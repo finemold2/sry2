@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sry — 브라우저에서 완성하는 한 편의 글</title>
+  <meta name="description" content="구조 설계부터 집필, 발행까지. 서버 없이 브라우저에서 동작하는 한국어 글쓰기 스튜디오. 원고는 실제 RTF 파일로 저장되고, 완전 오프라인으로 쓰며, 2,445개가 넘는 창작 도구가 함께합니다." />
+  <meta name="author" content="Parue" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- 소셜 미리보기 (og:image 는 래스터 PNG — 소셜 크롤러는 SVG 미지원)
+       배포 도메인이 정해지면 og:image·og:url 을 절대 URL(https://도메인/assets/og.png)로 바꾸는 걸 권장합니다. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="sry" />
+  <meta property="og:title" content="sry — 브라우저에서 완성하는 한 편의 글" />
+  <meta property="og:description" content="서버 없이 브라우저에서. 원고는 실제 RTF로. 2,445+ 창작 도구가 함께하는 한국어 글쓰기 스튜디오." />
+  <meta property="og:image" content="./assets/og.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="sry — 브라우저에서 완성하는 한 편의 글" />
+  <meta name="twitter:description" content="서버 없이 브라우저에서. 원고는 실제 RTF로. 한국어 글쓰기 스튜디오." />
+  <meta name="twitter:image" content="./assets/og.png" />
+
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <meta name="theme-color" content="#f7f7f8" id="themeColorMeta" />
+
+  <!-- Pretendard (한국어 그로테스크). 실패해도 시스템 폰트로 안전 폴백. -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="./styles.css" />
+  <!-- JS 미실행/차단 시에도 콘텐츠가 항상 보이도록 리빌 애니메이션을 무효화 -->
+  <noscript><style>.reveal{opacity:1 !important;transform:none !important}</style></noscript>
+
+  <!-- 앱 배포 설정:
+       · 아직 배포 전이면 SRY_APP_READY = false → '시작하기' 클릭 시 "곧 출시됩니다" 안내가 뜹니다.
+       · 배포 후엔 SRY_APP_URL 을 실제 위치로 바꾸고 SRY_APP_READY = true 로 두면 버튼이 앱으로 연결됩니다. -->
+  <script>
+    window.SRY_APP_URL = './app/';
+    window.SRY_APP_READY = false;
+  </script>
+  <!-- FOUC 방지: js 표시 + 저장된 테마를 첫 페인트 전에 적용 -->
+  <script>
+    (function () {
+      var el = document.documentElement;
+      el.classList.add('js'); // 스크롤 리빌은 js 가 있을 때만 콘텐츠를 숨긴다
+      try {
+        var t = localStorage.getItem('sry-theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        el.setAttribute('data-theme', t);
+        var m = document.getElementById('themeColorMeta');
+        if (m) m.setAttribute('content', t === 'dark' ? '#0d0f13' : '#f7f7f8');
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- ────────── 헤더 ────────── -->
+  <header class="site-header" id="siteHeader">
+    <div class="shell header-inner">
+      <a class="brand" href="#top" aria-label="sry 홈">
+        <img class="brand-mark" src="./assets/icon.svg" width="26" height="26" alt="" />
+        <span class="brand-name">sry</span>
+      </a>
+
+      <nav class="nav" aria-label="주요">
+        <a href="#flow">과정</a>
+        <a href="#screens">화면</a>
+        <a href="#why">특징</a>
+        <a href="#studio">도구</a>
+        <a href="#safety">안전</a>
+        <a href="#types">유형</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="테마 전환" title="라이트/다크 전환">
+          <span class="theme-toggle-dot" aria-hidden="true"></span>
+        </button>
+        <button class="btn btn-ghost btn-sm auth-soon" type="button" disabled aria-disabled="true" title="향후 제공 예정 — 지금은 회원가입 없이 바로 사용">로그인 <span class="soon-badge">준비&nbsp;중</span></button>
+        <a class="btn btn-primary btn-sm" href="./app/" data-app-link>시작하기</a>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="mobileMenu">
+          <span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 모바일 메뉴 -->
+  <div class="mobile-menu" id="mobileMenu" hidden>
+    <nav aria-label="모바일">
+      <a href="#flow">과정</a>
+      <a href="#screens">화면</a>
+      <a href="#why">특징</a>
+      <a href="#studio">도구</a>
+      <a href="#safety">안전</a>
+      <a href="#types">유형</a>
+      <a href="#contact">의견</a>
+      <button class="btn btn-ghost auth-soon" type="button" disabled aria-disabled="true">로그인 <span class="soon-badge">준비&nbsp;중</span></button>
+      <a class="btn btn-primary" href="./app/" data-app-link>지금 시작하기</a>
+    </nav>
+  </div>
+
+  <main id="main" tabindex="-1">
+    <span id="top"></span>
+
+    <!-- ────────── 히어로 ────────── -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="shell hero-inner">
+        <p class="eyebrow reveal" lang="en">BROWSER-NATIVE WRITING STUDIO</p>
+
+        <!-- 브랜드 스토리마크: s(시작) … ry(끝) 사이를 'to'가 채워 story 가 된다 — sry 의 의미를 애니메이션으로. -->
+        <div class="storymark reveal" id="storymark" role="img" tabindex="0"
+             aria-label="story — 시작(s)과 끝(ry) 사이, 그 사이를 sry의 to가 채워 하나의 story가 됩니다."
+             title="클릭하면 다시 재생">
+          <span class="storymark-word" aria-hidden="true">
+            <span class="sm-s">s</span><span class="sm-slot"><span class="sm-caret"></span><span class="sm-to">to</span></span><span class="sm-ry">ry</span>
+          </span>
+          <span class="storymark-cap" aria-hidden="true">
+            시작 <b>s</b> <span class="sm-sep">·</span> 끝 <b>ry</b> <span class="sm-sep">—</span> 그 사이를 채우는 <b class="sm-hl">to</b>, 그게 <b>sry</b>.
+          </span>
+        </div>
+
+        <h1 class="hero-title reveal" id="hero-title">
+          한 편의 글을,<br />처음부터 끝까지<span class="accent-dot">.</span>
+        </h1>
+        <p class="hero-lead reveal">
+          구조 설계부터 집필, 발행까지 &mdash; 서버 없이 브라우저에서.
+          당신의 원고는 처음부터 끝까지 <strong>실제 RTF 파일</strong>로 남습니다.
+        </p>
+        <div class="hero-cta reveal">
+          <a class="btn btn-primary btn-lg" href="./app/" data-app-link>지금 시작하기 <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost btn-lg" href="#flow">기능 살펴보기</a>
+        </div>
+        <ul class="hero-stats reveal" aria-label="핵심 지표">
+          <li><b data-count="2445" data-suffix="+">2,445+</b><span>창작 도구</span></li>
+          <li><b data-count="11" data-suffix="종">11종</b><span>내보내기 포맷</span></li>
+          <li><b>100%</b><span>오프라인 동작</span></li>
+          <li><b>0</b><span>설치 · 서버</span></li>
+        </ul>
+      </div>
+
+      <!-- 앱 미리보기 — 실제 에디터 화면(라이트/다크 자동 전환) -->
+      <div class="shell">
+        <figure class="mock">
+          <div class="mock-bar">
+            <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+            <span class="mock-url">sry — 원고.scriv</span>
+          </div>
+          <div class="mock-shot">
+            <img class="shot-light" src="./assets/shot-editor-light.png" width="2160" height="1350" decoding="async" loading="lazy"
+                 alt="sry 에디터 화면 — 왼쪽 바인더, 가운데 실제 RTF 편집기, 오른쪽 인스펙터" />
+            <img class="shot-dark" src="./assets/shot-editor-dark.png" width="2160" height="1350" decoding="async" loading="lazy"
+                 alt="sry 에디터 다크 테마 화면" />
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ────────── 로고/신뢰 스트립 ────────── -->
+    <section class="strip" aria-label="호환·기술">
+      <div class="shell strip-inner reveal">
+        <span>실제 <code>.rtf</code></span><i></i>
+        <span>Scrivener 3 <code>.scriv</code> 호환</span><i></i>
+        <span>DOCX · EPUB · PDF · LaTeX</span><i></i>
+        <span>PWA 오프라인 설치</span><i></i>
+        <span>다크 · 세피아 테마</span>
+      </div>
+    </section>
+
+    <!-- ────────── 01·02·03 워크플로 ────────── -->
+    <section class="flow" id="flow" aria-labelledby="flow-title">
+      <div class="shell">
+        <header class="section-head reveal">
+          <p class="eyebrow" lang="en">WORKFLOW</p>
+          <h2 class="section-title" id="flow-title">구상에서 발행까지,<br />하나의 흐름으로.</h2>
+        </header>
+
+        <article class="flow-row reveal">
+          <div class="flow-num"><span>01</span></div>
+          <div class="flow-body">
+            <h3>구조</h3>
+            <p class="flow-desc">
+              생각을 먼저 배치하세요. 폴더·문서 <b>바인더 트리</b>, 인덱스 카드 <b>코르크보드</b>,
+              열을 고르는 <b>아웃라이너</b>, 무한 <b>스토리 캔버스</b>, 그리고 장·POV·플롯라인
+              <b>타임라인</b>까지. 옮기고, 나누고, 다시 엮는 일이 자유롭습니다.
+            </p>
+            <ul class="flow-tags">
+              <li>바인더</li><li>코르크보드</li><li>아웃라이너</li><li>칸반 보드</li><li>스토리 캔버스</li><li>타임라인</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="flow-row reveal">
+          <div class="flow-num"><span>02</span></div>
+          <div class="flow-body">
+            <h3>집필</h3>
+            <p class="flow-desc">
+              본문은 처음부터 <b>진짜 RTF</b> 위에서 쓰입니다. 하위 문서를 이어 쓰는 <b>Scrivenings</b>,
+              좌우·상하 <b>분할 에디터</b>, 캐럿을 화면 중앙에 고정하는 <b>타자기 스크롤</b>,
+              각주·코멘트·내부 링크, 그리고 <b>각본 모드</b>까지 — 몰입은 그대로 둡니다.
+            </p>
+            <ul class="flow-tags">
+              <li>RTF 에디터</li><li>Scrivenings</li><li>분할 편집</li><li>타자기 스크롤</li><li>각주·코멘트</li><li>각본 모드</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="flow-row reveal">
+          <div class="flow-num"><span>03</span></div>
+          <div class="flow-body">
+            <h3>발행</h3>
+            <p class="flow-desc">
+              원고를 조립해 <b>11종 포맷</b>으로 컴파일합니다 — RTF · DOCX · EPUB · PDF · ODT ·
+              LaTeX · Markdown · Fountain · FDX · HTML · TXT. 문피아 · 네이버 · 노벨피아 · 카카오 ·
+              Royal Road 등 <b>플랫폼 규격 발행</b>과 SEO 점검까지 한자리에서.
+            </p>
+            <ul class="flow-tags">
+              <li>컴파일</li><li>DOCX · EPUB · PDF</li><li>LaTeX · ODT</li><li>Fountain · FDX</li><li>플랫폼 발행</li><li>SEO</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ────────── 실제 화면 쇼케이스 ────────── -->
+    <section class="screens" id="screens" aria-labelledby="screens-title">
+      <div class="shell">
+        <header class="section-head reveal">
+          <p class="eyebrow" lang="en">THE REAL THING</p>
+          <h2 class="section-title" id="screens-title">말보다,<br />화면으로.</h2>
+        </header>
+
+        <figure class="screen screen-feature reveal">
+          <div class="frame">
+            <div class="frame-bar"><span></span><span></span><span></span><em>도구 허브</em></div>
+            <img src="./assets/shot-toolhub.png" width="2160" height="1350" loading="lazy" decoding="async"
+                 alt="sry 도구 허브 — 수백 종의 창작 도구를 검색·분류해 여는 런처" />
+          </div>
+          <figcaption><b>도구 허브</b> — 막혔을 때 꺼내 쓰는 수백 종의 도구를 검색·분류해 곧바로 띄웁니다.</figcaption>
+        </figure>
+
+        <div class="screens-grid">
+          <figure class="screen reveal">
+            <div class="frame">
+              <div class="frame-bar"><span></span><span></span><span></span><em>코르크보드</em></div>
+              <img src="./assets/shot-corkboard.png" width="2160" height="1350" loading="lazy" decoding="async"
+                   alt="sry 코르크보드 — 인덱스 카드로 장면을 배치한 화면" />
+            </div>
+            <figcaption><b>코르크보드</b> — 인덱스 카드로 장면을 한눈에 배치하고 자유롭게 재정렬합니다.</figcaption>
+          </figure>
+          <figure class="screen reveal">
+            <div class="frame">
+              <div class="frame-bar"><span></span><span></span><span></span><em>연재 관리</em></div>
+              <img src="./assets/shot-serial.png" width="2160" height="1350" loading="lazy" decoding="async"
+                   alt="sry 연재 관리 대시보드 — 회차 파이프라인 보드" />
+            </div>
+            <figcaption><b>연재 관리</b> — 회차 파이프라인·비축분·발행 캘린더로 연재를 운영합니다.</figcaption>
+          </figure>
+          <figure class="screen reveal">
+            <div class="frame">
+              <div class="frame-bar"><span></span><span></span><span></span><em>창작 도구창</em></div>
+              <img src="./assets/shot-tools.png" width="2160" height="1350" loading="lazy" decoding="async"
+                   alt="sry 창작 도구창 — 마인드맵·책표지 목업 등을 자유 배치한 화면" />
+            </div>
+            <figcaption><b>창작 도구창</b> — 마인드맵·책표지 목업 등 도구를 여러 개 띄워 자유롭게 씁니다.</figcaption>
+          </figure>
+          <figure class="screen reveal">
+            <div class="frame">
+              <div class="frame-bar"><span></span><span></span><span></span><em>데이터베이스</em></div>
+              <img src="./assets/shot-database.png" width="2160" height="1350" loading="lazy" decoding="async"
+                   alt="sry 데이터베이스 뷰 — 모든 문서를 엑셀식 표로 보는 화면" />
+            </div>
+            <figcaption><b>데이터베이스</b> — 모든 문서를 엑셀식 표로 보고 라벨·상태·POV를 인라인 편집합니다.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────── 특징 그리드 ────────── -->
+    <section class="why" id="why" aria-labelledby="why-title">
+      <div class="shell">
+        <header class="section-head reveal">
+          <p class="eyebrow" lang="en">WHY SRY</p>
+          <h2 class="section-title" id="why-title">타협하지 않은<br />여섯 가지.</h2>
+        </header>
+
+        <div class="grid-cards">
+          <article class="card reveal">
+            <span class="card-idx">01</span>
+            <h3>진짜 RTF 위에서</h3>
+            <p>정본은 실제 <code>.rtf</code>입니다. 한글·유니코드·각주·인라인 이미지까지 왕복 보존 &mdash; Word·한글에서 바로 열립니다.</p>
+          </article>
+          <article class="card reveal">
+            <span class="card-idx">02</span>
+            <h3>서버 없음 · 완전 오프라인</h3>
+            <p>모든 처리는 브라우저 안에서. 네트워크조차 필요 없습니다. PWA로 설치하면 비행기 안에서도 그대로.</p>
+          </article>
+          <article class="card reveal">
+            <span class="card-idx">03</span>
+            <h3>원고 안전이 최우선</h3>
+            <p>자동 저장, 저장 검증, 롤링 zip 백업, 다중 탭 동기화. 데스크톱 Scrivener 호환 <code>.scriv</code>로 언제든 꺼낼 수 있습니다.</p>
+          </article>
+          <article class="card reveal">
+            <span class="card-idx">04</span>
+            <h3>창작 도구 2,445+</h3>
+            <p>분석기·단어 은행·아이디어 생성기·작법 가이드·절차적 합성기. 막혔을 때 곁에 두는, 거의 앱 한 개 규모의 대형 도구 100종도 함께.</p>
+          </article>
+          <article class="card reveal">
+            <span class="card-idx">05</span>
+            <h3>설치 없이, 지금 바로</h3>
+            <p>내려받을 것도, 복잡한 설정도 없습니다. 브라우저 새 탭 하나로 첫 문장을 시작하세요. 계정은 선택입니다.</p>
+          </article>
+          <article class="card reveal">
+            <span class="card-idx">06</span>
+            <h3>모든 글쓰기를 위해</h3>
+            <p>웹소설 연재부터 소설·논픽션·학술논문·에세이·블로그·각본·시까지. 유형을 고르면 그에 맞는 템플릿과 도구가 준비됩니다.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────── 도구 생태계 ────────── -->
+    <section class="studio" id="studio" aria-labelledby="studio-title">
+      <div class="shell">
+        <header class="section-head reveal">
+          <p class="eyebrow" lang="en">CREATIVE STUDIO</p>
+          <h2 class="section-title" id="studio-title">쓰다 막혔을 때,<br />꺼내 쓰는 도구들.</h2>
+        </header>
+
+        <div class="studio-stats reveal">
+          <div class="studio-figure">
+            <b data-count="2445">2,445</b>
+            <span>창작 스튜디오 도구 · 검색과 필터 내장</span>
+          </div>
+          <div class="studio-breakdown">
+            <div><em data-count="1534">1,534</em><span>절차적 합성기</span></div>
+            <div><em data-count="565">565</em><span>작법 가이드</span></div>
+            <div><em data-count="151">151</em><span>아이디어 생성기</span></div>
+            <div><em data-count="94">94</em><span>단어 은행</span></div>
+            <div><em data-count="54">54</em><span>문체·구조 분석기</span></div>
+            <div><em data-count="47">47</em><span>유형별 분석기</span></div>
+          </div>
+        </div>
+        <p class="studio-foot reveal">여기에 더해, 쓰다 막혔을 때 꺼내 쓰는 <b>대형 도구 허브 100종</b>이 별도로 준비되어 있습니다.</p>
+
+        <div class="marquee reveal" aria-hidden="true">
+          <div class="marquee-track">
+            <span>인물 관계도</span><span>마인드맵</span><span>세계관 위키</span><span>플롯 그리드</span><span>감정 아크</span><span>스노우플레이크</span><span>Save the Cat</span><span>영웅의 여정</span><span>포모도로</span><span>무자비 모드</span><span>책표지 목업</span><span>소리내어 읽기</span><span>음성 받아쓰기</span><span>번역기</span><span>클리셰 감지</span><span>이중피동 점검</span><span>운율 사전</span><span>텐션 아크</span>
+            <span>인물 관계도</span><span>마인드맵</span><span>세계관 위키</span><span>플롯 그리드</span><span>감정 아크</span><span>스노우플레이크</span><span>Save the Cat</span><span>영웅의 여정</span><span>포모도로</span><span>무자비 모드</span><span>책표지 목업</span><span>소리내어 읽기</span><span>음성 받아쓰기</span><span>번역기</span><span>클리셰 감지</span><span>이중피동 점검</span><span>운율 사전</span><span>텐션 아크</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────── 데이터 안전 ────────── -->
+    <section class="safety" id="safety" aria-labelledby="safety-title">
+      <div class="shell safety-inner">
+        <div class="safety-copy reveal">
+          <p class="eyebrow" lang="en">YOUR WORDS, YOURS</p>
+          <h2 class="section-title" id="safety-title">당신의 원고는<br />당신의 것입니다.</h2>
+          <p class="safety-lead">
+            글은 당신의 기기에만 머뭅니다. 우리는 그것을 볼 수도, 가질 수도 없습니다.
+            그럼에도 잃지 않도록, 여러 겹의 안전장치를 겹쳐 두었습니다.
+          </p>
+        </div>
+        <ul class="safety-list reveal">
+          <li><b>브라우저 로컬 저장</b><span>IndexedDB · File System Access. 업로드 없음.</span></li>
+          <li><b>자동 저장 &amp; 저장 검증</b><span>변경 후 지정 간격 저장. 쓴 데이터를 되읽어 확인.</span></li>
+          <li><b>롤링 zip 백업</b><span>최근 15개 자동 백업. 무결성 확인 후 복원.</span></li>
+          <li><b>표준 <code>.scriv</code> 패키지</b><span>데스크톱 Scrivener 3와 호환. 언제든 이주 가능.</span></li>
+          <li><b>다중 탭 동기화</b><span>여러 탭·창에서 열어도 실시간 반영, 손실 경고.</span></li>
+          <li><b>구조 복구</b><span>손상된 인덱스를 감지·복구하는 안전 경로.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ────────── 글쓰기 유형 ────────── -->
+    <section class="types" id="types" aria-labelledby="types-title">
+      <div class="shell">
+        <header class="section-head reveal">
+          <p class="eyebrow" lang="en">FOR EVERY FORM</p>
+          <h2 class="section-title" id="types-title">무엇을 쓰든,<br />맞춰 준비됩니다.</h2>
+        </header>
+        <ul class="type-chips reveal">
+          <li>웹소설 연재</li><li>장편 소설</li><li>논픽션</li><li>학술논문 (IMRaD)</li>
+          <li>에세이</li><li>블로그 · SEO</li><li>각본 · 시나리오</li><li>시</li>
+          <li>일지 · 저널</li><li>비평 · 논증</li><li>기획 · 브랜드</li><li>일반 글쓰기</li>
+        </ul>
+        <p class="types-note reveal">유형을 고르면 그에 맞는 프로젝트 템플릿·구조·분석 도구가 자동으로 준비됩니다.</p>
+      </div>
+    </section>
+
+    <!-- ────────── 계정(준비 중) · 의견 ────────── -->
+    <section class="engage" id="contact" aria-labelledby="engage-title">
+      <div class="shell engage-inner">
+        <!-- 계정 (향후 구현 예정) -->
+        <div class="engage-account reveal">
+          <p class="eyebrow" lang="en">ACCOUNTS · COMING SOON</p>
+          <h2 class="section-title" id="engage-title">계정은,<br />곧 만나요.</h2>
+          <p class="engage-lead">
+            지금은 <b>가입 없이</b> 바로 쓸 수 있습니다. 로그인·회원가입은
+            <b>향후 제공할 예정</b>입니다.
+          </p>
+          <div class="engage-auth" role="group" aria-label="계정 기능 (준비 중)">
+            <button class="btn btn-ghost auth-soon" type="button" disabled aria-disabled="true">
+              로그인 <span class="soon-badge">준비&nbsp;중</span>
+            </button>
+            <button class="btn btn-ghost auth-soon" type="button" disabled aria-disabled="true">
+              회원가입 <span class="soon-badge">준비&nbsp;중</span>
+            </button>
+          </div>
+          <p class="engage-note">향후 구현 예정 — 계정은 선택이며, 지금도 원고는 <b>로컬(브라우저)</b>에 안전하게 저장됩니다.</p>
+        </div>
+
+        <!-- 의견 보내기 -->
+        <div class="engage-feedback reveal">
+          <p class="eyebrow" lang="en">FEEDBACK</p>
+          <h3 class="engage-h">의견 보내기</h3>
+          <p class="engage-sub">기능 제안·버그·바라는 점 — 무엇이든 환영합니다. 아래를 채우면 메일 앱이 열립니다.</p>
+          <form id="feedbackForm" class="feedback-form" novalidate>
+            <div class="field">
+              <label for="fb-name">이름 <span>(선택)</span></label>
+              <input id="fb-name" name="name" type="text" autocomplete="name" placeholder="이름 또는 닉네임" />
+            </div>
+            <div class="field">
+              <label for="fb-email">회신 이메일 <span>(선택)</span></label>
+              <input id="fb-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" />
+            </div>
+            <div class="field">
+              <label for="fb-msg">의견 <span>(필수)</span></label>
+              <textarea id="fb-msg" name="message" rows="4" required placeholder="자유롭게 남겨주세요"></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">의견 보내기 <span aria-hidden="true">→</span></button>
+              <a class="feedback-direct" href="mailto:devfinemold@gmail.com">또는 직접 메일: devfinemold@gmail.com</a>
+            </div>
+            <p class="form-hint" id="fb-hint" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────── 최종 CTA ────────── -->
+    <section class="cta" aria-labelledby="cta-title">
+      <div class="shell cta-inner reveal">
+        <h2 class="cta-title" id="cta-title">지금, 브라우저에서.</h2>
+        <p class="cta-sub">설치 없이, 새 탭 하나로. 지금 바로 첫 문장을 시작하세요.</p>
+        <a class="btn btn-primary btn-lg" href="./app/" data-app-link>sry 시작하기 <span aria-hidden="true">→</span></a>
+        <p class="cta-fine">설치 없음 · 오픈 웹 표준 위에서 동작 · 원고는 당신의 기기에</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ────────── 푸터 ────────── -->
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="#top" aria-label="sry 홈">
+          <img class="brand-mark" src="./assets/icon.svg" width="24" height="24" alt="" />
+          <span class="brand-name">sry</span>
+        </a>
+        <p class="footer-tag">브라우저 네이티브 글쓰기 스튜디오</p>
+      </div>
+      <nav class="footer-nav" aria-label="푸터">
+        <a href="#flow">과정</a>
+        <a href="#screens">화면</a>
+        <a href="#why">특징</a>
+        <a href="#studio">도구</a>
+        <a href="#safety">안전</a>
+        <a href="#types">유형</a>
+        <a href="#contact">의견</a>
+        <a href="./app/" data-app-link>앱 열기</a>
+      </nav>
+      <div class="footer-meta">
+        <p>Made by <strong>Parue</strong></p>
+        <p class="footer-copy">© <span id="year">2026</span> sry · Parue. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./main.js" defer></script>
+</body>
+</html>

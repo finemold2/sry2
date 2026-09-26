@@ -1,0 +1,536 @@
+[
+ {
+  "title": "프로젝트 전체 찾아 바꾸기가 사실상 불가 — 미리보기·자동 스냅샷 없는 비가역 실행, 검색 결과 스니펫/점프 부재, 매치 전체 하이라이트 없음, Scrivenings에서 첫 문서만 검색",
+  "severity": 5,
+  "effort": "S",
+  "fix": "searchProject를 {id, count, snippet(±30자, <mark>)} 반환으로 확장해 실행 전 문서별 매치 수+스니펫 미리보기(diff.ts 재사용, 문서 단위 제외 체크박스)를 모달에 표시하고, 실행 시 변경되는 모든 문서에 '치환 전 자동 스냅샷'(rollbackSnapshot의 autoSnap 패턴 재사용)을 먼저 기록한 뒤 bodyRtf를 plain-run 단위로 치환 — confirm의 겁주는 문구는 '자동 백업됨·스냅샷에서 복원 가능'으로 교체하고 실행 후 '되돌리기(일괄 복원)' 액션 제공. 결과 클릭 시 pendingFind를 세워 FindReplaceBar 자동 오픈+첫 매치 스크롤. CSS Custom Highlight API로 매치 전체(노랑)+현재 매치(주황) 하이라이트. getEditor를 .editor-scroll 내 모든 .paper 수집으로 확장해 문서 경계를 넘는 검색·모두 바꾸기와 '이 문서/폴더 전체 N개' 범위 표시 지원.",
+  "files": [
+   "src/search/search.ts",
+   "src/components/FindReplaceBar.tsx",
+   "src/components/ProjectReplaceModal.tsx",
+   "src/store/store.ts",
+   "src/App.tsx",
+   "src/components/Binder.tsx",
+   "src/components/Editor.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 6,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4.7,
+  "confirmed": true
+ },
+ {
+  "title": "새 창 집중 모드가 외부 변경을 동기화하지 않아 원고 덮어쓰기(유실) 가능 + 집중 모드 내 문서 이동·단축키·Esc 처리 부재",
+  "severity": 5,
+  "effort": "S",
+  "fix": "Editor.tsx의 외부 동기화 패턴(마지막 커밋 RTF ref로 echo 가드 + store 구독)을 Composition에 이식해 같은 문서가 외부에서 바뀌면 innerHTML 갱신하고, 새 창 집중 모드 중 메인 창의 동일 문서 편집면은 읽기 전용/오버레이 처리로 충돌 자체를 차단. comp-bar에 현재 문서 제목+이전/다음 버튼을 추가하고 팝업 window(winOf 기준)에 ⌘PgUp/PgDn·⌘S를 직접 바인딩, '집중 친화' 도구(스프린트/포모도로) 진입 버튼 제공. 진입 방식은 localStorage(sry:focusMode)에 기억해 ⌘⇧Enter로 즉시 진입(모달은 첫 옵션 autoFocus+'이 방식 기억' 체크박스), 전체화면 해제 Esc는 fullscreenchange 후 ~300ms 가드로 집중 종료와 분리.",
+  "files": [
+   "src/components/Composition.tsx",
+   "src/App.tsx",
+   "src/components/PortalWindow.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "동기부여 장치가 실제 원고와 단절 — 스프린트/세션 목표가 자체 textarea만 집계, 퇴고한 날은 스트릭이 끊김(순증가만 인정), 세션 카운터 자정 미리셋·마감 없인 일일 목표 불가",
+  "severity": 4,
+  "effort": "S",
+  "fix": "WordSprintGame·SessionGoal·SprintLeague에 '실제 원고 모드'(기본값) 추가: 시작 시 getWritingStats().draftTotal을 기준선으로 저장하고 1~2초 폴링 증분을 진행률로 표시(자체 textarea는 '연습장 모드'로 강등, 종료 시 결과를 기존 localStorage 기록에 적립) — 작가가 본문 에디터에서 쓰면서 타이머·진행을 보게 되고 writingHistory와 숫자 일치. DayStat에 edited 필드를 추가해 recordWriting에서 본문 변경 시 기록, computeStreak 판정을 (words>0 || edited)로 완화하되 Footer 툴팁·통계에 '집필 N자/퇴고일' 구분 표기(기존 데이터는 필드 부재 시 false로 하위 호환). App의 분 단위 tick/포커스 이벤트로 날짜 변경 감지해 sessionStart 자동 리셋+'새 날 — 세션 리셋됨' 안내, settings에 dailyTarget(targetUnit 준수) 추가해 Footer에 '오늘: N/목표' 진행 막대(deadline 있으면 기존 pace 권장량 우선).",
+  "files": [
+   "src/tools/WordSprintGame.tsx",
+   "src/tools/SessionGoal.tsx",
+   "src/tools/SprintLeague.tsx",
+   "src/tools/linkbus.ts",
+   "src/store/store.ts",
+   "src/analysis/streak.ts",
+   "src/model/types.ts",
+   "src/components/Footer.tsx",
+   "src/components/ProjectSettingsModal.tsx"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "스킨 전환 오리엔테이션 부재 — 전환 즉시 화면 재배치인데 코치마크 없음, Studio에 도움말(?) 진입점 없음(투어가 없는 버튼 안내), 'Studio UI' vs '창작 스튜디오' 명칭 충돌",
+  "severity": 4,
+  "effort": "S",
+  "fix": "첫 전환 시(각 방향 1회, localStorage 플래그) 코치마크 3~4개 순차 표시: ①좌측 레일=뷰 전환(상단 아이콘이 여기로) ②'클래식 UI'=언제든 복귀·데이터 보존 ③메뉴바 그대로 ④⌘K 전체 검색 — GuidedTour의 스텝/포지셔닝 로직을 재사용한 SkinCoach 컴포넌트(역방향 동일). Studio 레일 하단에 railBtn('help','도움말 투어') 추가(startTour 연결), 투어 마지막 스텝 문구를 uiSkin 인식 분기('보기 메뉴 또는 레일의 도움말 버튼'), 레일 버튼 title에 단축키 병기('에디터 (⌘1)')+studioMenus 보기 메뉴에 뷰 전환·패널 토글 항목 보충. 첫 클릭 시 두 스킨 축소 스크린샷+3줄 차이 요약 비교 미니 모달('전환하기/그대로 쓰기'), 라벨을 'UI 스킨: 모던/클래식'으로 통일해 '창작 스튜디오'와 어휘 충돌 제거+설정 모달에 'UI 스킨' 섹션 추가.",
+  "files": [
+   "src/App.tsx",
+   "src/components/StudioShell.tsx",
+   "src/components/GuidedTour.tsx",
+   "src/components/SkinCoach.tsx (신규)",
+   "src/styles.css"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 2.7,
+  "confirmed": true
+ },
+ {
+  "title": "태블릿·터치에서 핵심 드래그 전멸 — 캔버스 노드·바인더 재정렬·보드 카드가 마우스/HTML5 DnD 전용(키보드 대안도 부재), 좁은 화면 바인더 오버레이 자동 닫힘 없음, 도구 창 크기 조절 CSS 코너 전용",
+  "severity": 4,
+  "effort": "S",
+  "fix": "StoryCanvas의 onMouseDown 계열(팬·노드 이동·리사이즈·포트 연결)을 onPointerDown+setPointerCapture로 교체+.canvas-area/.canvas-node 등에 touch-action:none(ToolWindow 헤더와 동일 패턴), 노드에 roving tabIndex+role=option+화살표 포커스 이동·Alt+화살표 위치 이동·Enter 열기·컨텍스트 메뉴 '연결 시작/이 노드로 연결'로 키보드 완주 지원(Corkboard 패턴 이식). Binder/Board는 HTML5 DnD 유지+포인터 폴백(롱프레스 300ms→pointermove 하이라이트→pointerup 시 기존 drop 핸들러 재사용), 최소한 '위로/아래로 이동' 버튼 대안을 터치에 노출. isNarrow에서 문서 선택 변경 시 binderVisible 자동 닫기 useEffect(폴더 펼침은 유지, 인스펙터는 제외). ToolWindow 우하단 28×28px 커스텀 리사이즈 그립(pointerdown+setPointerCapture, appZoom 보정, min 260×200 클램프, CSS resize:both 병존).",
+  "files": [
+   "src/components/StoryCanvas.tsx",
+   "src/components/Board.tsx",
+   "src/components/Binder.tsx",
+   "src/tools/ToolWindow.tsx",
+   "src/App.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 3.7,
+  "confirmed": true
+ },
+ {
+  "title": "테마 하드코딩 색상 결함 — 다크에서 형광펜·주석 하이라이트 판독 불가(대비 1.04:1), 아웃라이너 선택행 텍스트 소실, 한글 툴바 라벨 낱자 세로 줄바꿈, 세피아 AA 회귀, 집중 모드·스튜디오 레일 고정색",
+  "severity": 4,
+  "effort": "S",
+  "fix": "다크 안전망 CSS 추가: [data-theme='dark'] .paper span[style*='background']:not([style*='color']), .ann-flash에 어두운 글자색(#1f2329) 강제+형광펜 기본값 테마 분기(다크는 어두운 앰버), .cmt-marker 다크 오버라이드(#e0b34d). 아웃라이너 고정 hex 3개를 var(--border)·color-mix(in srgb, var(--accent) 8%/22%, var(--paper))로 교체해 3테마 자동 대응. .tbtn { white-space:nowrap; flex-shrink:0 } 추가(스튜디오 .st-menu-btn과 동일 정책)+좁은 폭은 라벨 미디어쿼리 숨김. UI 3.0 세피아 블록 --accent를 AA 검증값 #8a5a2c 계열로 되돌리고(--accent-soft 분리) 구 테마 블록 삭제로 이중 정의 재발 방지. 집중 모드 색을 --comp-bg/--comp-fg 변수화+세피아는 웜 다크(#262015)+comp-bar '배경: 다크/세피아/종이' 토글(localStorage), 스튜디오 레일 --st-rail-bg 세피아 분기(#332b1e)+--st-rail-fg 웜 혼합. 수정 후 CDP 3테마 렌더 재검증.",
+  "files": [
+   "src/styles.css",
+   "src/components/FormatBar.tsx",
+   "src/components/Composition.tsx"
+  ],
+  "mergedFrom": 6,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "명령 팔레트 630여 개가 무순위 배열 순서 나열 — 랭킹·최근 실행·즐겨찾기 우선·초성 검색 없음, 키보드 탐색 시 선택이 화면 밖으로, 즐겨찾기 단축키 실행 불가",
+  "severity": 4,
+  "effort": "S",
+  "fix": "fuzzy를 점수 함수로 교체: 정확 접두(3점)>단어 경계 substring(2점)>substring(1점)>서브시퀀스(0.5점)+동점 시 제목 짧은 순, 즐겨찾기·최근 실행(localStorage 'sry:cmd-recents', exec()에서 push 최대 20개) 부스트, 빈 쿼리 시 '최근 사용'·'★ 즐겨찾기' 섹션을 최상단 렌더, 한글 초성 매칭 유틸(음절→초성 분해 서브시퀀스) 추가 — 전부 CommandPalette 내부 useMemo로 완결. sel 변경 useEffect에서 itemRefs[sel]?.scrollIntoView({block:'nearest'})+onMouseEnter는 최근 keydown 150ms 내면 무시 가드. App 키보드 핸들러에 Ctrl/⌘+Alt+1~9로 favorites[n-1]을 scriv:run-fav 이벤트로 실행(기존 인프라 재사용), FavoritesTab 항목에 순번 뱃지(⌥1…)로 단축키 학습 유도+팔레트 즐겨찾기 섹션에도 힌트 노출.",
+  "files": [
+   "src/components/CommandPalette.tsx",
+   "src/App.tsx",
+   "src/components/Inspector.tsx"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "수집함 반쪽 왕복 — 이미지·파일·URL은 원고로 되돌릴 경로 없음, 목록 보기 메모 클릭 무반응(편집 UI가 캔버스 분기 전용), 클립보드 이미지 붙여넣기 조용히 무시",
+  "severity": 4,
+  "effort": "S",
+  "fix": "이미지 항목에 '⤵ 원고' 액션 추가: blobId→loadBlob→File화 후 'scriv:insertImage' window 이벤트 하나를 Editor에 추가해 기존 insertImageFile 경로 재사용, insertToEditor를 kind 분기로 확장(URL은 라벨+주소 텍스트, doc은 이동 유지), stash-item에 draggable+setData로 에디터 직접 드롭도 지원. 편집 로직을 StashMemoEdit 소형 컴포넌트로 추출해 목록 행에서도 editId===it.id면 동일 textarea 인라인 렌더(onBlur→updateItem 공유). onPaste에서 clipboardData.files(items kind==='file') 우선 검사해 acceptDrop의 파일 분기(용량 상한·saveBlob·경고 포함)를 헬퍼로 추출·재사용, 두 뷰 공용 handlePaste로 통합.",
+  "files": [
+   "src/components/StashBox.tsx",
+   "src/components/Editor.tsx"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 3.7,
+  "confirmed": true
+ },
+ {
+  "title": "도구 창 조작 안전·접근성 결함 — 최대화/타일이 원래 위치·크기를 영구 덮어씀, Esc가 최소화 아닌 닫기(작업 상태 소실), 즐겨찾기 핫존이 UI zoom 미보정, 열림/닫힘 포커스 관리 부재",
+  "severity": 4,
+  "effort": "S",
+  "fix": "localStorage 스키마를 {x,y,w,h,maxed,prev}로 확장해 최대화 시 prevBox 함께 저장(또는 더 간단히 maxed 동안 persist 중단)해 재오픈/새로고침 후에도 복원 가능하게, 타일 적용 전 각 창 기하를 sry:toolwin:<id>:pretile 스냅샷+독에 '타일 해제(이전 배치로)' 버튼. Esc 기본 동작을 onMinimize(독으로 최소화)로 변경하고 닫기는 X/Shift+Esc로 분리+'독으로 최소화됨' 1회 flash. overHotzone 판정을 고정값 x<=132 대신 핫존 DOM getBoundingClientRect 기준으로 교체해 zoom 배율 자동 보정(CSS/로직 폭 이중 정의 해소). 마운트 시 useModal의 초기 포커스 로직 재사용(창 내부 첫 포커서블/rootRef로 이동), 열기 직전 activeElement 저장 후 닫기/최소화 시 복원, 포커스 시 Alt+화살표 창 이동 지원 — ToolWindow 한 곳 수정으로 555개 도구 전부 적용.",
+  "files": [
+   "src/tools/ToolWindow.tsx",
+   "src/App.tsx",
+   "src/components/useModal.ts",
+   "src/styles.css"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 3.3,
+  "confirmed": true
+ },
+ {
+  "title": "도구 3,000종(허브 555+창작 스튜디오 2,445) 탐색이 매번 콜드 스타트 — 최근 사용·즐겨찾기·계층 전무, 분류 붕괴(114개 잡동사니·중복 그룹), 검색이 이름만 매칭·장르/그룹명/intro 누락",
+  "severity": 4,
+  "effort": "S",
+  "fix": "스토어에 recentTools {id,count,lastUsed} 기록(openTool 시)+CreativeStudio는 localStorage에 마지막 도구·펼친 그룹·최근 10개·별표 저장, 허브·스튜디오 최상단에 '최근 사용'(8~10개)·'즐겨찾기' 고정 스트립+카드/nav 항목 별표 토글, 첫 방문자에겐 큐레이션 '시작 추천 8종' 표시, 검색 정렬에 사용 빈도 가중치. 정본 그룹 상수 선언으로 중복 통합('언어·어휘'+'어휘·표현', '게임·캐릭터'→'캐릭터')·고아 그룹 재배치·'구상·정리'는 subgroup 분할+_gentools.cjs 미등록 그룹 경고, ToolHub 좌측 그룹 내비(개수 표시)·CreativeStudio nav 상단 유형 탭(분석·합성·단어은행·생성기·가이드+수 뱃지)으로 2단계 드릴다운, 카테고리 기본 접힘(상위 6개+'N개 더 보기'). 검색을 genre·그룹명·intro까지 확장(그룹명 매칭 시 그룹 전체 유지)+장르 칩 필터로 GenreToolbox 흡수+한글 초성 검색 유틸, ArrowDown/Up+Enter로 첫 결과 즉시 실행.",
+  "files": [
+   "src/tools/ToolHub.tsx",
+   "src/tools/registry.tsx",
+   "scripts/_gentools.cjs",
+   "src/store/store.ts",
+   "src/App.tsx",
+   "src/components/CreativeStudio.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 8,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "프로젝트 전환 마찰 — 최근 프로젝트·팔레트·단축키 없는 4단계 경로, clean 상태에도 확인 모달 강제, 목록 로드가 전체 프로젝트(본문 RTF 포함) getAll 역직렬화",
+  "severity": 4,
+  "effort": "S",
+  "fix": "마운트 시 idbList 메타 캐시로 커맨드 팔레트에 '전환: <제목>' 동적 명령 주입(openProjectById 재사용), 파일 메뉴에 최근 프로젝트 3~5개(수정시각순) 직접 나열, 상단바 프로젝트 제목 클릭=목록 열기+Ctrl+Shift+O 배정. requestSwitch는 note 없고 dirty=false+IDB 영속 확인(baseModified 일치) 시 모달 생략 즉시 proceed()+전환 직후 '자동 저장됨 · .sry 내보내기는 파일 메뉴' flash 1회(dirty/note 케이스는 기존 유지로 데이터 안전 보존). idbList를 커서 순회 또는 저장 시 별도 meta 스토어({id,title,modified,words,items}) 기록으로 경량화, 목록 행에 단어수·문서수 표시+검색 입력+행 전체 클릭=열기+이름 변경(연필)·복제 추가.",
+  "files": [
+   "src/App.tsx",
+   "src/components/CommandPalette.tsx",
+   "src/persistence/idb.ts",
+   "src/components/ProjectListModal.tsx"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "컴파일/발행 단절 — 11개 포맷이 무안내 버튼 나열(미리보기 미연동), 플랫폼별 발행이 컴파일 옵션(포함 문서·치환·범위) 전부 무시, 분량이 한국어 기준(글자수·원고지) 아님",
+  "severity": 4,
+  "effort": "S",
+  "fix": "포맷을 즉시-다운로드 버튼 대신 '포맷 선택(라디오/카드)+내보내기 1개 주버튼' 구조로 전환, 각 포맷에 한 줄 한국어 용도 설명(DOCX '출판사 투고용', ePub '전자책·리디', PDF '인쇄·교정지', Fountain/FDX '각본 — 휴리스틱 변환 주의', LaTeX/ODT는 '고급' 접기), 선택 포맷 따라 미리보기 자동 전환(md/latex/txt/fountain은 해당 텍스트, docx/epub/rtf는 '근사 미리보기' 라벨)+마지막 포맷 localStorage 기억+각본 경고는 해당 포맷 선택 시만. PlatformPublishModal은 defaultCompileOptions 하드코딩 대신 onlyIncluded=true 기본+CompileDialog와 compileOptions 공유(localStorage/스토어), 모달 안에 대상 선택(전체/컬렉션/선택)과 '활자 치환' 체크 노출, CompileDialog 하단에 '플랫폼별 발행' 상호 링크. compile() 결과에 charCount(공백 포함/제외)를 추가해 '문서 N개 · 12,340자(공백 포함) · 원고지 약 62매' 표기(wordCount는 영문용 병기).",
+  "files": [
+   "src/components/CompileDialog.tsx",
+   "src/components/PlatformPublishModal.tsx",
+   "src/compile/compile.ts",
+   "src/App.tsx"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "가져오기 결함 — OS 파일 드롭 시 브라우저가 파일로 이동해 앱 언로드, 최다 보유 포맷 .txt/.md 산문 가져오기 부재(.txt는 각본으로 오변환), 실패 안내가 2.6초 무원인 토스트",
+  "severity": 4,
+  "effort": "S",
+  "fix": "App 전역 dragenter/dragover/drop 리스너: 파일 드래그면 항상 preventDefault로 내비게이션 차단, 확장자 라우팅으로 기존 임포터 재사용(.rtf→importRtf, .docx→importDocx, .fountain/.fdx→각본, 이미지/PDF→importMedia, .sry.zip→onImportSryFile)+드래그 중 반투명 오버레이('여기에 놓으면 원고로 가져옵니다')+다중 파일 forEach 일괄 처리. '텍스트/마크다운 가져오기(.txt·.md)' 메뉴 추가: 빈 줄 기준 <p> 변환(importDocx 패턴), '제1화/Chapter N' 헤딩 감지 시 회차별 분할 옵션 제안, importFountain은 씬 헤딩 0개면 각본 폴더 생성 '전에' 일반 텍스트 선택지 제시. flash에 닫기 버튼 있는 스티키 배너 변형 추가(실패/장문 자동 선택), 취소(picker 닫음)와 예외 분리, DOCX는 'PK' 시그니처 검사로 '구버전 .doc — .docx로 다시 저장 후 가져오세요' 원인+행동 메시지+대안 경로 한 줄.",
+  "files": [
+   "src/App.tsx",
+   "src/styles.css",
+   "src/components/Footer.tsx"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4.3,
+  "confirmed": true
+ },
+ {
+  "title": "인스펙터 탭 9개가 폭을 넘쳐 '스냅샷' 탭이 가로 스크롤 뒤에 숨음(버전 기록 발견성 치명) + 키워드 추가가 Enter 전용·버튼/안내 없음",
+  "severity": 4,
+  "effort": "S",
+  "fix": ".insp-tabs를 아이콘+짧은 라벨(패딩 축소, 전 탭 icon 지정)로 압축하거나 flex-wrap 허용해 기본 폭에서 9개 모두 노출, 넘칠 땐 '⋯ 더보기' 오버플로 메뉴로 수납, setTab/setInspectorTab 시 활성 탭 scrollIntoView({inline:'nearest'}), 스냅샷 탭에 개수 배지('스냅샷 3')로 버전 존재 신호 상시 노출, SEO 등 직군 전용 탭은 설정에서 숨김 가능하게. 키워드 input 옆 '+ 추가' minibtn(스냅샷 탭 '지금 찍기'와 동일 레이아웃)+placeholder '새 키워드 (Enter)'+0개일 때 '키워드로 문서를 태깅해 검색·필터에 쓸 수 있어요' 빈 상태 안내, 추가 직후 현재 문서에 자동 토글해 흐름 한 번에 완결.",
+  "files": [
+   "src/components/Inspector.tsx",
+   "src/styles.css",
+   "src/App.tsx"
+  ],
+  "mergedFrom": 2,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "데이터베이스 뷰 '엑셀식' 기대 붕괴 — 다중 행 선택·일괄 편집 전무, 라벨/상태/발행 열 필터 없음, POV·스토리시간 등 절반 열 정렬 불가, 빈 결과 원인 미구분",
+  "severity": 4,
+  "effort": "S",
+  "fix": "행 맨 앞 체크박스 열+헤더 전체선택+Shift 범위선택, 1개 이상 선택 시 일괄 작업 바(라벨/상태/발행상태 일괄 지정 셀렉트, '회차 자동 번호 매기기(현재 정렬 순서로 시작번호부터)', 휴지통 이동 — 기존 스토어 액션 forEach 재사용)+'n건 변경' 토스트·실행취소. 툴바에 라벨/상태/발행상태 필터 칩 3개(rows useMemo filter 체인 확장, 활성 필터 '라벨: 중요 ×' 해제 칩), 여유 시 헤더 ▼ 팝오버로 승격. SortKey를 'pov'|'mood'|'storyTime'|'pubState'|`cf:${id}`로 확장하고 val() 스위치에 customMeta 분기+해당 th에 clickSort/cursor:pointer(스토리시간은 localeCompare numeric 자연 정렬), 정렬 가능 헤더에만 hover 밑줄. 빈 결과는 검색어/범위/진짜 0건 분기: '검색어 지우기'·'전체 보기'·scope별 생성 CTA('＋ 새 글' 등).",
+  "files": [
+   "src/components/DatabaseView.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 3.3,
+  "confirmed": true
+ },
+ {
+  "title": "연재 관리 핵심 흐름 단절 — 발행 요일·자동 예약 없이 회차마다 날짜 수동 입력, 회차번호가 발행 후 밀림, '발행 캘린더'가 평면 리스트, 빈 상태 CTA·플랫폼용 평문 복사 부재",
+  "severity": 4,
+  "effort": "S",
+  "fix": "settings에 serialDays(발행 요일 배열, 월수금 체크박스)를 추가하고 '완성·비축' 칼럼에 '다음 슬롯부터 자동 예약'(ready 회차를 회차번호순으로 빈 발행 슬롯에 일괄 배정), 드롭 시 window.prompt 대신 다음 빈 슬롯 기본값 date 팝오버. episodeStatePatch에서 scheduled/published 전환 시 episode.number를 명시 저장해 고정+번호 중복/건너뜀 경고 배지. 월간 7열 CSS grid 미니 캘린더(예약·발행 칩, 발행 요일 빈 슬롯 옅게, 같은 날 2건 겹침 강조, 셀 클릭 예약). 빈 상태에 '＋ 첫 회차 만들기'(addItem 후 select, 가치 예고 문구)+회차 0개 시 비축분 게이지 중립화. EpisodeCard·PlatformReaderPreview·캘린더 '오늘 발행' 행에 '플랫폼용 본문 복사'(bodyParagraphs 재사용, 각주/코멘트 마커 제외 평문·문단 사이 빈 줄)+복사 후 '발행됨으로 옮길까요?' 원탭 전환.",
+  "files": [
+   "src/components/SerialDashboard.tsx",
+   "src/components/PlatformReaderPreview.tsx",
+   "src/model/types.ts",
+   "src/model/episode.ts",
+   "src/store/store.ts",
+   "src/styles.css"
+  ],
+  "mergedFrom": 5,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "타임라인 사용 불능 — POV·플롯라인·스토리시간 입력 경로가 발견 불가(인스펙터 필드 없음·커스텀 필드 키 불일치), 타 장(章) 드롭이 삽입선 표시 후 조용히 무시, 빈 상태 막다른 길",
+  "severity": 4,
+  "effort": "S",
+  "fix": "Inspector 텍스트 문서 섹션에 POV(인물 자동완성 datalist)·스토리시간·플롯라인 고정 입력 필드를 추가해 setCustomMeta로 structure.ts의 'pov'/'plotlines'/'storyTime' 키에 직접 기록(CreativeStudio 표와 데이터 호환 자동), 타임라인 카드의 POV 배지 클릭 인라인 편집+'(미지정)' 레인과 빈 상태에 '인스펙터 › 메타에서 입력' 링크. handleDragOver에서 dragId와 대상 카드 parentId가 다르면 dropEffect='none'+삽입선 미표시(금지선), 드롭 거부 시 '다른 장의 장면 사이로는 이동 불가 — 장 이동은 바인더에서' 1회성 토스트, 툴바 문구를 '같은 장 안에서'로 정정. 장면 0개 빈 상태에 '+ 새 장면' 버튼(addItem), '레인 없음'은 \"장면 N개가 있지만 'POV' 지정이 없어요\"로 원인 설명+'기준을 전체로' 버튼.",
+  "files": [
+   "src/components/Inspector.tsx",
+   "src/components/TimelineView.tsx",
+   "src/creative/structure.ts"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "코르크보드·칸반·아웃라이너 조작 결함 — 폴더 카드 한 클릭 즉시 드릴인(선택 불가), 드롭 삽입 위치 무표시·타 컬럼 카드 위 드롭 무시, 새 카드/컬럼 추가 진입점 부재, 행 키보드 순회 없음",
+  "severity": 4,
+  "effort": "S",
+  "fix": "컨테이너 탐색을 선택과 분리: corkContainerId(또는 select opts.drill)를 별도 상태로 두고 싱글클릭=선택만, 더블클릭/Enter/브레드크럼만 드릴인(코르크보드·아웃라이너·칸반 공용 수정, Scrivener 관례 일치). onDragOver에서 마우스 X가 카드 중앙 기준 앞/뒤 삽입 판정+.drop-before/.drop-after 삽입선, onDrop에서 indexOf 또는 +1(+2 보정) 전달. cork-toolbar에 상시 '+ 새 카드'+빈 배경 더블클릭 생성(자유배치는 좌표 저장)+생성 즉시 인라인 개명. 칸반 BoardCard에 colId를 내려 드롭 시 그룹값이 다르면 setStatus/setLabel 먼저 적용 후 위치 삽입('카드 위 드롭=그 컬럼 이동' 표준 멘탈모델), '+ 컬럼 추가' 고스트 컬럼(addStatus/addLabel)+헤더 EditableText 인라인 개명. 아웃라이너 onKeyDown 확장: ↑/↓ 선택 이동(Shift 범위)·←/→ 접기/펼치기·Enter 열기·F2 개명+tr focus/scrollIntoView 동기화.",
+  "files": [
+   "src/components/Corkboard.tsx",
+   "src/components/Board.tsx",
+   "src/components/Outliner.tsx",
+   "src/components/EditableText.tsx",
+   "src/store/store.ts",
+   "src/styles.css"
+  ],
+  "mergedFrom": 6,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "바인더 조작 결함 — 다중 선택 드래그/Delete가 한 항목만 적용(선택 조용히 깨짐), 드래그 중 자동 스크롤·접힌 폴더 spring-load 없음, 컨텍스트메뉴 화면 밖 잘림",
+  "severity": 4,
+  "effort": "S",
+  "fix": "onDragStart에서 드래그 항목이 selectedIds에 포함되면 flattenVisible 순서의 선택 전체 id 배열을 dataTransfer('text/scriv-ids')에 싣고, 스토어에 moveItems 일괄 액션(자손-포함 정리, undo/저장 1회 단위) 추가+드래그 고스트 'N개 항목' 배지, Delete 키도 선택 전체 일괄 moveToTrash. 트리 컨테이너 dragover에서 상/하단 32px 이내면 rAF로 속도 가변 자동 스크롤, 접힌 폴더 위 ~700ms 호버 시 toggleExpanded(타이머는 dragleave/drop에서 해제). 컨텍스트메뉴는 ref+useLayoutEffect로 rect 측정 후 뷰포트 클램프(Math.min)+maxHeight:calc(100vh-16px)+overflow-y:auto+Esc 닫기 추가.",
+  "files": [
+   "src/components/Binder.tsx",
+   "src/store/store.ts",
+   "src/styles.css"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "서식바 상태·적용 결함 — 글꼴/크기 셀렉트 항상 빈 플레이스홀더, 복수 문단·선택 없음 조작이 조용히 무시, 저빈도 리비전 그룹이 1열 중앙 차지, 색상 매번 네이티브 피커, aria-pressed 부재",
+  "severity": 4,
+  "effort": "S",
+  "fix": "selectionchange 스냅샷에서 캐럿 위치의 fontFamily/fontSize(queryCommandValue 또는 computedStyle)를 두 셀렉트 value에 반영(혼합 시 빈 값 유지), collapsed 선택은 제로폭 스팬으로 '다음 입력부터 적용' 또는 '적용할 글자를 먼저 선택하세요' 토스트로 무반응 제거. wrapInlineStyle을 blocksInSelection() 재활용한 블록 단위 분해로 교체해 문단 3개 선택 크기 변경이 동작하게(실패 시 flash). 리비전 그룹은 '리비전 ▾' 드롭다운 1개로 접어 바 끝으로 이동(지우개 아이콘은 CheckCheck로 교체해 서식 지우기와 분리), 각주·코멘트·이미지·링크를 1열로 앞당김. 글자 색·형광펜은 스플릿 버튼(본체=마지막 색 즉시 적용+localStorage 기억, ▾=피커, 형광펜 '해제' 항목). ib()에 aria-label={title}+aria-pressed={state(cmd)}, 컨테이너에 role=toolbar aria-label=서식.",
+  "files": [
+   "src/components/FormatBar.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 5,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "단축키 체계 붕괴 — 윈도우 사용자에게 ⌘⇧↵ 맥 기호 노출(Ctrl 혼용), 집필 중(contentEditable) 뷰 전환·패널 단축키 전멸(과도한 isTyping 가드), 치트시트 부재",
+  "severity": 4,
+  "effort": "S",
+  "fix": "src/ui/kbd.ts 공용 유틸 신설(isMac=/Mac|iP/.test(navigator.platform), ⌘→Ctrl+ / ⇧→Shift+ / ↵→Enter 치환)로 App 메뉴 kbd·팔레트 hint·툴팁과 StudioShell·GuidedTour/Manual·Footer·FindReplaceBar·Inspector 등 8개+ 파일의 표기를 일괄 통일('Ctrl +'/'Ctrl -'도 동일 포맷). isTyping()을 isFormField(INPUT/TEXTAREA)와 isEditorBody(contentEditable)로 분리해 ⌘1~9·⌘⇧B/I/L/A는 본문 편집 중에도 동작(Alt+화살표만 기존 가드 유지). SHORTCUTS 단일 소스 배열에서 메뉴·팔레트·치트시트 표기를 생성하고 Ctrl+/(및 ? 버튼·도움말 메뉴)로 여는 '키보드 단축키' 모달(전역/편집/탐색 3섹션 표) 추가.",
+  "files": [
+   "src/App.tsx",
+   "src/ui/kbd.ts (신규)",
+   "src/components/StudioShell.tsx",
+   "src/components/GuidedManual.tsx",
+   "src/components/GuidedTour.tsx",
+   "src/components/FormatBar.tsx",
+   "src/components/CommandPalette.tsx",
+   "src/components/Footer.tsx",
+   "src/components/FindReplaceBar.tsx",
+   "src/components/Inspector.tsx"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "성능 — 키 입력마다 서식바 전량 리렌더+200ms마다 전문서 HTML→RTF 변환, 인스펙터 입력마다 프로젝트 clone, 8MB 창작 스튜디오 청크, 메인 번들 1.66MB, 도구 허브 555카드 재렌더",
+  "severity": 4,
+  "effort": "S",
+  "fix": "FormatBar selectionchange를 rAF 코얼레싱+queryCommand* 스냅샷 비교로 실제 상태 변화 시에만 리렌더(타이핑 중 리렌더 0회), 저장 디바운스 200ms→600ms~1s+htmlToRtf/recount를 requestIdleCallback 이연, 글자수는 el.textContent 경량 카운트 분리, 타자기 center()도 rAF 코얼레싱. Inspector 시놉시스/노트는 로컬 state+디바운스(300~500ms)/onBlur 커밋으로 전환(SeoTab·AnnRow 패턴 재사용, scriv:flush-editor 동참). CreativeStudio는 탭/카테고리 단위 2차 lazy로 쪼개 셸을 즉시 표시+스켈레톤 fallback+idle 프리페치, 10개 뷰·저빈도 모달(CompileDialog·StatisticsModal 등)을 React.lazy 전환. ToolHub은 그룹별 버킷·소문자 검색 문자열 사전 계산+useDeferredValue+useMemo, .toolhub-card에 content-visibility:auto.",
+  "files": [
+   "src/components/FormatBar.tsx",
+   "src/components/Editor.tsx",
+   "src/store/store.ts",
+   "src/components/Inspector.tsx",
+   "src/components/CreativeStudio.tsx",
+   "src/App.tsx",
+   "vite.config.ts",
+   "src/tools/ToolHub.tsx",
+   "src/tools/registry.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 5,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4.3,
+  "confirmed": true
+ },
+ {
+  "title": "포커스·위치 연속성 붕괴 — 빈 문서 오토포커스/플레이스홀더 없음, 키보드로 문서를 열어도 에디터 포커스 안 됨, 문서 전환 시 스크롤·캐럿 최상단 리셋, 패널 간 포커스 이동 키 부재",
+  "severity": 4,
+  "effort": "S",
+  "fix": "activeId 변경/마운트 시 본문이 비면 rAF로 contenteditable focus()+캐럿 배치(투어·매뉴얼 표시 중 탈취 방지), .paper [contenteditable]:empty::before로 '여기에 첫 문장을 쓰세요 — 입력 즉시 자동 저장됩니다' 플레이스홀더. 모듈 Map<docId,{scrollTop,caretPath}>에 전환 직전 위치를 기록하고 innerHTML 로드 직후 복원(캐럿은 블록 인덱스+오프셋 직렬화, 실패 시 scrollTop 폴백). Binder Enter·Ctrl+PgUp/PgDn·팔레트 문서 열기에 pendingEditorFocus 신호를 세워 DocEditable 마운트 effect에서 focus+캐럿 배치(마우스 흐름은 불변). F6/Shift+F6으로 바인더→에디터→인스펙터→푸터 순환 포커스, Ctrl+Shift+B/I로 패널을 켤 때 포커스도 동반 이동+팔레트에 '바인더로 포커스' 명령 등록.",
+  "files": [
+   "src/components/Editor.tsx",
+   "src/components/Binder.tsx",
+   "src/components/Inspector.tsx",
+   "src/App.tsx",
+   "src/store/store.ts",
+   "src/styles.css"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "39단계 실습 매뉴얼 — 진행 저장 없이 Esc 한 번에 전체 리셋, 인스펙터 동형 과제 8연속+'핵심만 빠르게'가 3단계만 건너뜀, do 단계 판정 실패 시 무한 대기",
+  "severity": 4,
+  "effort": "S",
+  "fix": "단계 인덱스+folderId/docId를 localStorage(sry:manual:progress:<projectId>)에 매 단계 저장하고 재진입 시 '이어하기/처음부터' 선택지 제시(기존 choices UI 재사용), Esc는 '그만둘까요? 진행은 저장돼요' 1차 확인(do 단계 편집기 포커스 중엔 무시). 인스펙터 챕터를 3단계로 압축(메타 한 번에 3-체크 과제+키워드·노트+스냅샷), '핵심만 빠르게'를 집필→자동저장→코르크보드→도구→저장 약 10단계의 진짜 큐레이션 경로로 구현, dot 39개 대신 챕터 칩 클릭 이동+각 챕터 '건너뛰기' 버튼. do 단계 15~20초 미완료 시 MStep.stuckHint 보조 문구('연습 폴더가 선택된 상태여야 인정돼요' 등)+'대신 해줄게요' 버튼 pulse 강조, name-mixer 판정은 [data-tool-id*=\"name\"]로 완화.",
+  "files": [
+   "src/components/GuidedManual.tsx",
+   "src/styles.css"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 3.3,
+  "confirmed": true
+ },
+ {
+  "title": "첫 실행 자동 투어 19단계 과부하 — '특장점 ①~⑩' 중복 스포트라이트(최대 4회), 실수 클릭/Esc로 영구 종료·이어보기 불가, 대상 못 찾으면 허공 지시, 뷰 버튼 10개 무차별 노출",
+  "severity": 4,
+  "effort": "S",
+  "fix": "STEPS를 CORE 6~9단계(인사→바인더→집필→서식바→뷰 전환→마무리)로 축소하고 '특장점 ①~⑩'(80-121행)은 EXTRA 배열로 분리해 마무리 단계의 '기능 더 보기(선택)' 분기/GuidedManual 도입 챕터로 이관, 같은 target 단계는 body 병합해 1회만 스포트라이트. 투어 1단계에 '어떤 글을 쓰세요?'(웹소설/소설·시나리오/논픽션) 선택을 통합해 유형별 기본 뷰 4~5개만 seg에 노출(나머지는 '⋯ 더 보기' 드롭다운+설정 '모든 뷰 표시' 토글, 프로젝트 제목도 함께 입력). resolveTarget null이면 자동 스킵 또는 '지금은 접혀 있어요' 대체 문구, pre는 forceOpenInspector 콜백으로 좁은 화면 규칙 준수+종료 시 패널 상태 복원. tour-dim 클릭은 close 대신 '다음', 진행 인덱스를 localStorage 저장해 '이어서 볼까요? (7/19)' 재진입 제공, 완주 시에만 done 기록. 마무리 버튼은 에디터 contenteditable에 focus() 연결해 종료 즉시 타이핑 가능하게.",
+  "files": [
+   "src/components/GuidedTour.tsx",
+   "src/components/GuidedManual.tsx",
+   "src/App.tsx",
+   "src/store/store.ts"
+  ],
+  "mergedFrom": 6,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "오류·안내 메시지 품질 결함 — 취소/실패 미구분, 자동저장 실패 원인(저장공간 부족) 무진단, '미지원합니다' 번역투, 외래어 조사 띄어쓰기 제각각",
+  "severity": 4,
+  "effort": "S",
+  "fix": "공통 flashError(e, ctx) 헬퍼 신설: AbortError(사용자 취소)는 조용히 return, NotAllowedError→권한 안내, 파싱 실패→형식 안내, 기타→e.message+'변경분은 브라우저 자동저장에 보존됨' 안심 문구로 분기(App 5곳 일괄 정리). 자동저장 catch에서 QuotaExceededError/검증 실패를 분류하고 storageEstimate()로 '저장공간 부족(1.9GB/2GB)' 진단 시 사라지지 않는 상단 배너+즉시 실행 버튼 2개('.sry로 내보내기'·'프로젝트 목록에서 정리'), 재시도 성공 시 자동 해제 — saveError를 {kind, detail}로 확장. 브라우저 미지원 안내 4곳을 실제 메뉴 라벨을 짚는 합니다체로 교체('.sry 파일로 내보내기를 이용해 주세요'). 외래어+조사는 붙여쓰기('URL을')로 grep 일괄 정리하고 CLAUDE.md 컨벤션에 표기 규칙 추가.",
+  "files": [
+   "src/App.tsx",
+   "src/persistence/idb.ts",
+   "src/components/Footer.tsx",
+   "src/components/FormatBar.tsx",
+   "src/components/GuidedTour.tsx",
+   "src/components/ReferencesView.tsx",
+   "CLAUDE.md"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 3,
+  "confirmed": true
+ },
+ {
+  "title": "백업/복원이 재난 상황에서 막다른 길 — 모달에 .sry 파일 복원 경로 없음, 백업 15개 구분 불가+탐색 복원이 옛 백업을 밀어내 삭제, confirm 3연타 후 무피드백",
+  "severity": 4,
+  "effort": "S",
+  "fix": "BackupModal에 '.sry 파일에서 복원…' 버튼(App의 openSryZip 경로 재사용)을 추가하고 빈 상태 문구를 '브라우저 데이터가 지워졌다면 .sry 파일로 복원하세요'로 교체, 설명문에 '백업은 이 브라우저에만 저장됨 — 주기적으로 파일 내려받기' 경고 1줄 추가. saveBackup 시 meta에 kind(auto/manual)·wordCount·docCount를 저장해 행에 '수동 · 12,340단어 · 문서 8개' 표시, '미리보기' 버튼(loadBackup 읽기 전용 트리+본문 뷰)으로 복원 확정 전 확인, 복원 직전 자동 보관 백업은 KEEP=15 계산에서 제외해 탐색 중 원본 백업 소실 방지. confirm 연쇄는 단일 다이얼로그(백업 날짜/단어수 + '.sry 내보내기' 체크박스)로 교체하고 복원 후 '직전 상태는 목록 맨 위에 보관됨' flash+원클릭 되돌리기 제공.",
+  "files": [
+   "src/components/BackupModal.tsx",
+   "src/persistence/backup.ts",
+   "src/App.tsx"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4.3,
+  "confirmed": true
+ },
+ {
+  "title": "파괴적 동작 안전망 부재 — 캔버스 Delete 즉시 영구 삭제(undo 없음), window.confirm 120곳 남용, 자동 스냅샷 전무, 되돌리기 확인창 문구가 실제 동작과 모순",
+  "severity": 4,
+  "effort": "S",
+  "fix": "3단계 확인 정책 도입: (a) 가역 작업(휴지통 이동 등)은 confirm 제거+'실행 취소' 버튼 있는 flash 토스트(5초 undo 콜백), (b) 스냅샷 복원은 이미 자동 백업되므로 confirm 문구를 '직전 상태는 되돌리기 전 자동저장으로 보관됨'으로 정정, (c) 진짜 비가역 대량 삭제만 공용 ConfirmModal(위험 버튼 빨강, 기본 포커스=취소)로 교체하고 linkbus에 confirm 헬퍼 노출해 도구 점진 이관. StoryCanvas에 로컬 undo 스택(직전 CanvasState ~50개 링버퍼, Ctrl+Z/Ctrl+Shift+Z)+다중 삭제 시 'N개 삭제됨 — 실행취소' 토스트. 문서별 '그날 첫 본문 수정 전' 자동 스냅샷 1회(동일 bodyRtf면 skip, 자동 스냅샷 문서당 N개 유지)와 Ctrl+Shift+S 수동 스냅샷 단축키 추가, 인스펙터 스냅샷 탭 발견성 개선과 연계.",
+  "files": [
+   "src/components/StoryCanvas.tsx",
+   "src/components/Binder.tsx",
+   "src/components/Inspector.tsx",
+   "src/store/store.ts",
+   "src/App.tsx",
+   "src/tools/linkbus.ts"
+  ],
+  "mergedFrom": 4,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "연속 집필 중 자동저장이 무기한 연기(디바운스 무한 리셋)되고, 집중 모드에 저장 상태 표시가 없으며 마지막 저장 시각이 툴팁에만 숨음",
+  "severity": 4,
+  "effort": "S",
+  "fix": "자동저장에 max-wait 상한 추가: lastSaved 이후 10~15초 경과+dirty면 디바운스를 무시하고 즉시 저장(setTimeout 지연을 overdue ? 0 : interval로 주는 수십 줄 변경) — 최악 손실 범위를 N초로 제한. Footer의 표시 로직을 SaveStatus 공용 컴포넌트로 추출해 comp-bar·Studio 헤더에도 동일 문구/색(aria-live=polite)으로 렌더, 저장 실패 시 경고색 강조. 표시 텍스트를 '저장됨 · 방금/N초 전/N분 전' 상대시간으로 확장(useRelativeTime 훅, 30초 갱신), 5분 이상 dirty면 '변경됨 · 마지막 저장 5분 전' 병기해 사용자가 ⌘S로 스스로 대응 가능하게.",
+  "files": [
+   "src/App.tsx",
+   "src/components/Composition.tsx",
+   "src/components/Footer.tsx",
+   "src/components/StudioShell.tsx"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 3,
+  "impact": 4,
+  "confirmed": true
+ },
+ {
+  "title": "학술 인용 파이프라인 단절 — 인라인 인용이 '죽은 텍스트'(IEEE 번호·스타일 변경 미반영), 컴파일/내보내기에 참고문헌 미연동('끝에 추가'는 중복 누적), 출처 목록 검색·정렬·DOI 자동 채우기 부재",
+  "severity": 4,
+  "effort": "M",
+  "fix": "인용 삽입을 <span class=\"cite\" data-ref-id data-style>[3]</span> 마커로 교체하고 에디터 로드·참고문헌 변경 시 각주 재번호 로직(FormatBar.tsx:26)과 같은 방식으로 .paper 내 cite 스팬을 현재 라이브러리 기준 재생성, 컴파일 시에도 refId 기준 최종 스타일로 재렌더+참고문헌 뷰에 '본문 인용 새로고침' 일괄 버튼(마커 없는 기존 평문은 불변으로 데이터 안전). 컴파일 옵션에 '참고문헌 자동 첨부'(체크박스+스타일 선택)를 추가해 내보내기 직전 formatBibliography를 최종 섹션으로 생성 — 원고에 박지 않으므로 중복·낡음 문제 자체 소멸, LaTeX는 exportBibtex로 .bib 동반 출력+\\bibliography 골격, '문서 끝에 추가'는 마커 주석 식별로 재클릭 시 직전 블록 교체. 목록 상단에 검색(제목·저자·연도·DOI 부분일치)+정렬 셀렉트(저자/연도/추가순), DOI 필드 옆 '조회' 버튼으로 Crossref REST(키 불필요·https·CORS — 프로젝트 컨벤션 부합) 자동 채움, 가져오기 textarea의 DOI 한 줄 붙여넣기도 같은 경로 처리.",
+  "files": [
+   "src/components/ReferencesView.tsx",
+   "src/components/FormatBar.tsx",
+   "src/compile/compile.ts",
+   "src/export/latex.ts",
+   "src/creative/cite.ts"
+  ],
+  "mergedFrom": 3,
+  "votes": 3,
+  "yes": 2,
+  "impact": 3.3,
+  "confirmed": true
+ }
+]

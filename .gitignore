@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+
+# CDP 캡처 작업 산출물(소스 아님). site/assets 의 스크린샷은 페이지 에셋이라 유지.
+preview_app/
+preview_site/
+*.log

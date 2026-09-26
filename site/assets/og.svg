@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="sry — 브라우저에서 완성하는 한 편의 글">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d0f13"/>
+      <stop offset="1" stop-color="#181c24"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.28" r="0.6">
+      <stop offset="0" stop-color="#4a76d4" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#4a76d4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <!-- 상·하단 헤어라인 -->
+  <rect x="80" y="96" width="1040" height="1" fill="#ffffff" opacity="0.12"/>
+  <rect x="80" y="534" width="1040" height="1" fill="#ffffff" opacity="0.12"/>
+  <!-- eyebrow -->
+  <text x="80" y="150" fill="#8fb0f5" font-family="'JetBrains Mono','Consolas',monospace" font-size="22" letter-spacing="6">BROWSER-NATIVE WRITING STUDIO</text>
+  <!-- 워드마크 -->
+  <text x="1120" y="150" text-anchor="end" fill="#f2f3f5" font-family="'Segoe UI',system-ui,sans-serif" font-size="30" font-weight="600" letter-spacing="1">sry</text>
+  <!-- 헤드라인 -->
+  <text x="78" y="330" fill="#f2f3f5" font-family="'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif" font-size="120" font-weight="300" letter-spacing="-4">한 편의 글을,</text>
+  <text x="78" y="452" fill="#f2f3f5" font-family="'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif" font-size="120" font-weight="300" letter-spacing="-4">끝까지<tspan fill="#6b95ef">.</tspan></text>
+  <!-- 하단 지표 -->
+  <text x="80" y="588" fill="#a8afbc" font-family="'Malgun Gothic',system-ui,sans-serif" font-size="26" letter-spacing="1">실제 RTF · 완전 오프라인 · 창작 도구 2,445+ · 설치 0 · 서버 0</text>
+</svg>
