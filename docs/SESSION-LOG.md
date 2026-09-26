@@ -4,14 +4,14 @@
 
 ## ▶▶ 다음 세션 이어받기 (2026-09-26, 최신) — 여기부터 읽으세요
 
-### 2026-09-26 #35 (브랜치 `design-v2`): 디자인 2 "Aurora" 스킨 — 큼직한 내비·아이콘·카드형 작업 공간, 세 스킨 전환
-- **요구**: 기존 디자인(클래식·스튜디오)은 손대지 않고, 새 브랜치에서 최근 트렌드의 완전 새 디자인을 만들되 기능은 100% 동일, 나중에 디자인1↔2 전환 가능.
-- **구현 방식**: 세 번째 스킨 `aurora` (`store.uiSkin: 'classic'|'studio'|'aurora'`, `sry:uiSkin` 영속). 셸 `src/components/AuroraShell.tsx`(StudioProps 재사용 + `onSetSkin`) + 스타일 `src/aurora.css`(`.app-aurora` 범위). 뷰/바인더/인스펙터/도구/모달은 같은 컴포넌트를 그대로 렌더 → 기능 동일. 메뉴 트리거는 `.menu-wrap > button` 구조 유지(투어/매뉴얼 호환).
-- **디자인**: 좌측 104px 대형 내비(26px 아이콘 + 라벨, 활성 시 그라디언트 아이콘 배지, 하단 도구 5종은 2열 아이콘), 상단 2줄 커맨드 바(알약형 메뉴 4종 · 배율 · **디자인 스위처(클래식/스튜디오/오로라)** · 큼직한 아이콘+라벨 액션 7종 · 그라디언트 저장 버튼 · 제목/경로), 카드형 3분할 작업 공간(라운드 22px·그림자·간격 12px), 공용 컨트롤 확대(.minibtn/.btn-primary/.linkbtn/.field/.binder-row/.insp-tabs/.toolwin/.modal/.dropdown …), 라이트/다크/세피아 토큰 상속, 900px 이하 아이콘 전용·오버레이 패널.
-- **전환 진입점**: 클래식 툴바 `Aurora` 버튼, 스튜디오 보기 메뉴 "Aurora UI 로 전환", 명령 팔레트 `skin-aurora`, 오로라 헤더 스위처.
-- **주의**: 상단 바 z-index 는 드롭다운이 열린 동안만 350(`:has(.dropdown)`), 평소 50 — 도구창(200~289)이 헤더에 가려 잘리던 문제 회피.
-- **검증**: `scripts/_cdp_aurora_smoke.cjs`(셸 렌더·10뷰·메뉴 4종·헤더 액션·패널/도구창·스킨 왕복·좁은 화면) + 기존 배터리 회귀(ui_all·menus_all·keyboard·view_parity·a11y·all_tools). 스크린샷 7장(라이트/다크/메뉴/도구창/좁은 폭) 육안 확인.
-- **다음**: 사용자 리뷰 후 `main` 머지 시 기본 스킨은 클래식 유지(기존 사용자 화면 불변) — 디자인 2는 스위처로 선택. 세부 톤(색·라운드·간격)은 피드백에 따라 `aurora.css` 토큰만 조정.
+### 2026-09-26 #35 (브랜치 `design-v2`): 디자인 2 "Aurora" 스킨 — 다크 전용·대형 컨트롤·드로어/독/런처 구조, 세 스킨 전환
+- **요구**: 기존 디자인(클래식·스튜디오)은 손대지 않고, 새 브랜치에서 최근 트렌드의 완전 새 디자인을 만들되 기능은 100% 동일, 나중에 디자인1↔2 전환 가능. 1차 시안이 "비슷하다"는 피드백 → 다크 계열·큼직하게·서랍이 열리는 역동적 구조로 전면 재작성.
+- **구현 방식**: 세 번째 스킨 `aurora` (`store.uiSkin: 'classic'|'studio'|'aurora'`, `sry:uiSkin` 영속, `/v2/` 경로 최초 진입 시 기본값). 셸 `src/components/AuroraShell.tsx`(StudioProps 재사용 + `onSetSkin`) + 스타일 `src/aurora.css`(`.app-aurora` 범위). 뷰/바인더/인스펙터/도구/모달은 같은 컴포넌트를 그대로 렌더 → 기능 동일.
+- **디자인(재작성판)**: 셸은 항상 다크(`--bg/--chrome/--panel/--text/--accent` 를 `.app-aurora` 안에서 재정의, 원고 종이색만 테마 따름), 라디얼 그라디언트 배경 + 글래스 패널. 구조는 ① 하단 **컬러 독**(`.au-dock`: 10개 뷰 버튼 60px 아이콘, 뷰마다 고유 색 `--c`, 우측에 창작/도구 허브/장르 상자/컴파일/설정), ② 상단 **플로팅 아일랜드** 2개(`.au-islands`: 런처 버튼+제목+경로 / 찾기·스냅샷·분할·집중·테마·명령 48px 아이콘 + 배율 + 저장 + 스킨 스위처), ③ 가운데 **스테이지**(`.au-stage`: 뷰 배지·제목, 바인더/인스펙터 칩), ④ 좌우 **글래스 드로어**(`.au-drawer-left/right`: 스프링 슬라이드 인, 980px 이하 백드롭 오버레이), ⑤ 드롭다운 메뉴 4종을 대체하는 **타일 런처**(`.au-launcher`: 전 메뉴 항목 타일 그리드 + 검색, Esc 닫기). 현재 뷰 색을 `--au-view` 로 루트에 주입해 배지/독/스테이지 테두리가 함께 바뀜. 애니메이션 `auDrawerL/R`·`auBounce`·`auPop`·`auSlide`, `prefers-reduced-motion` 존중. 공용 폼 컨트롤(select/input/textarea/.minibtn) 다크화, `.tool-dock` 은 독 위로(bottom 132px).
+- **전환 진입점**: 클래식 툴바 `Aurora` 버튼, 스튜디오 헤더 `Aurora` 버튼 + 보기 메뉴 "Aurora UI 로 전환", 명령 팔레트 `skin-aurora`, 오로라 아일랜드 스위처.
+- **검증**: `scripts/_cdp_aurora_smoke.cjs` 38/0(셸 렌더·독 10뷰·런처·아일랜드 액션·드로어 열고 닫기·도구창·스킨 왕복·좁은 화면) + `_cdp_ui_all` 72/0, tsc 0, 콘솔 에러 0. 스크린샷 7장(에디터/코르크보드/런처/도구창/테마/도구 허브/좁은 폭) 육안 확인.
+- **배포 메모**: github-pages 환경 보호 규칙이 main 외 브랜치 배포를 거부해 `/v2/` 미리보기는 main 푸시 때만 갱신됨(Settings → Environments → github-pages → Deployment branches 에 design-v2 허용 시 브랜치 푸시마다 갱신 가능).
+- **다음**: 사용자 리뷰 후 `main` 머지 시 기본 스킨은 클래식 유지(기존 사용자 화면 불변) — 디자인 2는 스위처로 선택. 세부 톤(색·라운드·간격)은 `aurora.css` 토큰만 조정.
 
 ### 2026-09-26 #34: 전 기능 실동작 배터리(97 스크립트) 완주 + 도구 연계(payload) 전수 점검·수정 + 확정 버그 6건
 - **환경**: 클라우드 세션(npm 은 `NO_PROXY= npm ci --proxy $HTTPS_PROXY --https-proxy $HTTPS_PROXY --noproxy ""` 로 프록시 경유 필요). 러너: preview(:4178) 1개 + 스크립트마다 새 헤드리스 Chromium(:9222, 새 프로필) — `chrome --headless=new --no-sandbox --remote-debugging-port=9222 --user-data-dir=<tmp>`.

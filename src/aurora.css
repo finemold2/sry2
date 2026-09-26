@@ -1,229 +1,268 @@
 /* =====================================================================
-   Aurora 스킨(디자인 2) — `.app-aurora` 범위 안에서만 적용.
-   · 큼직한 내비게이션/아이콘/버튼, 카드형 작업 공간, 부드러운 그림자·라운드·그라디언트 강조.
-   · 기존 클래식/스튜디오 스타일은 건드리지 않는다(스킨 전환으로 언제든 복귀).
-   · 공용 컨트롤(.minibtn/.btn-primary/.linkbtn/.field/.toolwin/.modal…)은 이 범위 안에서만 크기·라운드를 키운다.
+   Aurora 스킨(디자인 2) — `.app-aurora` 범위.
+   뼈대: 상단 떠 있는 커맨드 아일랜드 · 가운데 큰 스테이지 카드 + 유리 서랍 · 하단 대형 컬러 독.
+   클래식/스튜디오 스타일은 건드리지 않는다. 공용 컨트롤은 이 범위 안에서만 크기·라운드를 키운다.
    ===================================================================== */
 
 .app-aurora {
-  /* 디자인 토큰 */
-  --au-radius-xl: 22px;
-  --au-radius-lg: 16px;
-  --au-radius-md: 12px;
-  --au-radius-sm: 9px;
-  --au-nav-w: 104px;
-  --au-gap: 12px;
-  --au-glow: 0 10px 30px color-mix(in srgb, var(--accent) 28%, transparent);
-  --au-card-shadow: 0 8px 28px rgba(15, 18, 26, 0.10), 0 1px 2px rgba(15, 18, 26, 0.06);
-  --au-surface: color-mix(in srgb, var(--panel) 92%, #ffffff);
-  --au-surface-2: color-mix(in srgb, var(--bg) 70%, var(--panel));
-  --au-ink: var(--text);
-  --au-grad: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-2) 70%, #7c4dff));
-  /* 기본 글자 한 단계 크게 */
-  font-size: 14.5px;
-  letter-spacing: -0.005em;
+  /* 오로라는 다크 계열 전용 — 셸(아일랜드·스테이지·서랍·독) 크롬 토큰을 짙은 남색으로 고정.
+     본문 종이(--paper)만 라이트/다크/세피아 테마를 따라가 '어두운 스튜디오 + 밝은 원고지' 느낌. */
+  --bg: #090b12; --chrome: #141826; --chrome-2: #10131e; --panel: #151a29;
+  --binder-bg: #0f1320; --binder-fg: #cfd6e6; --binder-sel: #5b7cfa;
+  --border: #262c40; --border-dark: #303852; --text: #e8ecf5; --muted: #8b94ab;
+  --accent: #6d8bff; --accent-2: #9db1ff; --shadow: 0 1px 3px rgba(0,0,0,.6);
+  color-scheme: dark;
+  --au-r-xl: 28px; --au-r-lg: 20px; --au-r-md: 14px; --au-r-sm: 10px;
+  --au-gap: 14px;
+  --au-view: var(--accent);                 /* 현재 뷰 색(셸이 주입) */
+  --au-glass: rgba(22, 27, 43, .62);
+  --au-glass-2: rgba(22, 27, 43, .86);
+  --au-line: rgba(255, 255, 255, .09);
+  --au-shadow: 0 22px 56px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .45);
+  --au-glow: 0 10px 28px color-mix(in srgb, var(--au-view) 38%, transparent);
+  font-size: 15px; letter-spacing: -0.005em;
   background:
-    radial-gradient(1200px 600px at 8% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, #7c4dff 10%, transparent), transparent 55%),
-    var(--bg);
+    radial-gradient(1200px 760px at 10% -10%, color-mix(in srgb, var(--au-view) 30%, transparent), transparent 62%),
+    radial-gradient(1000px 640px at 108% 8%, rgba(124, 77, 255, .22), transparent 58%),
+    radial-gradient(900px 560px at 50% 112%, color-mix(in srgb, var(--au-view) 18%, transparent), transparent 60%),
+    linear-gradient(180deg, #0b0e18, #07090f);
+  transition: background .6s;
 }
-[data-theme='dark'] .app-aurora {
-  --au-surface: color-mix(in srgb, var(--panel) 92%, #000);
-  --au-surface-2: color-mix(in srgb, var(--bg) 60%, var(--panel));
-  --au-card-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
-}
+/* 세피아/라이트 테마여도 셸은 어둡고, 종이만 테마색 */
+.app-aurora .paper { box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+[data-theme='light'] .app-aurora .paper, :root:not([data-theme]) .app-aurora .paper { background: #fbfbfd; color: #1f2329; }
 
-/* ---------- 루트 레이아웃 ---------- */
-.aurora-root {
-  flex: 1; min-height: 0; width: 100%; display: flex; overflow: hidden;
-  color: var(--au-ink); font-family: inherit;
-}
+.aurora-root { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; overflow: hidden; color: var(--text); font-family: inherit; }
 
-/* ---------- 좌측 대형 내비 ---------- */
-.au-nav {
-  flex: 0 0 var(--au-nav-w); width: var(--au-nav-w);
-  display: flex; flex-direction: column; align-items: stretch; gap: 6px;
-  padding: 14px 10px 12px;
-  background: color-mix(in srgb, var(--au-surface) 88%, transparent);
-  backdrop-filter: blur(14px);
-  border-right: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+/* ---------- 커맨드 아일랜드 ---------- */
+.au-islands { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px 6px; flex-wrap: wrap; position: relative; z-index: 60; }
+.au-island {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 60px; padding: 8px 12px;
+  background: var(--au-glass); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid var(--au-line); border-radius: 999px; box-shadow: var(--au-shadow);
 }
-.au-brand {
-  display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0 0 6px; flex-shrink: 0;
+.au-island-title { padding-left: 8px; min-width: 0; max-width: 46%; }
+.au-island-actions { flex-wrap: wrap; row-gap: 6px; }
+.au-menu-launch {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 55%, #7c4dff)); box-shadow: var(--au-glow);
+  transition: transform .12s, filter .14s;
 }
-.au-brand-mark {
-  display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px; color: #fff;
-  background: var(--au-grad); box-shadow: var(--au-glow);
-}
-.au-brand-name { display: none; }
-.au-nav-group { display: flex; flex-direction: column; gap: 4px; }
-.au-nav-spacer { flex: 1; min-height: 10px; }
-.au-nav-btn {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-  width: 100%; min-height: 54px; padding: 5px 4px 4px; flex-shrink: 0;
-  border: 1px solid transparent; border-radius: var(--au-radius-lg);
-  background: transparent; color: var(--muted); cursor: pointer;
-  transition: background .16s, color .16s, transform .12s, box-shadow .16s, border-color .16s;
-}
-.au-nav-ico {
-  display: grid; place-items: center; width: 44px; height: 34px; border-radius: 13px;
-  background: transparent; transition: background .16s, color .16s;
-}
-.au-nav-label { font-size: 11px; font-weight: 700; line-height: 1.15; text-align: center; letter-spacing: -.01em; }
-.au-nav-btn:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--text); }
-.au-nav-btn:hover .au-nav-ico { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.au-nav-btn:active { transform: scale(.96); }
-.au-nav-btn.active { color: var(--text); background: color-mix(in srgb, var(--accent) 12%, var(--au-surface)); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
-.au-nav-btn.active .au-nav-ico { background: var(--au-grad); color: #fff; box-shadow: var(--au-glow); }
-.au-nav-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.au-nav-tools .au-nav-btn { min-height: 44px; padding: 4px 2px; }
-.au-nav-tools .au-nav-label { display: none; }
-.au-nav-tools .au-nav-ico { width: 38px; height: 34px; }
-.au-nav-tools .au-nav-btn:nth-child(5) { grid-column: 1 / -1; }
-
-/* ---------- 상단 커맨드 바 ---------- */
-.au-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.au-top {
-  display: flex; flex-direction: column; gap: 6px; padding: 10px 16px 10px;
-  background: color-mix(in srgb, var(--au-surface) 82%, transparent); backdrop-filter: blur(14px);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  position: relative; z-index: 50;
-}
-.au-top:has(.dropdown) { z-index: 350; } /* 메뉴가 열린 동안만 도구창(200~289) 위로 */
-.au-top-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
-.au-top-row-2 { min-height: 50px; }
-.au-top-spacer { flex: 1; }
-.au-status { font-size: 12.5px; color: var(--accent-2); font-weight: 600; }
-.au-menubar { display: inline-flex; align-items: center; gap: 4px; }
-.au-menubar .menu-wrap { position: relative; }
-.au-menu-btn {
-  height: 38px; padding: 0 16px; border: 1px solid transparent; border-radius: 999px; background: transparent;
-  color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap;
-  transition: background .14s, border-color .14s;
-}
-.au-menu-btn:hover, .au-menu-btn.active { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
-.au-title-wrap { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.au-title {
-  font-size: 19px; font-weight: 800; letter-spacing: -.01em; color: var(--text);
-  background: transparent; border: 1px solid transparent; border-radius: var(--au-radius-sm);
-  padding: 3px 8px; max-width: 420px; min-width: 120px;
-}
-.au-title:hover { border-color: var(--border); }
-.au-title:focus { border-color: var(--accent); background: var(--au-surface); outline: none; }
-.au-crumbs { display: flex; align-items: center; gap: 4px; padding: 0 8px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; max-width: 520px; }
-.au-crumb { display: inline-flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; }
+.au-menu-launch:hover { filter: brightness(1.06); }
+.au-menu-launch:active { transform: scale(.94); }
+.au-title-wrap { display: flex; flex-direction: column; min-width: 0; }
+.au-title { font-size: 19px; font-weight: 800; letter-spacing: -.01em; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 2px 8px; max-width: 380px; min-width: 120px; }
+.au-title:hover { border-color: var(--au-line); }
+.au-title:focus { border-color: var(--au-view); background: var(--au-glass-2); outline: none; }
+.au-crumbs { display: flex; align-items: center; gap: 4px; padding: 0 8px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.au-crumb { overflow: hidden; text-overflow: ellipsis; }
 .au-crumb-last { color: var(--text); font-weight: 600; }
-.au-crumb-sep { opacity: .5; }
-.au-scale { display: inline-flex; align-items: center; background: var(--au-surface-2); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; height: 36px; }
+.au-crumb-sep { margin: 0 5px; opacity: .55; }
+.au-ib {
+  display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  border: 1px solid transparent; background: transparent; color: var(--text); font-size: 14px; font-weight: 700; flex-shrink: 0;
+  transition: background .14s, color .14s, transform .1s, box-shadow .14s;
+}
+.au-ib:hover { background: color-mix(in srgb, var(--au-view) 12%, transparent); }
+.au-ib:active { transform: scale(.96); }
+.au-ib.active { color: #fff; background: var(--au-view); box-shadow: var(--au-glow); }
+.au-status { font-size: 12.5px; color: var(--accent-2); font-weight: 600; padding: 0 6px; }
+.au-scale { display: inline-flex; align-items: center; height: 40px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--bg) 60%, transparent); border: 1px solid var(--au-line); }
 .au-scale-btn { height: 100%; min-width: 36px; padding: 0 10px; border: 0; background: transparent; color: var(--text); font-size: 12.5px; font-weight: 700; cursor: pointer; }
-.au-scale-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.au-scale-btn:hover { background: color-mix(in srgb, var(--au-view) 14%, transparent); }
 .au-scale-btn:disabled { opacity: .4; cursor: default; }
 .au-scale-val { min-width: 52px; }
-.au-skins { display: inline-flex; padding: 3px; gap: 2px; background: var(--au-surface-2); border: 1px solid var(--border); border-radius: 999px; }
-.au-skin { height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
-.au-skin:hover { color: var(--text); }
-.au-skin.active { background: var(--au-surface); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); cursor: default; }
-.au-action {
-  display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent); border-radius: 999px;
-  background: var(--au-surface-2); color: var(--text); cursor: pointer; font-size: 13.5px; font-weight: 700;
-  transition: background .14s, border-color .14s, color .14s, transform .1s, box-shadow .14s; flex-shrink: 0;
-}
-.au-action-ico { padding: 0; width: 42px; justify-content: center; }
-.au-action:hover { background: color-mix(in srgb, var(--accent) 12%, var(--au-surface)); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
-.au-action:active { transform: scale(.97); }
-.au-action.active { color: #fff; background: var(--au-grad); border-color: transparent; box-shadow: var(--au-glow); }
 .au-save {
-  display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 18px; border-radius: 999px; cursor: pointer;
-  font-size: 14px; font-weight: 800; border: 1px solid transparent; color: #fff; background: var(--au-grad); box-shadow: var(--au-glow);
-  flex-shrink: 0; transition: transform .1s, filter .14s;
+  display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 20px; border-radius: 999px; cursor: pointer; flex-shrink: 0;
+  font-size: 14px; font-weight: 800; border: 1px solid transparent; color: #fff; background: var(--au-view); box-shadow: var(--au-glow);
+  transition: transform .1s, filter .14s;
 }
-.au-save:hover { filter: brightness(1.05); }
-.au-save:active { transform: scale(.97); }
-.au-save.ok { background: var(--au-surface-2); color: var(--muted); border-color: var(--border); box-shadow: none; }
+.au-save:hover { filter: brightness(1.06); }
+.au-save:active { transform: scale(.96); }
+.au-save.ok { background: transparent; color: var(--muted); border-color: var(--au-line); box-shadow: none; }
 .au-save.err { background: var(--warn); box-shadow: none; }
+.au-skins { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 60%, transparent); border: 1px solid var(--au-line); }
+.au-skin { height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.au-skin:hover { color: var(--text); }
+.au-skin.active { background: var(--au-glass-2); color: var(--au-view); box-shadow: 0 1px 4px rgba(0,0,0,.14); cursor: default; }
 
-/* ---------- 카드형 작업 공간 ---------- */
-.au-body {
-  flex: 1; min-height: 0; display: flex; gap: var(--au-gap); padding: var(--au-gap);
-  overflow: hidden; position: relative; /* 좁은 화면 패널 오버레이 기준 */
+/* ---------- 스테이지 + 유리 서랍 ---------- */
+.au-stage-wrap { flex: 1; min-height: 0; position: relative; display: flex; padding: 8px 18px 10px; }
+.au-stage {
+  flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--au-glass-2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--au-line); border-radius: var(--au-r-xl); box-shadow: var(--au-shadow);
+  transition: margin .42s cubic-bezier(.22,1.3,.36,1);
 }
-.au-panel {
-  min-height: 0; overflow: hidden; display: flex; flex-direction: column;
-  background: var(--au-surface); border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  border-radius: var(--au-radius-xl); box-shadow: var(--au-card-shadow);
+.au-stage.with-left { margin-left: 336px; }
+.au-stage.with-right { margin-right: 356px; }
+.au-stage-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px 10px 16px; border-bottom: 1px solid var(--au-line); }
+.au-stage-badge { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; animation: auPop .35s cubic-bezier(.34,1.56,.64,1); color: #fff; flex-shrink: 0; box-shadow: var(--au-glow); }
+.au-stage-title { display: flex; flex-direction: column; line-height: 1.15; }
+.au-stage-title b { font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
+.au-stage-title span { font-size: 12px; color: var(--muted); }
+.au-stage-spacer { flex: 1; }
+.au-chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--au-line); background: transparent; color: var(--text); font-size: 13px; font-weight: 700;
+  transition: background .14s, color .14s, border-color .14s;
 }
-.au-binder > .binder, .au-binder > * { flex: 1; min-width: 0; }
-.au-inspector > .inspector { flex: 1; min-width: 0; width: 100%; }
-.au-center { flex: 1; min-width: 0; }
-.au-resizer { flex: 0 0 8px; margin: 0 -6px; cursor: col-resize; border-radius: 4px; background: transparent; transition: background .12s; z-index: 1; }
-.au-resizer:hover { background: color-mix(in srgb, var(--accent) 35%, transparent); }
-/* 오버레이 패널(좁은 화면)도 카드 모양 유지 */
-.au-body .pane-overlay { border-radius: var(--au-radius-xl); box-shadow: 0 18px 48px rgba(0,0,0,.28); }
-.au-body .pane-overlay-left { left: var(--au-gap); top: var(--au-gap); bottom: var(--au-gap); }
-.au-body .pane-overlay-right { right: var(--au-gap); top: var(--au-gap); bottom: var(--au-gap); }
+.au-chip:hover { background: color-mix(in srgb, var(--au-view) 12%, transparent); border-color: color-mix(in srgb, var(--au-view) 40%, transparent); }
+.au-chip.active { color: #fff; background: var(--au-view); border-color: transparent; box-shadow: var(--au-glow); }
+.au-stage-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.au-drawer {
+  position: absolute; top: 8px; bottom: 10px; width: 322px; display: flex; flex-direction: column; overflow: hidden; z-index: 5;
+  background: var(--au-glass-2); backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--au-line); border-radius: var(--au-r-xl); box-shadow: var(--au-shadow);
+}
+.au-drawer-left { left: 18px; animation: auDrawerL .42s cubic-bezier(.22,1.3,.36,1); }
+.au-drawer-right { right: 18px; width: 342px; animation: auDrawerR .42s cubic-bezier(.22,1.3,.36,1); }
+@keyframes auDrawerL { from { opacity: 0; transform: translateX(-120%) rotateY(12deg); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
+@keyframes auDrawerR { from { opacity: 0; transform: translateX(120%) rotateY(-12deg); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
+@keyframes auSlide { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes auPop { from { transform: scale(.6) rotate(-8deg); } to { transform: none; } }
+.au-stage-wrap { perspective: 1400px; }
+.au-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 10px 16px; font-size: 14px; font-weight: 800; border-bottom: 1px solid var(--au-line); }
+.au-drawer-head span { display: inline-flex; align-items: center; gap: 8px; }
+.au-drawer-x { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.au-drawer-x:hover { background: color-mix(in srgb, var(--au-view) 14%, transparent); color: var(--text); }
+.au-drawer-body { flex: 1; min-height: 0; display: flex; }
+.au-drawer-body > .binder, .au-drawer-body > .inspector, .au-drawer-body > * { flex: 1; min-width: 0; width: 100%; }
+.au-drawer-backdrop { position: absolute; inset: 0; z-index: 4; background: rgba(10, 12, 18, .18); border-radius: var(--au-r-xl); }
+/* 서랍 안 바인더: 어두운 바인더 배경 대신 유리 위에 자연스럽게 */
+.app-aurora .au-drawer .binder { background: transparent; color: var(--text); }
+
+/* ---------- 하단 대형 컬러 독 ---------- */
+.au-dock {
+  display: flex; align-items: flex-end; justify-content: center; gap: 10px; padding: 6px 18px 12px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+  position: relative; z-index: 60;
+}
+.au-dock-views, .au-dock-tools {
+  display: inline-flex; align-items: flex-end; gap: 2px; padding: 8px 10px;
+  background: var(--au-glass); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid var(--au-line); border-radius: 26px; box-shadow: var(--au-shadow);
+}
+.au-dock-sep { width: 0; }
+.au-dock-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 5px; width: 86px; padding: 6px 2px 4px; border: 0; border-radius: 18px;
+  background: transparent; color: var(--muted); cursor: pointer; flex-shrink: 0;
+  transition: transform .16s cubic-bezier(.34,1.56,.64,1), color .14s, background .14s;
+}
+.au-dock-ico {
+  display: grid; place-items: center; width: 60px; height: 60px; border-radius: 19px; color: #fff;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--c) 92%, #fff), color-mix(in srgb, var(--c) 78%, #000));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 35%, transparent), inset 0 1px 0 rgba(255,255,255,.35);
+  transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s;
+}
+.au-dock-btn:hover .au-dock-ico { transform: translateY(-4px) scale(1.06); }
+.au-dock-btn:active .au-dock-ico { transform: scale(.95); }
+.au-dock-btn.active { color: var(--text); }
+.au-dock-btn.active .au-dock-ico { animation: auBounce .5s cubic-bezier(.34,1.56,.64,1); transform: translateY(-8px) scale(1.12); box-shadow: 0 12px 26px color-mix(in srgb, var(--c) 55%, transparent), 0 0 0 4px color-mix(in srgb, var(--c) 28%, transparent); }
+.au-dock-btn.active::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--c); margin-top: 1px; }
+.au-dock-label { font-size: 12.5px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+.au-dock-tool { width: 76px; }
+.au-dock-tool .au-dock-ico { width: 52px; height: 52px; border-radius: 16px; }
+
+/* ---------- 타일형 런처(메뉴) ---------- */
+.au-launcher-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(10, 12, 18, .38); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; }
+.au-launcher {
+  width: min(1180px, 100%); max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--au-glass-2); border: 1px solid var(--au-line); border-radius: var(--au-r-xl); box-shadow: 0 40px 100px rgba(0,0,0,.45);
+  animation: auSlide .18s cubic-bezier(.4,0,.2,1);
+}
+.au-launcher-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--au-line); }
+.au-launcher-title { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; }
+.au-launcher-search { flex: 1; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--au-line); background: color-mix(in srgb, var(--bg) 60%, transparent); color: var(--text); font-size: 15px; }
+.au-launcher-search:focus { outline: none; border-color: var(--au-view); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-view) 22%, transparent); }
+.au-launcher-x { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.au-launcher-x:hover { background: color-mix(in srgb, var(--au-view) 14%, transparent); color: var(--text); }
+.au-launcher-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; padding: 16px 18px 18px; overflow-y: auto; }
+.au-launcher-col { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.au-launcher-col h3 { margin: 0 0 6px 4px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.au-launcher-sep { height: 1px; background: var(--au-line); margin: 5px 4px; }
+.au-tile {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 11px 14px; border-radius: var(--au-r-md); cursor: pointer;
+  border: 1px solid var(--au-line); background: color-mix(in srgb, var(--panel) 60%, transparent); color: var(--text); font-size: 13.5px; font-weight: 600; line-height: 1.3;
+  transition: background .12s, border-color .12s, transform .1s;
+}
+.au-tile:hover:not(:disabled) { background: color-mix(in srgb, var(--au-view) 12%, var(--panel)); border-color: color-mix(in srgb, var(--au-view) 45%, transparent); transform: translateY(-1px); }
+.au-tile:disabled { opacity: .45; cursor: default; }
+.au-tile-kbd { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; flex-shrink: 0; }
 
 /* ---------- 공용 컨트롤 크기 키우기(이 스킨 범위에서만) ---------- */
-.app-aurora .minibtn {
-  font-size: 13px; padding: 6px 12px; border-radius: var(--au-radius-sm);
-  border-color: color-mix(in srgb, var(--border-dark) 80%, transparent); line-height: 1.2;
-  transition: background .12s, border-color .12s, transform .08s;
-}
-.app-aurora .minibtn:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--paper)); }
+.app-aurora .minibtn { font-size: 13px; padding: 6px 12px; border-radius: var(--au-r-sm); border-color: color-mix(in srgb, var(--border-dark) 80%, transparent); line-height: 1.2; transition: background .12s, border-color .12s, transform .08s; }
+.app-aurora .minibtn:hover { border-color: var(--au-view); background: color-mix(in srgb, var(--au-view) 8%, var(--paper)); }
 .app-aurora .minibtn:active { transform: scale(.97); }
 .app-aurora .minibtn svg { width: 17px; height: 17px; }
-.app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: var(--au-radius-md); background: var(--au-grad); border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
+.app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: var(--au-r-md); background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
 .app-aurora .linkbtn { font-size: 13px; padding: 6px 12px; gap: 6px; }
 .app-aurora .linkbtn svg { width: 16px; height: 16px; }
-.app-aurora .field { font-size: 14px; padding: 9px 12px; border-radius: var(--au-radius-sm); }
-.app-aurora .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); outline: none; }
+.app-aurora .field { font-size: 14px; padding: 9px 12px; border-radius: var(--au-r-sm); }
+.app-aurora .field:focus { border-color: var(--au-view); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-view) 18%, transparent); outline: none; }
 .app-aurora .kw-chip { font-size: 12.5px; padding: 5px 12px; border-radius: 999px; }
-.app-aurora .binder-row { padding: 6px 10px; font-size: 14px; border-radius: 10px; margin: 0 6px; gap: 6px; }
+.app-aurora .binder-row { padding: 7px 10px; font-size: 14px; border-radius: 12px; margin: 1px 8px; gap: 6px; }
 .app-aurora .binder-row svg, .app-aurora .binder-row img.emoji { transform: scale(1.15); }
 .app-aurora .insp-tabs button { font-size: 13px; padding: 10px 12px; font-weight: 700; }
-.app-aurora .insp-tabs button[aria-selected='true'] { color: var(--accent); }
-.app-aurora .toolwin { border-radius: var(--au-radius-lg); box-shadow: 0 22px 56px rgba(0,0,0,.32); border-color: color-mix(in srgb, var(--border-dark) 70%, transparent); }
+.app-aurora .insp-tabs button[aria-selected='true'] { color: var(--au-view); }
+.app-aurora .toolwin { border-radius: var(--au-r-lg); box-shadow: 0 26px 64px rgba(0,0,0,.34); border-color: color-mix(in srgb, var(--border-dark) 70%, transparent); }
 .app-aurora .toolwin-head { padding: 10px 14px; font-size: 14px; background: color-mix(in srgb, var(--chrome) 70%, var(--panel)); }
 .app-aurora .toolwin-head .minibtn { padding: 4px 8px; }
 .app-aurora .toolwin-body { font-size: 14px; }
-.app-aurora .modal { border-radius: var(--au-radius-xl); box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+.app-aurora .modal { border-radius: var(--au-r-xl); box-shadow: 0 30px 80px rgba(0,0,0,.4); }
 .app-aurora .modal h2 { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
-.app-aurora .modal-backdrop { backdrop-filter: blur(6px); background: rgba(10, 12, 18, .42); }
-.app-aurora .dropdown { border-radius: var(--au-radius-lg); padding: 8px; box-shadow: 0 22px 56px rgba(0,0,0,.28); min-width: 240px; }
+.app-aurora .modal-backdrop { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); background: rgba(10, 12, 18, .42); }
+.app-aurora .dropdown { border-radius: var(--au-r-lg); padding: 8px; box-shadow: 0 22px 56px rgba(0,0,0,.28); min-width: 240px; }
 .app-aurora .dropdown button { font-size: 14px; padding: 9px 12px; border-radius: 10px; }
-.app-aurora .dropdown button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.app-aurora .dropdown .divider { margin: 6px 4px; }
-.app-aurora .card { border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.14); }
-.app-aurora .paper { border-radius: 16px; }
+.app-aurora .card { border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,.14); }
+.app-aurora .paper { border-radius: 18px; }
 .app-aurora .formatbar { padding: 8px 12px; gap: 6px; }
 .app-aurora .formatbar .minibtn, .app-aurora .formatbar button { border-radius: 9px; }
 .app-aurora .toolhub-card, .app-aurora .cmd-item { border-radius: 14px; }
-.app-aurora .cmd-palette { border-radius: var(--au-radius-xl); }
+.app-aurora .cmd-palette { border-radius: var(--au-r-xl); }
 .app-aurora .cmd-input { font-size: 17px; padding: 14px 16px; }
 .app-aurora .tool-dock-chip { border-radius: 999px; padding: 6px 12px; font-size: 13px; }
 .app-aurora .stash-icon { transform: scale(1.15); }
+.app-aurora .footer { font-size: 12.5px; padding: 0 18px; gap: 14px; background: transparent; border-top: 0; white-space: nowrap; overflow: hidden; }
 .app-aurora ::-webkit-scrollbar { width: 10px; height: 10px; }
 .app-aurora ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--muted) 35%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 .app-aurora ::-webkit-scrollbar-track { background: transparent; }
 
 /* ---------- 반응형 ---------- */
-@media (max-width: 1180px) {
-  .au-action-tx { display: none; }
-  .au-action { padding: 0 12px; }
+@media (max-width: 1280px) {
+  .au-ib-tx { display: none; }
+  .au-ib { padding: 0 12px; }
   .au-crumbs { display: none; }
 }
-@media (max-width: 900px) {
-  .app-aurora { --au-nav-w: 76px; --au-gap: 8px; }
-  .au-nav-label { display: none; }
-  .au-nav-btn { min-height: 52px; }
-  .au-brand-name { display: none; }
-  .au-title { max-width: 180px; font-size: 16px; }
-  .au-skins { display: none; } /* 좁은 폭에서는 메뉴/팔레트로 전환 */
-  .au-menu-btn { padding: 0 10px; font-size: 13px; }
+@media (max-width: 980px) {
+  .au-islands { padding: 10px 12px 4px; }
+  .au-island-title { max-width: 100%; }
+  .au-stage-wrap { padding: 6px 12px 8px; }
+  .au-stage.with-left, .au-stage.with-right { margin: 0; }
+  .au-drawer-left { left: 12px; width: min(86vw, 340px); }
+  .au-drawer-right { right: 12px; width: min(86vw, 360px); }
+  .au-dock-btn { width: 60px; }
+  .au-dock-ico { width: 46px; height: 46px; border-radius: 14px; }
+  .au-dock-label { display: none; }
+  .au-dock-tool { width: 52px; }
+  .au-dock-tool .au-dock-ico { width: 40px; height: 40px; }
   .au-save-tx { display: none; }
-  .au-top-row { flex-wrap: wrap; }
+  .au-skins { display: none; }
+  .au-launcher-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .au-title { max-width: 200px; font-size: 16px; }
 }
 
-/* 하단 상태바(공용 .footer) — 카드형 작업 공간과 어울리게 */
-.app-aurora .footer { font-size: 12.5px; padding: 0 16px; gap: 14px; background: color-mix(in srgb, var(--au-surface) 82%, transparent); border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent); white-space: nowrap; overflow: hidden; }
+@keyframes auBounce { 0% { transform: translateY(0) scale(1); } 45% { transform: translateY(-14px) scale(1.18); } 100% { transform: translateY(-8px) scale(1.12); } }
+.au-stage-body > * { animation: auSlide .28s cubic-bezier(.4,0,.2,1); }
+@media (prefers-reduced-motion: reduce) { .app-aurora * { animation: none !important; transition: none !important; } }
+
+/* ---------- 다크 셸 위의 폼 컨트롤: 종이(.paper) 밖의 입력·선택·버튼은 어두운 표면으로 ---------- */
+.app-aurora select, .app-aurora input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), .app-aurora textarea { background: var(--chrome-2); color: var(--text); border-color: var(--border-dark); }
+.app-aurora select option { background: var(--chrome-2); color: var(--text); }
+.app-aurora .minibtn { background: var(--chrome); color: var(--text); }
+.app-aurora .toolwin .minibtn, .app-aurora .modal .minibtn { background: var(--chrome); }
+.app-aurora ::placeholder { color: color-mix(in srgb, var(--muted) 80%, transparent); }
+/* 하단 독과 겹치지 않도록 최소화된 도구 칩은 독 위로 */
+.app-aurora .tool-dock { bottom: 132px; }
+/* 인스펙터·바인더 서랍 안의 라벨/헤더 대비 */
+.app-aurora .insp-tabs { background: transparent; }
+.app-aurora .binder-head, .app-aurora .insp-head { background: transparent; }

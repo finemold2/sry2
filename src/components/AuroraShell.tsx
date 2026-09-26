@@ -1,8 +1,9 @@
-// Aurora 스킨(디자인 2) — 최근 트렌드의 큼직한 내비게이션·아이콘·카드형 작업 공간을 가진 완전히 새로운 셸.
-// 클래식/스튜디오와 같은 zustand store 와 같은 뷰/바인더/인스펙터 컴포넌트를 재사용하므로 기능은 100% 동일하고
-// 껍데기(레이아웃·크기·질감)만 다르다. 설정/메뉴/명령 팔레트에서 세 스킨을 언제든 오갈 수 있다.
-// 스타일은 src/aurora.css (`.app-aurora` 범위). 메뉴 드롭다운 트리거는 다른 스킨과 같은 `.menu-wrap > button` 구조를 유지해
-// 가이드 투어/매뉴얼의 셀렉터가 그대로 동작한다.
+// Aurora 스킨(디자인 2) — 클래식/스튜디오와 뼈대부터 다른 셸.
+//  · 좌측 레일 없음 → 화면 하단의 **대형 컬러 독**(뷰 10종, 뷰마다 고유 색)으로 이동
+//  · 상단 바 없음 → 떠 있는 **커맨드 아일랜드**(제목·경로·저장 상태, 큰 액션 버튼) + **타일형 런처**(파일/문서/도구/보기 전 항목)
+//  · 바인더/인스펙터는 스테이지 위로 미끄러져 나오는 **유리 서랍**(독 버튼·⌘⇧B/⌘⇧I 로 열고 닫음)
+//  · 작업 스테이지는 한 장의 큰 카드. 색·간격·라운드는 src/aurora.css 토큰.
+// 같은 zustand store 와 같은 뷰/바인더/인스펙터/도구 컴포넌트를 렌더하므로 기능은 100% 동일하다.
 import { useEffect, useRef, useState } from 'react'
 import { pathOf, useStore } from '../store/store'
 import { Icon } from '../ui/icons'
@@ -11,24 +12,78 @@ import Inspector from './Inspector'
 import FindReplaceBar from './FindReplaceBar'
 import { ActiveView, type StudioMenuDef, type StudioProps, type ViewKey } from './StudioShell'
 
-const VIEWS: { key: ViewKey; icon: string; label: string; hint: string }[] = [
-  { key: 'editor', icon: 'editor', label: '에디터', hint: '원고 쓰기' },
-  { key: 'corkboard', icon: 'corkboard', label: '코르크보드', hint: '카드로 구상' },
-  { key: 'outliner', icon: 'outliner', label: '아웃라이너', hint: '표로 훑기' },
-  { key: 'board', icon: 'board', label: '칸반', hint: '상태별 진행' },
-  { key: 'canvas', icon: 'canvas', label: '캔버스', hint: '자유 배치' },
-  { key: 'serial', icon: 'serial', label: '연재', hint: '회차·발행' },
-  { key: 'timeline', icon: 'timeline', label: '타임라인', hint: '스토리 시간' },
-  { key: 'references', icon: 'references', label: '참고문헌', hint: '출처·인용' },
-  { key: 'argument', icon: 'argument', label: '논증', hint: '주장·근거' },
-  { key: 'database', icon: 'database', label: '데이터베이스', hint: '전체 표' },
-]
-
 export type SkinName = 'classic' | 'studio' | 'aurora'
 
 export interface AuroraProps extends Omit<StudioProps, 'onSetClassic'> {
-  /** 세 스킨 전환(헤더의 디자인 스위처). */
   onSetSkin: (skin: SkinName) => void
+}
+
+// 뷰 10종 — 각각 고유 색(독 아이콘·스테이지 헤더 강조에 사용)
+const VIEWS: { key: ViewKey; icon: string; label: string; hint: string; color: string }[] = [
+  { key: 'editor', icon: 'editor', label: '에디터', hint: '원고를 씁니다', color: '#5b7cfa' },
+  { key: 'corkboard', icon: 'corkboard', label: '코르크보드', hint: '카드로 구상합니다', color: '#f0a23b' },
+  { key: 'outliner', icon: 'outliner', label: '아웃라이너', hint: '표로 훑습니다', color: '#2fb3a6' },
+  { key: 'board', icon: 'board', label: '칸반', hint: '상태별로 진행합니다', color: '#e0518b' },
+  { key: 'canvas', icon: 'canvas', label: '캔버스', hint: '자유롭게 배치합니다', color: '#8b6dd4' },
+  { key: 'serial', icon: 'serial', label: '연재', hint: '회차와 발행을 관리합니다', color: '#d2473b' },
+  { key: 'timeline', icon: 'timeline', label: '타임라인', hint: '스토리 시간을 봅니다', color: '#3fa35a' },
+  { key: 'references', icon: 'references', label: '참고문헌', hint: '출처와 인용', color: '#7a8493' },
+  { key: 'argument', icon: 'argument', label: '논증', hint: '주장·근거·반박', color: '#c9772b' },
+  { key: 'database', icon: 'database', label: '데이터베이스', hint: '모든 요소를 표로', color: '#2bb6c0' },
+]
+
+function useIsNarrow(px: number) {
+  const [narrow, setNarrow] = useState<boolean>(() => { try { return window.innerWidth < px } catch { return false } })
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < px)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [px])
+  return narrow
+}
+
+// 타일형 런처 — 파일/문서/도구/보기 메뉴의 모든 항목을 4열 그리드로 한 화면에.
+// (다른 스킨의 드롭다운과 같은 항목 배열을 그대로 렌더 → 기능 누락 없음)
+function Launcher({ menus, onClose }: { menus: StudioMenuDef[]; onClose: () => void }) {
+  const [q, setQ] = useState('')
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  const needle = q.trim().toLowerCase()
+  return (
+    <div className="au-launcher-backdrop" onClick={onClose} role="presentation">
+      <div className="au-launcher" role="dialog" aria-modal="true" aria-label="메뉴" onClick={(e) => e.stopPropagation()}>
+        <div className="au-launcher-head">
+          <div className="au-launcher-title"><Icon name="menu" size={22} mono /> 메뉴</div>
+          <input className="au-launcher-search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="명령 검색… (예: 백업, 가져오기, 분할)" aria-label="메뉴 검색" />
+          <button className="au-launcher-x" onClick={onClose} aria-label="닫기"><Icon name="close" size={20} mono /></button>
+        </div>
+        <div className="au-launcher-grid">
+          {menus.map((m) => {
+            const items = m.items.filter((it) => !it.divider && it.label && (!needle || it.label.toLowerCase().includes(needle)))
+            if (!items.length) return null
+            return (
+              <section key={m.id} className="au-launcher-col" aria-label={m.label}>
+                <h3>{m.label}</h3>
+                {m.items.map((it, i) => {
+                  if (it.divider) return needle ? null : <div key={i} className="au-launcher-sep" />
+                  if (!it.label || (needle && !it.label.toLowerCase().includes(needle))) return null
+                  return (
+                    <button key={i} className="au-tile" disabled={it.disabled} onClick={() => { it.fn && it.fn(); onClose() }}>
+                      <span className="au-tile-label">{it.label}</span>
+                      {it.kbd && <span className="au-tile-kbd">{it.kbd}</span>}
+                    </button>
+                  )
+                })}
+              </section>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function Crumbs() {
@@ -38,60 +93,12 @@ function Crumbs() {
   const crumbs = item ? pathOf(project, item.id) : []
   return (
     <div className="au-crumbs" aria-label="현재 문서 경로">
-      {crumbs.length === 0 && <span className="au-crumb au-crumb-empty">선택된 문서 없음</span>}
-      {crumbs.map((c, i) => (
-        <span key={c.id} className={'au-crumb' + (i === crumbs.length - 1 ? ' au-crumb-last' : '')}>
-          {i > 0 && <Icon name="dot" size={8} mono className="au-crumb-sep" />}{c.title}
-        </span>
+      {crumbs.length === 0 ? <span className="au-crumb au-crumb-empty">문서를 선택하세요</span> : crumbs.map((c, i) => (
+        <span key={c.id} className={'au-crumb' + (i === crumbs.length - 1 ? ' au-crumb-last' : '')}>{i > 0 && <span className="au-crumb-sep">›</span>}{c.title}</span>
       ))}
     </div>
   )
 }
-
-function Resizer({ onDrag }: { onDrag: (dx: number) => void }) {
-  const drag = useRef<number | null>(null)
-  return (
-    <div
-      className="au-resizer"
-      onPointerDown={(e) => { drag.current = e.clientX; (e.target as HTMLElement).setPointerCapture(e.pointerId) }}
-      onPointerMove={(e) => { if (drag.current != null) { onDrag(e.clientX - drag.current); drag.current = e.clientX } }}
-      onPointerUp={(e) => { drag.current = null; try { (e.target as HTMLElement).releasePointerCapture(e.pointerId) } catch { /* noop */ } }}
-    />
-  )
-}
-
-// 큼직한 알약형 메뉴 트리거 + 공용 .dropdown(다른 스킨과 동일 동작·셀렉터).
-function AuroraMenu({ menu, open, setOpen }: { menu: StudioMenuDef; open: boolean; setOpen: (v: string | null) => void }) {
-  useEffect(() => {
-    if (!open) return
-    const onClick = () => setOpen(null)
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(null) }
-    window.addEventListener('click', onClick)
-    window.addEventListener('keydown', onKey)
-    return () => { window.removeEventListener('click', onClick); window.removeEventListener('keydown', onKey) }
-  }, [open, setOpen])
-  return (
-    <div className="menu-wrap">
-      <button
-        className={'au-menu-btn' + (open ? ' active' : '')}
-        aria-haspopup="menu" aria-expanded={open}
-        onClick={(e) => { e.stopPropagation(); setOpen(open ? null : menu.id) }}
-        onMouseEnter={() => { if (!open) { const anyOpen = document.querySelector('.au-menubar .menu-wrap .dropdown'); if (anyOpen) setOpen(menu.id) } }}
-      >{menu.label}</button>
-      {open && (
-        <div className="dropdown" role="menu" onClick={(e) => e.stopPropagation()}>
-          {menu.items.map((it, i) => it.divider ? <div key={i} className="divider" /> : (
-            <button key={i} disabled={it.disabled} onClick={() => { it.fn && it.fn(); setOpen(null) }}>
-              <span>{it.label}</span>{it.kbd && <span className="kbd">{it.kbd}</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-const NARROW_PX = 900
 
 export default function AuroraShell(p: AuroraProps) {
   const viewMode = useStore((s) => s.viewMode)
@@ -100,148 +107,121 @@ export default function AuroraShell(p: AuroraProps) {
   const inspectorVisible = useStore((s) => s.inspectorVisible)
   const title = useStore((s) => s.project.title)
   const setProjectTitle = useStore((s) => s.setProjectTitle)
-  const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const [isNarrow, setIsNarrow] = useState<boolean>(() => { try { return window.innerWidth < NARROW_PX } catch { return false } })
-  useEffect(() => {
-    const onResize = () => setIsNarrow(window.innerWidth < NARROW_PX)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
-  const closePanels = () => useStore.setState({ binderVisible: false, inspectorVisible: false })
+  const [launcher, setLauncher] = useState(false)
+  const isNarrow = useIsNarrow(980)
+  const cur = VIEWS.find((v) => v.key === viewMode) || VIEWS[0]
+  const rootRef = useRef<HTMLDivElement>(null)
+  // 현재 뷰 색을 CSS 변수로 — 독 활성 아이콘·스테이지 헤더·저장 버튼 강조에 쓰인다
+  useEffect(() => { rootRef.current?.style.setProperty('--au-view', cur.color) }, [cur.color])
 
-  const navBtn = (icon: string, label: string, hint: string, active: boolean, onClick: () => void, isToggle = true) => (
-    <button
-      className={'au-nav-btn' + (active ? ' active' : '')}
-      onClick={onClick}
-      title={label + ' — ' + hint}
-      aria-label={label}
-      {...(isToggle ? { 'aria-pressed': active } : {})}
-    >
-      <span className="au-nav-ico"><Icon name={icon} size={26} mono strokeWidth={1.6} /></span>
-      <span className="au-nav-label">{label}</span>
-    </button>
-  )
+  const closeDrawers = () => useStore.setState({ binderVisible: false, inspectorVisible: false })
 
-  // 헤더 액션: 아이콘 + 짧은 라벨의 큼직한 알약 버튼(좁은 폭에서는 라벨 숨김).
-  const action = (icon: string, label: string, onClick: () => void, opts: { active?: boolean; title?: string; pressed?: boolean; onContextMenu?: (e: React.MouseEvent) => void } = {}) => (
-    <button
-      className={'au-action' + (opts.active ? ' active' : '')}
-      onClick={onClick}
-      onContextMenu={opts.onContextMenu}
-      title={opts.title || label}
-      aria-label={label}
-      {...(opts.pressed !== undefined ? { 'aria-pressed': opts.pressed } : {})}
-    >
-      <Icon name={icon} size={20} mono strokeWidth={1.7} />
-      <span className="au-action-tx">{label}</span>
+  const island = (icon: string, label: string, onClick: () => void, o: { active?: boolean; title?: string; pressed?: boolean; onContextMenu?: (e: React.MouseEvent) => void } = {}) => (
+    <button className={'au-ib' + (o.active ? ' active' : '')} onClick={onClick} onContextMenu={o.onContextMenu} title={o.title || label} aria-label={label} {...(o.pressed !== undefined ? { 'aria-pressed': o.pressed } : {})}>
+      <Icon name={icon} size={22} mono strokeWidth={1.7} />
+      <span className="au-ib-tx">{label}</span>
     </button>
   )
 
   return (
-    <div className="aurora-root">
-      {/* 좌측 대형 내비게이션 */}
-      <nav className="au-nav" aria-label="주요 내비게이션">
-        <div className="au-brand" title="sry — 글쓰기 스튜디오">
-          <span className="au-brand-mark"><Icon name="book" size={26} mono /></span>
-          <span className="au-brand-name">sry</span>
+    <div className="aurora-root" ref={rootRef}>
+      {/* ── 상단: 커맨드 아일랜드(왼쪽 제목/경로, 오른쪽 액션) ── */}
+      <div className="au-islands">
+        <div className="au-island au-island-title">
+          <button className="au-menu-launch" onClick={() => setLauncher(true)} title="메뉴 — 파일·문서·도구·보기의 모든 명령" aria-label="메뉴" aria-haspopup="dialog" aria-expanded={launcher}>
+            <Icon name="menu" size={24} mono />
+          </button>
+          <div className="au-title-wrap">
+            <input className="au-title" value={title} onChange={(e) => setProjectTitle(e.target.value)} title="프로젝트 제목" aria-label="프로젝트 제목" />
+            <Crumbs />
+          </div>
         </div>
-        <div className="au-nav-group" role="group" aria-label="보기">
-          {VIEWS.map((v) => navBtn(v.icon, v.label, v.hint, viewMode === v.key, () => setView(v.key)))}
+        <div className="au-island au-island-actions">
+          {island('search', '찾기', () => p.setShowFind(!p.showFind), { active: p.showFind, pressed: p.showFind, title: '찾기/바꾸기 (⌘F)' })}
+          {island('snapshot', '스냅샷', p.onSnapshot, { title: '스냅샷 찍기(버전 저장)' })}
+          {island('split', '분할', () => { if (p.splitId) p.onCycleSplitDir(); else p.onToggleSplit() }, { active: !!p.splitId, pressed: !!p.splitId, title: p.splitId ? '분할 방향 전환 (현재: ' + (p.splitDir === 'horizontal' ? '가로' : '세로') + ' · 우클릭: 닫기)' : '편집기 분할 (⌘⇧K)', onContextMenu: (e) => { if (p.splitId) { e.preventDefault(); p.onCloseSplit() } } })}
+          {island('focus', '집중', p.onToggleComposition, { title: '집중 모드 (⌘⇧↵)' })}
+          {island(p.theme === 'dark' ? 'moon' : p.theme === 'sepia' ? 'book' : 'sun', '테마', p.onCycleTheme, { title: '테마 전환 (⌘⇧L)' })}
+          {island('palette', '명령', () => p.onOpenModal('palette'), { title: '명령 팔레트 (⌘K) — 모든 기능' })}
+          <div className="au-scale" title="화면 글자 크기">
+            <button className="au-scale-btn" onClick={() => p.onChangeScale(-0.1)} disabled={p.uiScale <= 0.8} aria-label="작게">A−</button>
+            <button className="au-scale-btn au-scale-val" onClick={p.onResetScale} title="100%로" aria-label="크기 초기화">{Math.round(p.uiScale * 100)}%</button>
+            <button className="au-scale-btn" onClick={() => p.onChangeScale(0.1)} disabled={p.uiScale >= 1.6} aria-label="크게">A+</button>
+          </div>
+          <button
+            className={'au-save' + (p.saveError ? ' err' : p.dirty ? ' dirty' : ' ok')}
+            onClick={p.onSave}
+            title={(p.saveError ? '⚠ 자동 저장 실패 — 변경분은 메모리에 보존되어 있습니다. 눌러서 다시 저장하거나 백업/내보내기를 권장합니다.' : p.dirty ? '변경사항을 저장합니다 (⌘S).' : p.lastSaved ? '저장됨 · ' + new Date(p.lastSaved).toLocaleTimeString() : '저장 (⌘S)') + '\n자동 저장이 켜져 있으면 잠시 후 자동으로도 저장됩니다.'}
+          >
+            <Icon name="save" size={20} mono /><span className="au-save-tx">{p.saveError ? '저장 실패' : p.dirty ? '저장' : '저장됨'}</span>
+          </button>
+          <div className="au-skins" role="group" aria-label="디자인 전환" title="디자인 전환 — 원고·설정은 그대로 보존됩니다">
+            <button className="au-skin" onClick={() => p.onSetSkin('classic')} aria-label="클래식 UI 로 전환">클래식</button>
+            <button className="au-skin" onClick={() => p.onSetSkin('studio')} aria-label="Studio UI 로 전환">스튜디오</button>
+            <button className="au-skin active" aria-pressed="true" aria-label="Aurora UI(현재)">오로라</button>
+          </div>
         </div>
-        <div className="au-nav-spacer" />
-        <div className="au-nav-group au-nav-tools" role="group" aria-label="도구">
-          {navBtn('sparkle', '창작 스튜디오', '2,445개 창작 도구', p.activeModal === 'creative', () => p.onOpenModal('creative'), false)}
-          {navBtn('tools', '도구 허브', '막혔을 때 돕는 대형 도구', p.activeModal === 'toolhub', () => p.onOpenModal('toolhub'), false)}
-          {navBtn('generator', '장르 도구함', '장르별 생성기', p.activeModal === 'genrebox', () => p.onOpenModal('genrebox'), false)}
-          {navBtn('compile', '내보내기', '컴파일·발행', p.activeModal === 'compile', () => p.onOpenModal('compile'), false)}
-          {navBtn('settings', '설정', '앱·프로젝트 설정', p.activeModal === 'settings', () => p.onOpenModal('settings'), false)}
+      </div>
+
+      {/* ── 스테이지(작업 카드) + 유리 서랍 ── */}
+      <div className="au-stage-wrap">
+        {(binderVisible || inspectorVisible) && isNarrow && <div className="au-drawer-backdrop" onClick={closeDrawers} aria-hidden="true" />}
+        {binderVisible && (
+          <aside className="au-drawer au-drawer-left" aria-label="바인더">
+            <div className="au-drawer-head"><span><Icon name="binder" size={18} mono /> 바인더</span><button className="au-drawer-x" onClick={() => useStore.setState({ binderVisible: false })} aria-label="바인더 닫기"><Icon name="close" size={18} mono /></button></div>
+            <div className="au-drawer-body"><Binder /></div>
+          </aside>
+        )}
+        <main className={'au-stage' + (binderVisible && !isNarrow ? ' with-left' : '') + (inspectorVisible && !isNarrow ? ' with-right' : '')}>
+          <div className="au-stage-head">
+            <span className="au-stage-badge" style={{ background: cur.color }}><Icon name={cur.icon} size={22} mono /></span>
+            <div className="au-stage-title"><b>{cur.label}</b><span>{cur.hint}</span></div>
+            <span className="au-stage-spacer" />
+            {p.status && <span className="au-status" role="status">{p.status}</span>}
+            <button className={'au-chip' + (binderVisible ? ' active' : '')} onClick={p.onToggleBinder} aria-label="바인더" aria-pressed={binderVisible} title="바인더 서랍 (⌘⇧B)"><Icon name="binder" size={18} mono /> 바인더</button>
+            <button className={'au-chip' + (inspectorVisible ? ' active' : '')} onClick={p.onToggleInspector} aria-label="인스펙터" aria-pressed={inspectorVisible} title="인스펙터 서랍 (⌘⇧I)"><Icon name="inspector" size={18} mono /> 인스펙터</button>
+          </div>
+          <div className="au-stage-body">
+            {p.showFind && <FindReplaceBar onClose={() => p.setShowFind(false)} />}
+            <ActiveView />
+          </div>
+        </main>
+        {inspectorVisible && (
+          <aside className="au-drawer au-drawer-right" aria-label="인스펙터">
+            <div className="au-drawer-head"><span><Icon name="inspector" size={18} mono /> 인스펙터</span><button className="au-drawer-x" onClick={() => useStore.setState({ inspectorVisible: false })} aria-label="인스펙터 닫기"><Icon name="close" size={18} mono /></button></div>
+            <div className="au-drawer-body"><Inspector /></div>
+          </aside>
+        )}
+      </div>
+
+      {/* ── 하단 대형 컬러 독 ── */}
+      <nav className="au-dock" aria-label="주요 내비게이션">
+        <div className="au-dock-views" role="group" aria-label="보기">
+          {VIEWS.map((v) => (
+            <button key={v.key} className={'au-dock-btn' + (viewMode === v.key ? ' active' : '')} style={{ ['--c' as string]: v.color }} onClick={() => setView(v.key)} title={v.label + ' — ' + v.hint} aria-label={v.label} aria-pressed={viewMode === v.key}>
+              <span className="au-dock-ico"><Icon name={v.icon} size={28} mono strokeWidth={1.6} /></span>
+              <span className="au-dock-label">{v.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="au-dock-sep" />
+        <div className="au-dock-tools" role="group" aria-label="도구">
+          {[
+            { id: 'creative', icon: 'sparkle', label: '창작 스튜디오', color: '#e0a93b' },
+            { id: 'toolhub', icon: 'tools', label: '도구 허브', color: '#5b7cfa' },
+            { id: 'genrebox', icon: 'generator', label: '장르 도구함', color: '#8b6dd4' },
+            { id: 'compile', icon: 'compile', label: '내보내기', color: '#2fb3a6' },
+            { id: 'settings', icon: 'settings', label: '설정', color: '#7a8493' },
+          ].map((t) => (
+            <button key={t.id} className={'au-dock-btn au-dock-tool' + (p.activeModal === t.id ? ' active' : '')} style={{ ['--c' as string]: t.color }} onClick={() => p.onOpenModal(t.id)} title={t.label} aria-label={t.label}>
+              <span className="au-dock-ico"><Icon name={t.icon} size={26} mono strokeWidth={1.6} /></span>
+              <span className="au-dock-label">{t.label}</span>
+            </button>
+          ))}
         </div>
       </nav>
 
-      <div className="au-main">
-        {/* 상단 커맨드 바 */}
-        <header className="au-top">
-          <div className="au-top-row">
-            {p.menus && p.menus.length > 0 && (
-              <div className="au-menubar">
-                {p.menus.map((m) => <AuroraMenu key={m.id} menu={m} open={openMenu === m.id} setOpen={setOpenMenu} />)}
-              </div>
-            )}
-            <span className="au-top-spacer" />
-            {p.status && <span className="au-status" role="status">{p.status}</span>}
-            <div className="au-scale" title="화면 글자 크기">
-              <button className="au-scale-btn" onClick={() => p.onChangeScale(-0.1)} disabled={p.uiScale <= 0.8} aria-label="작게">A−</button>
-              <button className="au-scale-btn au-scale-val" onClick={p.onResetScale} title="100%로" aria-label="크기 초기화">{Math.round(p.uiScale * 100)}%</button>
-              <button className="au-scale-btn" onClick={() => p.onChangeScale(0.1)} disabled={p.uiScale >= 1.6} aria-label="크게">A+</button>
-            </div>
-            <div className="au-skins" role="group" aria-label="디자인 전환" title="디자인 전환 — 원고·설정은 그대로 보존됩니다">
-              <button className="au-skin" onClick={() => p.onSetSkin('classic')} aria-label="클래식 UI 로 전환">클래식</button>
-              <button className="au-skin" onClick={() => p.onSetSkin('studio')} aria-label="Studio UI 로 전환">스튜디오</button>
-              <button className="au-skin active" aria-pressed="true" aria-label="Aurora UI(현재)">오로라</button>
-            </div>
-          </div>
-          <div className="au-top-row au-top-row-2">
-            <button className={'au-action au-action-ico' + (binderVisible ? ' active' : '')} onClick={p.onToggleBinder} title="바인더 토글 (⌘⇧B)" aria-label="바인더" aria-pressed={binderVisible}><Icon name="binder" size={22} mono /></button>
-            <div className="au-title-wrap">
-              <input className="au-title" value={title} onChange={(e) => setProjectTitle(e.target.value)} title="프로젝트 제목" aria-label="프로젝트 제목" />
-              <Crumbs />
-            </div>
-            <span className="au-top-spacer" />
-            {action('search', '찾기', () => p.setShowFind(!p.showFind), { active: p.showFind, pressed: p.showFind, title: '찾기/바꾸기 (⌘F)' })}
-            {action('snapshot', '스냅샷', p.onSnapshot, { title: '스냅샷 찍기(버전 저장)' })}
-            {action('split', '분할', () => { if (p.splitId) p.onCycleSplitDir(); else p.onToggleSplit() }, {
-              active: !!p.splitId, pressed: !!p.splitId,
-              title: p.splitId ? '분할 방향 전환 (현재: ' + (p.splitDir === 'horizontal' ? '가로' : '세로') + ' · 우클릭: 닫기)' : '편집기 분할 (⌘⇧K)',
-              onContextMenu: (e) => { if (p.splitId) { e.preventDefault(); p.onCloseSplit() } },
-            })}
-            {action('focus', '집중', p.onToggleComposition, { title: '집중 모드 (⌘⇧↵)' })}
-            {action(p.theme === 'dark' ? 'moon' : p.theme === 'sepia' ? 'book' : 'sun', '테마', p.onCycleTheme, { title: '테마 전환 (⌘⇧L)' })}
-            {action('palette', '명령', () => p.onOpenModal('palette'), { title: '명령 팔레트 (⌘K) — 모든 기능' })}
-            <button className={'au-action au-action-ico' + (inspectorVisible ? ' active' : '')} onClick={p.onToggleInspector} title="인스펙터 토글 (⌘⇧I)" aria-label="인스펙터" aria-pressed={inspectorVisible}><Icon name="inspector" size={22} mono /></button>
-            <button
-              className={'au-save' + (p.saveError ? ' err' : p.dirty ? ' dirty' : ' ok')}
-              onClick={p.onSave}
-              title={
-                (p.saveError
-                  ? '⚠ 자동 저장 실패 — 변경분은 메모리에 보존되어 있습니다. 눌러서 다시 저장하거나 백업/내보내기를 권장합니다.'
-                  : p.dirty ? '변경사항을 저장합니다 (⌘S).' : p.lastSaved ? '저장됨 · ' + new Date(p.lastSaved).toLocaleTimeString() : '저장 (⌘S)') +
-                '\n자동 저장이 켜져 있으면 잠시 후 자동으로도 저장됩니다.'
-              }
-            >
-              <Icon name="save" size={20} mono /> <span className="au-save-tx">{p.saveError ? '저장 실패' : p.dirty ? '저장' : '저장됨'}</span>
-            </button>
-          </div>
-        </header>
-
-        {/* 카드형 작업 공간 */}
-        <div className="au-body">
-          {isNarrow && (binderVisible || inspectorVisible) && (
-            <div className="panel-backdrop" onClick={closePanels} aria-hidden="true" />
-          )}
-          {binderVisible && (
-            <>
-              <aside
-                className={'au-panel au-binder' + (isNarrow ? ' pane-overlay pane-overlay-left' : '')}
-                style={isNarrow ? { width: 'min(88vw, 380px)' } : { width: p.binderW, flex: `0 0 ${p.binderW}px` }}
-              ><Binder /></aside>
-              {!isNarrow && <Resizer onDrag={(dx) => p.setBinderW((w) => Math.max(210, Math.min(480, w + dx)))} />}
-            </>
-          )}
-          <main className="au-panel au-center">
-            {p.showFind && <FindReplaceBar onClose={() => p.setShowFind(false)} />}
-            <ActiveView />
-          </main>
-          {inspectorVisible && (
-            <>
-              {!isNarrow && <Resizer onDrag={(dx) => p.setInspW((w) => Math.max(240, Math.min(540, w - dx)))} />}
-              <aside
-                className={'au-panel au-inspector' + (isNarrow ? ' pane-overlay pane-overlay-right' : '')}
-                style={isNarrow ? { width: 'min(88vw, 400px)' } : { width: p.inspW, flex: `0 0 ${p.inspW}px` }}
-              ><Inspector /></aside>
-            </>
-          )}
-        </div>
-      </div>
+      {launcher && p.menus && <Launcher menus={p.menus} onClose={() => setLauncher(false)} />}
     </div>
   )
 }
