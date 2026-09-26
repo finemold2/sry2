@@ -1,6 +1,6 @@
 /* =====================================================================
    Aurora 스킨(디자인 2) — `.app-aurora` 범위.
-   컨셉: "캔버스 위의 원고"(기본 다크, 라이트/세피아 테마 지원). 상단 바·좌측 레일·카드 프레임 없이,
+   컨셉: "캔버스 위의 원고"(기본 다크, 라이트/세피아 테마 지원, 셸은 전부 회색 톤 — 색은 내용에만). 상단 바·좌측 레일·카드 프레임 없이,
      · 캔버스 위 세리프 타이포그래피(브랜드·제목·뷰 이름)
      · 오른쪽 세로 플로팅 레일(액션) · 하단 대형 컬러 독(뷰) · 유리 서랍(바인더/인스펙터) · 타일 런처(메뉴)
      · 바인더·인스펙터·서식 바·코르크보드·아웃라이너·푸터 등 공용 컴포넌트도 이 범위 안에서 전부 다시 입힌다.
@@ -11,9 +11,9 @@
   /* 기본(다크) 팔레트 — 공용 토큰을 이 범위에서 재정의. 라이트/세피아는 아래 [data-theme] 블록에서 같은 토큰만 바꾼다. */
   --bg: #07080d; --chrome: #12141d; --chrome-2: #0e1017; --panel: #13161f;
   --paper: #12141d;
-  --binder-bg: transparent; --binder-fg: #d8dce6; --binder-sel: #5b7cfa;
+  --binder-bg: transparent; --binder-fg: #d8dce6; --binder-sel: #6f7888; /* 선택 행도 회색 */
   --border: #22263a; --border-dark: #2c3147; --text: #eceff6; --muted: #8790a6;
-  --accent: #5e72f0; --accent-2: #aebcff; --shadow: 0 1px 3px rgba(0,0,0,.6); /* 흰 글자를 올려도 4.5:1 이상 */
+  --accent: #8a94a6; --accent-2: #c3cad6; --shadow: 0 1px 3px rgba(0,0,0,.6); /* 강조색도 회색 계열(흰 글자 4.5:1 이상) */
   color-scheme: dark;
   --au-fill: var(--au-fill);      /* 유리 위 얕은 채움(입력·탭·타일) */
   --au-fill-2: var(--au-fill-2);    /* 호버/진행 막대 트랙 */
@@ -22,19 +22,19 @@
   --au-backdrop: rgba(6, 8, 14, .5);
   --au-soft-shadow: 0 12px 30px rgba(0, 0, 0, .35);
   --au-card-shadow: 0 16px 40px rgba(0, 0, 0, .35);
-  --au-view-fg: #fff;                        /* 뷰 색 위 글자(셸이 뷰마다 주입) */
+  --au-view-fg: #ffffff;                     /* 회색 강조 위 글자 */
   --au-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Apple SD Gothic Neo', 'Malgun Gothic', Georgia, serif;
   --au-r-xl: 26px; --au-r-lg: 20px; --au-r-md: 14px; --au-r-sm: 10px;
-  --au-view: var(--accent);                 /* 현재 뷰 색(셸이 주입) */
+  --au-view: #6f7888;                       /* 셸 강조색 = 중립 회색(뷰별 색 없음) */
   --au-glass: rgba(18, 21, 32, .58);
   --au-glass-2: rgba(18, 21, 32, .88);
   --au-line: rgba(255, 255, 255, .08);
   --au-shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .45);
-  --au-glow: 0 10px 30px color-mix(in srgb, var(--au-view) 40%, transparent);
+  --au-glow: 0 10px 28px rgba(0, 0, 0, .35);
   font-size: 15px; letter-spacing: -0.005em;
   background:
     radial-gradient(1400px 800px at 8% -12%, color-mix(in srgb, var(--au-view) 26%, transparent), transparent 60%),
-    radial-gradient(1100px 700px at 110% 6%, rgba(124, 77, 255, .18), transparent 58%),
+    radial-gradient(1100px 700px at 110% 6%, rgba(120, 128, 145, .14), transparent 58%),
     radial-gradient(900px 600px at 50% 115%, color-mix(in srgb, var(--au-view) 16%, transparent), transparent 60%),
     linear-gradient(180deg, var(--au-canvas-a), var(--au-canvas-b));
   transition: background .6s;
@@ -54,14 +54,14 @@
 .au-top { display: flex; align-items: center; gap: 16px; padding: 18px 26px 6px; position: relative; z-index: 60; }
 .au-menu-launch {
   display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; border: 0; cursor: pointer; color: var(--au-view-fg, #fff); flex-shrink: 0;
-  background: conic-gradient(from 210deg, var(--au-view), #7c4dff, #2bb6c0, var(--au-view)); box-shadow: var(--au-glow), inset 0 0 0 3px rgba(0,0,0,.35);
+  background: conic-gradient(from 210deg, #8a94a6, #4a5261, #6f7888, #8a94a6); box-shadow: 0 10px 28px rgba(0,0,0,.45), inset 0 0 0 3px rgba(0,0,0,.35);
   transition: transform .18s cubic-bezier(.34,1.56,.64,1), filter .14s;
 }
 .au-menu-launch:hover { filter: brightness(1.08); transform: rotate(90deg); }
 .au-menu-launch:active { transform: rotate(90deg) scale(.94); }
 .au-brand { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .au-title-row { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
-.au-brand-mark { font-family: var(--au-serif); font-style: italic; font-weight: 800; font-size: 22px; letter-spacing: -.02em; background: linear-gradient(90deg, var(--au-view), #c3b1ff); -webkit-background-clip: text; background-clip: text; color: transparent; flex-shrink: 0; }
+.au-brand-mark { font-family: var(--au-serif); font-style: italic; font-weight: 800; font-size: 22px; letter-spacing: -.02em; background: linear-gradient(90deg, var(--text), var(--muted)); -webkit-background-clip: text; background-clip: text; color: transparent; flex-shrink: 0; }
 .au-title { font-family: var(--au-serif); font-size: 27px; font-weight: 700; letter-spacing: -.015em; color: var(--text); background: transparent; border: 0; border-bottom: 1px solid transparent; padding: 0 2px 2px; max-width: 520px; min-width: 120px; width: 100%; }
 .au-title:hover { border-bottom-color: var(--au-line); }
 .au-title:focus { border-bottom-color: var(--au-view); outline: none; }
@@ -92,7 +92,7 @@
 .au-stage.with-left { margin-left: 352px; }
 .au-stage.with-right { margin-right: 456px; }
 .au-stage-head { display: flex; align-items: center; gap: 12px; padding: 6px 26px 8px; }
-.au-stage-badge { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; animation: auPop .35s cubic-bezier(.34,1.56,.64,1); color: #fff; flex-shrink: 0; box-shadow: var(--au-glow); }
+.au-stage-badge { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; animation: auPop .35s cubic-bezier(.34,1.56,.64,1); color: var(--au-view-fg); background: linear-gradient(145deg, #6f7888, #4a5261); flex-shrink: 0; box-shadow: var(--au-glow); }
 .au-stage-title { display: flex; align-items: baseline; gap: 10px; line-height: 1.1; min-width: 0; }
 .au-stage-title b { font-family: var(--au-serif); font-size: 26px; font-weight: 700; letter-spacing: -.015em; }
 .au-stage-title span { font-size: 12.5px; color: var(--muted); }
@@ -169,7 +169,7 @@
 .app-aurora .binder-tree { padding: 4px 0 60px; }
 .app-aurora .binder-row { padding: 9px 12px; font-size: 14.5px; border-radius: 14px; margin: 2px 10px; gap: 8px; border: 1px solid transparent; transition: background .12s, transform .12s; }
 .app-aurora .binder-row:hover { background: var(--au-fill); }
-.app-aurora .binder-row.selected { background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); color: var(--au-view-fg, #fff); box-shadow: var(--au-glow); }
+.app-aurora .binder-row.selected { background: linear-gradient(135deg, #7a8494, #5b6472); color: #fff; box-shadow: var(--au-glow); }
 .app-aurora .binder-row.drop-into { background: color-mix(in srgb, var(--au-view) 30%, transparent); border-color: var(--au-view); }
 .app-aurora .binder-row.drop-before { border-top: 2px solid var(--au-view); }
 .app-aurora .binder-row.drop-after { border-bottom: 2px solid var(--au-view); }
@@ -254,8 +254,8 @@
 .au-dock-btn:hover .au-dock-ico { transform: translateY(-4px) scale(1.06); background: linear-gradient(145deg, var(--au-dock-ico-hover-a, #6a7382), var(--au-dock-ico-hover-b, #4a5261)); }
 .au-dock-btn:active .au-dock-ico { transform: scale(.95); }
 .au-dock-btn.active { color: var(--text); }
-.au-dock-btn.active .au-dock-ico { animation: auBounce .5s cubic-bezier(.34,1.56,.64,1); transform: translateY(-8px) scale(1.12); background: linear-gradient(145deg, var(--au-dock-ico-hover-a, #6a7382), var(--au-dock-ico-hover-b, #4a5261)); box-shadow: 0 12px 26px rgba(0, 0, 0, .4), 0 0 0 3px color-mix(in srgb, var(--c) 45%, transparent); }
-.au-dock-btn.active::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--c); margin-top: 1px; }
+.au-dock-btn.active .au-dock-ico { animation: auBounce .5s cubic-bezier(.34,1.56,.64,1); transform: translateY(-8px) scale(1.12); background: linear-gradient(145deg, var(--au-dock-ico-hover-a, #6a7382), var(--au-dock-ico-hover-b, #4a5261)); box-shadow: 0 12px 26px rgba(0, 0, 0, .4), 0 0 0 3px color-mix(in srgb, var(--text) 28%, transparent); }
+.au-dock-btn.active::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--text); opacity: .8; margin-top: 1px; }
 /* 오른쪽 도구 묶음(창작 스튜디오·도구 허브·장르·내보내기·설정)은 한 단계 더 짙은 슬레이트 — 뷰 묶음과 구분되되 회색 톤 유지 */
 .au-dock-tool .au-dock-ico { background: linear-gradient(145deg, var(--au-dock-tool-a, #3d4452), var(--au-dock-tool-b, #262b36)); color: var(--au-dock-tool-fg, #c9cfda); }
 .au-dock-btn.au-dock-tool:hover .au-dock-ico, .au-dock-btn.au-dock-tool.active .au-dock-ico { background: linear-gradient(145deg, var(--au-dock-tool-hover-a, #4c5463), var(--au-dock-tool-hover-b, #333a47)); }
@@ -299,7 +299,7 @@
 .app-aurora .minibtn:hover { background: color-mix(in srgb, var(--au-view) 18%, transparent); }
 .app-aurora .minibtn:active { transform: scale(.97); }
 .app-aurora .minibtn svg { width: 17px; height: 17px; }
-.app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: 999px; background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); color: var(--au-view-fg, #fff); border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
+.app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: 999px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 75%, #000)); color: #fff; border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
 .app-aurora .linkbtn { font-size: 13px; padding: 6px 12px; gap: 6px; border-radius: 999px; }
 .app-aurora .linkbtn svg { width: 16px; height: 16px; }
 .app-aurora .field { font-size: 14px; padding: 9px 12px; border-radius: 12px; }
@@ -335,9 +335,9 @@
 [data-theme='light'] .app-aurora {
   --bg: #eef0f6; --chrome: #ffffff; --chrome-2: #f3f5f9; --panel: #ffffff;
   --paper: #ffffff;
-  --binder-fg: #2a2f3d; --binder-sel: #5b7cfa;
+  --binder-fg: #2a2f3d; --binder-sel: #5b6472;
   --border: #dfe3ec; --border-dark: #cdd3df; --text: #1b1f2a; --muted: #6b7385;
-  --accent: #4f6ef7; --accent-2: #3d5be0; --shadow: 0 1px 3px rgba(20, 24, 40, .12);
+  --accent: #5b6472; --accent-2: #3f4653; --shadow: 0 1px 3px rgba(20, 24, 40, .12);
   color-scheme: light;
   --au-glass: rgba(255, 255, 255, .64);
   --au-glass-2: rgba(255, 255, 255, .9);
@@ -350,19 +350,19 @@
   --au-backdrop: rgba(30, 34, 50, .28);
   --au-soft-shadow: 0 10px 26px rgba(20, 24, 40, .12);
   --au-card-shadow: 0 14px 36px rgba(20, 24, 40, .12);
-  --au-skin-active-fg: var(--au-view);
+  --au-skin-active-fg: #1b1f2a; --au-view: #5b6472; --au-view-fg: #ffffff;
   background:
     radial-gradient(1400px 800px at 8% -12%, color-mix(in srgb, var(--au-view) 18%, transparent), transparent 60%),
-    radial-gradient(1100px 700px at 110% 6%, rgba(124, 77, 255, .10), transparent 58%),
+    radial-gradient(1100px 700px at 110% 6%, rgba(90, 98, 112, .10), transparent 58%),
     radial-gradient(900px 600px at 50% 115%, color-mix(in srgb, var(--au-view) 10%, transparent), transparent 60%),
     linear-gradient(180deg, var(--au-canvas-a), var(--au-canvas-b));
 }
 [data-theme='sepia'] .app-aurora {
   --bg: #efe6d3; --chrome: #fbf6e9; --chrome-2: #f3ecdb; --panel: #fbf6e9;
   --paper: #fbf6e9;
-  --binder-fg: #3b3121; --binder-sel: #8a6d3b;
+  --binder-fg: #3b3121; --binder-sel: #7a6f5f;
   --border: #e2d8c2; --border-dark: #d2c6ab; --text: #3b3121; --muted: #7d6f58;
-  --accent: #8a6d3b; --accent-2: #6f5728; --shadow: 0 1px 3px rgba(60, 45, 20, .12);
+  --accent: #7a6f5f; --accent-2: #5a5044; --shadow: 0 1px 3px rgba(60, 45, 20, .12);
   color-scheme: light;
   --au-glass: rgba(255, 251, 240, .66);
   --au-glass-2: rgba(255, 251, 240, .92);
@@ -375,10 +375,10 @@
   --au-backdrop: rgba(60, 45, 20, .26);
   --au-soft-shadow: 0 10px 26px rgba(60, 45, 20, .12);
   --au-card-shadow: 0 14px 36px rgba(60, 45, 20, .12);
-  --au-skin-active-fg: var(--au-view);
+  --au-skin-active-fg: #3b3121; --au-view: #6e6558; --au-view-fg: #ffffff;
   background:
     radial-gradient(1400px 800px at 8% -12%, color-mix(in srgb, var(--au-view) 16%, transparent), transparent 60%),
-    radial-gradient(1100px 700px at 110% 6%, rgba(200, 150, 60, .12), transparent 58%),
+    radial-gradient(1100px 700px at 110% 6%, rgba(120, 105, 80, .10), transparent 58%),
     linear-gradient(180deg, var(--au-canvas-a), var(--au-canvas-b));
 }
 /* 밝은 테마에서 그라디언트 브랜드 글자·툴팁 대비 */
