@@ -6,7 +6,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # main 푸시: 본 사이트(랜딩 + /app/) + /v2/ 미리보기 갱신.
+    # design-v2 푸시: github-pages 환경의 Deployment branches 에 design-v2 가 허용되어 있어 같은 구성으로 재배포(/v2/ 가 브랜치 최신으로).
+    branches: [main, design-v2]
     # 사이트에 포함되지 않는 문서만 바뀐 커밋은 재배포하지 않음
     paths-ignore:
       - 'docs/**'
@@ -30,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main # 어느 브랜치가 트리거했든 본 사이트(랜딩 + /app/)는 main 기준
 
       - uses: actions/setup-node@v4
         with:

@@ -149,6 +149,8 @@ export interface StudioProps {
   onToggleBinder: () => void
   onToggleInspector: () => void
   onSetClassic: () => void
+  /** (선택) 디자인 2(Aurora)로 전환 — 있으면 헤더에 버튼 표시. */
+  onSetAurora?: () => void
 }
 
 // 좁은 화면 기준(클래식 App.tsx 와 동일한 820px). 이하에서는 바인더/인스펙터를 본문 위 오버레이로 띄운다.
@@ -251,6 +253,7 @@ export default function StudioShell(p: StudioProps) {
             <Icon name="save" size={16} mono /> <span className="st-save-tx">{p.saveError ? '저장 실패' : p.dirty ? '저장' : '저장됨'}</span>
           </button>
           <button className="st-skin-toggle" onClick={p.onSetClassic} title="클래식 UI 로 전환">클래식 UI</button>
+          {p.onSetAurora && <button className="st-skin-toggle" onClick={p.onSetAurora} title="Aurora UI 로 전환 — 디자인 2(큼직한 버튼·카드형 작업 공간)" aria-label="Aurora UI 로 전환">Aurora</button>}
         </header>
 
         {/* 3분할 본문 */}

@@ -37,7 +37,7 @@ async function main() {
   await ev(ws, sid, "document.activeElement&&document.activeElement.blur&&document.activeElement.blur();var b=document.querySelector('.binder-head button[title=\"새 글\"]');if(b)b.click();return 1"); await sleep(500)
   await ev(ws, sid, "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));document.activeElement&&document.activeElement.blur&&document.activeElement.blur();return 1"); await sleep(200)
   await ev(ws, sid, "window.__setView('editor');return 1"); await sleep(400)
-  const ph = await ev(ws, sid, "var p=document.querySelector('.paper');if(!p)return 'no';var cs=getComputedStyle(p,'::before');return (cs.content||'').indexOf('여기에 쓰세요')>=0?'yes':cs.content")
+  const ph = await ev(ws, sid, "var p=document.querySelector('.paper');if(!p)return 'no';if(document.activeElement&&p.contains(document.activeElement))document.activeElement.blur();var q=p.querySelector(':scope > p');var cs=getComputedStyle(q||p,'::before');return (cs.content||'').indexOf('여기에 쓰세요')>=0?'yes':cs.content")
   t(ph === 'yes', '③ 빈 문서 플레이스홀더 표시(' + ph + ')')
 
   // ④ 백업 모달 .sry 파일 복원 경로

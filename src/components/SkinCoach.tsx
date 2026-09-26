@@ -1,4 +1,4 @@
-// 스킨 전환 코치마크(#4) — 클래식↔스튜디오 첫 전환 때 화면이 확 바뀌어 생기는 혼란을 3걸음으로 안내.
+// 스킨 전환 코치마크(#4) — 클래식↔스튜디오↔오로라 첫 전환 때 화면이 확 바뀌어 생기는 혼란을 3걸음으로 안내.
 //  각 방향(→studio / →classic) 1회만 표시(localStorage), 투어 CSS(.tour-*)를 재사용.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -9,14 +9,20 @@ const STEPS_TO_STUDIO: CoachStep[] = [
   { emoji: '🧭', title: '메뉴는 그대로 위에', body: '파일·문서·도구·보기 메뉴는 상단에 그대로 있어요. ⌘K 명령 팔레트로 무엇이든 검색해 실행할 수도 있고요.', target: '.st-menubar' },
   { emoji: '↩️', title: '언제든 돌아갈 수 있어요', body: '오른쪽 위 ‘클래식 UI’ 버튼으로 언제든 복귀! 어느 쪽을 쓰든 원고·데이터는 완전히 동일하게 보존됩니다.', target: '.st-skin-toggle' },
 ]
+const STEPS_TO_AURORA: CoachStep[] = [
+  { emoji: '🎨', title: '뷰 전환은 아래 독으로', body: '에디터·코르크보드·연재 등 10개 뷰가 화면 아래 컬러 독에 있어요. 오른쪽 묶음은 창작 스튜디오·도구 허브·내보내기·설정.', target: '.au-dock' },
+  { emoji: '🧭', title: '메뉴는 왼쪽 위 오브', body: '파일·문서·도구·보기의 모든 명령이 한 화면 타일로 펼쳐져요. 검색도 되고, ⌘K 명령 팔레트도 그대로예요.', target: '.au-menu-launch' },
+  { emoji: '🌓', title: '테마는 오른쪽 위에서', body: '라이트·다크·세피아를 여기서 바로 고르세요. 오른쪽 세로 레일의 달/해 버튼이나 ⌘⇧L 로도 순환됩니다.', target: '.au-themes' },
+  { emoji: '↩️', title: '언제든 돌아갈 수 있어요', body: '오른쪽 위 ‘클래식 · 스튜디오 · 오로라’ 스위처로 언제든 전환! 어느 쪽을 쓰든 원고·데이터는 완전히 동일하게 보존됩니다.', target: '.au-skins' },
+]
 const STEPS_TO_CLASSIC: CoachStep[] = [
   { emoji: '🎛️', title: '뷰 전환은 상단 버튼으로', body: '왼쪽 레일에 있던 화면 전환이 상단 가운데 버튼 묶음으로 왔어요. 10개 뷰 모두 그대로예요.', target: '.seg' },
   { emoji: '🧰', title: '도구·컴파일도 위에', body: '창작 스튜디오·도구 허브는 ‘도구’ 메뉴에, 컴파일 버튼은 툴바에 있어요. ⌘K 로 검색 실행도 그대로.', target: '.toolbar' },
   { emoji: '↩️', title: '언제든 돌아갈 수 있어요', body: '오른쪽 위 ‘Studio’ 버튼으로 언제든 모던 UI 로 복귀! 원고·데이터는 완전히 동일하게 보존됩니다.', target: '.toolbar' },
 ]
 
-export default function SkinCoach({ skin, onClose }: { skin: 'classic' | 'studio'; onClose: () => void }) {
-  const steps = skin === 'studio' ? STEPS_TO_STUDIO : STEPS_TO_CLASSIC
+export default function SkinCoach({ skin, onClose }: { skin: 'classic' | 'studio' | 'aurora'; onClose: () => void }) {
+  const steps = skin === 'classic' ? STEPS_TO_CLASSIC : skin === 'aurora' ? STEPS_TO_AURORA : STEPS_TO_STUDIO
   const [i, setI] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const [pos, setPos] = useState({ left: 0, top: 0 })

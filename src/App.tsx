@@ -47,6 +47,7 @@ import Composition from './components/Composition'
 import PortalWindow from './components/PortalWindow'
 import ShortcutSheet from './components/ShortcutSheet'
 import SkinCoach from './components/SkinCoach'
+import AuroraShell from './components/AuroraShell'
 import CompileDialog from './components/CompileDialog'
 import CommandPalette, { type Command } from './components/CommandPalette'
 import StatisticsModal from './components/StatisticsModal'
@@ -424,7 +425,7 @@ export default function App() {
   const toggleFavorite = useStore((s) => s.toggleFavorite)
   const uiSkin = useStore((s) => s.uiSkin)
   // 스킨 전환 코치마크(#4): 각 방향 첫 전환 때만 3걸음 안내(마운트 시엔 미표시).
-  const [skinCoach, setSkinCoach] = useState<'classic' | 'studio' | null>(null)
+  const [skinCoach, setSkinCoach] = useState<'classic' | 'studio' | 'aurora' | null>(null)
   const prevSkin = useRef<string | null>(null)
   useEffect(() => {
     if (prevSkin.current !== null && prevSkin.current !== uiSkin) {
@@ -1681,6 +1682,7 @@ export default function App() {
     { id: 'platform-preview', section: '도구', title: '📱 웹소설 플랫폼 독자뷰 미리보기 (문피아·네이버·카카오·노벨피아·리디)', run: () => setModal('platformPreview') },
     { id: 'skin-studio', section: '보기', title: '🎨 Studio UI 로 전환 (새 모던 디자인 — 데이터 보존)', run: () => setUiSkin('studio') },
     { id: 'skin-classic', section: '보기', title: '🎨 클래식 UI 로 전환', run: () => setUiSkin('classic') },
+    { id: 'skin-aurora', section: '보기', title: '🎨 Aurora UI 로 전환 (디자인 2 — 큼직한 버튼·카드형 작업 공간, 데이터 보존)', run: () => setUiSkin('aurora') },
     { id: 'toolhub', section: '도구', title: '🧰 도구 허브 (상상력 자극·웹검색·캐릭터 모델·집중 등)', run: () => setModal('toolhub') },
     { id: 'genrebox', section: '도구', title: '🎭 장르별 도구함 (미스터리·SF·무협·판타지·로맨스 등 장르 특화)', run: () => setModal('genrebox') },
     { id: 'stats', section: '도구', title: '프로젝트 통계', run: () => setModal('stats') },
@@ -1888,12 +1890,14 @@ export default function App() {
         { label: '명령 팔레트', fn: () => setModal('palette'), kbd: '⌘K' },
         { label: '집중 모드', fn: requestFocusMode },
         { label: '편집기 분할 토글', fn: toggleSplit },
+        { label: '테마 전환 (라이트/다크/세피아)', fn: cycleTheme, kbd: '⌘⇧L' },
         { divider: true },
         { label: '단축키 도움말 (치트시트)', fn: () => setShowShortcuts(true), kbd: 'F1' },
         { label: '도움말 둘러보기 (가이드 투어)', fn: startTour },
         { label: '더 알아보기 (사용법 실습 — 따라 하며 한 편 완성)', fn: startManual },
         { divider: true },
         { label: '클래식 UI 로 전환', fn: () => setUiSkin('classic') },
+        { label: 'Aurora UI 로 전환 (디자인 2)', fn: () => setUiSkin('aurora') },
       ],
     },
   ]
@@ -1902,8 +1906,24 @@ export default function App() {
   uiGuardRef.current = { modal, openTools: openToolIds.length, switching: !!switchAsk, sheet: showShortcuts }
 
   return (
-    <div className={'app' + (uiSkin === 'studio' ? ' app-studio' : '')}>
-      {uiSkin === 'studio' ? (
+    <div className={'app' + (uiSkin === 'studio' ? ' app-studio' : uiSkin === 'aurora' ? ' app-aurora' : '')}>
+      {uiSkin === 'aurora' ? (
+        <AuroraShell
+          theme={theme} uiScale={uiScale} dirty={dirty} saveError={!!saveError} lastSaved={lastSaved} status={status || undefined}
+          splitId={splitId} splitDir={splitDir} showFind={showFind} setShowFind={setShowFind} menus={studioMenus}
+          activeModal={modal}
+          binderW={binderW} inspW={inspW} setBinderW={setBinderW} setInspW={setInspW}
+          onOpenModal={(n) => setModal(n as ModalName)} onSave={saveNow} onCycleTheme={cycleTheme}
+          onChangeScale={changeScale} onResetScale={resetScale} onSnapshot={snapshotEntry}
+          onToggleSplit={toggleSplit}
+          onCycleSplitDir={() => setSplitDir(splitDir === 'vertical' ? 'horizontal' : 'vertical')}
+          onCloseSplit={toggleSplit}
+          onToggleComposition={requestFocusMode}
+          onToggleBinder={userToggleBinder} onToggleInspector={userToggleInspector}
+          onSetSkin={(s) => setUiSkin(s)}
+          onSetTheme={(t) => setTheme(t)}
+        />
+      ) : uiSkin === 'studio' ? (
         <StudioShell
           theme={theme} uiScale={uiScale} dirty={dirty} saveError={!!saveError} lastSaved={lastSaved} status={status || undefined}
           splitId={splitId} splitDir={splitDir} showFind={showFind} setShowFind={setShowFind} menus={studioMenus}
@@ -1917,6 +1937,7 @@ export default function App() {
           onToggleComposition={requestFocusMode}
           onToggleBinder={userToggleBinder} onToggleInspector={userToggleInspector}
           onSetClassic={() => setUiSkin('classic')}
+          onSetAurora={() => setUiSkin('aurora')}
         />
       ) : (
       <>
@@ -2152,6 +2173,15 @@ export default function App() {
           style={{ fontWeight: 600 }}
         >
           <Icon name="sparkle" size={15} /> Studio
+        </button>
+        <button
+          className="tbtn"
+          onClick={() => setUiSkin('aurora')}
+          title="Aurora UI 로 전환 — 디자인 2: 큼직한 버튼·아이콘, 카드형 작업 공간 (데이터·원고는 그대로 보존)"
+          aria-label="Aurora UI 로 전환"
+          style={{ fontWeight: 600 }}
+        >
+          <Icon name="palette" size={15} /> Aurora
         </button>
       </div>
 

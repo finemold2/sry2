@@ -39,6 +39,7 @@ node scripts/_cdp_link_payloads.cjs      # 도구 연계 payload 수신 E2E(17�
 - `src/creative/` — 합성기 1,534(procgen)·분석기 47·가이드 565·단어은행 등(창작 스튜디오, 약 2,445 도구).
 - `src/tools/` — **도구 허브 507종**(기본 100 + 장르별 168 + 자율 대형 도구 novel-A~K) + `linkbus.ts`(연계) + `ToolWindow`/`ToolHub`/`registry.tsx`. 모든 도구는 ToolWindow 하단 자동 "관련 도구" 스트립으로 연결(App `relatedToolsFor`). → [docs/TOOL-HUB.md](docs/TOOL-HUB.md)
 - `src/export/`, `src/compile/`, `src/rtf/` — 컴파일/내보내기(DOCX/EPUB/ODT/LaTeX/MD/Fountain/FDX)·RTF 엔진.
+- **스킨 3종**: `classic`(기본) · `studio`(`StudioShell.tsx`) · `aurora`(디자인 2, `AuroraShell.tsx` + `aurora.css`, 브랜치 `design-v2` 에서 시작). 같은 store/컴포넌트를 렌더하므로 기능 동일. 전환: 툴바/메뉴/⌘K/헤더 스위처, `sry:uiSkin`.
 - `site/` — **앱 소개(랜딩) 페이지**(앱과 분리된 독립 정적: 미니멀 스위스+스크롤 모션+실제 앱 스크린샷, 곧-출시 토스트·의견 폼). 로컬 미리보기 `node scripts/serve-site.cjs`(→ :5500). 배포/재생성·SRY_APP_READY 플래그는 `site/README.md`·SESSION-LOG #29. **GitHub Pages 배포 완료(#33)**: `SRY_APP_READY=true`, 랜딩=루트·앱=`/app/`.
 
 ## 상세 문서 (docs/)
