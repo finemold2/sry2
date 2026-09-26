@@ -7,6 +7,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # 사이트에 포함되지 않는 문서만 바뀐 커밋은 재배포하지 않음
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'CLAUDE.md'
+      - 'site/README.md'
+      - 'site/DESIGN.md'
   workflow_dispatch:
 
 permissions:
