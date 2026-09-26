@@ -177,7 +177,10 @@ function Card({
   const startFreeDrag = (e: React.MouseEvent) => {
     if (!freeform || e.button !== 0) return
     const t = e.target as HTMLElement
-    if (t.isContentEditable || t.closest('.card-title, .card-syn')) return // 텍스트 편집 중에는 이동 안 함
+    // 제목/시놉시스는 항상 contentEditable 이고 시놉시스가 카드 대부분을 채우므로, 여기서 시작을 막으면 사실상 잡을 곳이 없다(자유 배치가
+    // 동작하지 않던 원인). '이미 편집 중(포커스된)' 필드에서 시작할 때만 이동을 막고, 그 외에는 5px 이상 끌었을 때 드래그로 판정한다.
+    const editable = t.closest('.card-title, .card-syn') as HTMLElement | null
+    if (editable && document.activeElement === editable) return
     // 선(先)선택 금지(리뷰 F6): mousedown 에서 바로 선택하면 이어지는 click 의 additive 토글이 방금 추가한
     // 항목을 되빼서 Ctrl+클릭 다중선택이 불가능해진다 → '실제 드래그로 판정된 순간'에만 선택한다.
     const wasSelected = selected
@@ -189,6 +192,10 @@ function Card({
       // 임계값(5px) 넘게 움직이면 드래그로 간주 — 그 순간 미선택 카드는 선택(끌기 전 선택 의도 유지)
       if (!d.moved && Math.abs(ev.clientX - d.sx) + Math.abs(ev.clientY - d.sy) > 5) {
         d.moved = true
+        // 편집 필드 위에서 시작한 드래그: 브라우저 텍스트 선택/포커스를 걷어내 카드 이동으로만 처리
+        try { window.getSelection()?.removeAllRanges() } catch { /* noop */ }
+        const ae = document.activeElement as HTMLElement | null
+        if (ae && ae.closest && ae.closest('.card') && ae.isContentEditable) ae.blur()
         if (!wasSelected) selectOnly({ additive })
       }
       d.lastX = Math.max(0, d.ox + ev.clientX - d.sx)
