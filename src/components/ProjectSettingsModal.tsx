@@ -245,16 +245,16 @@ export default function ProjectSettingsModal({ onClose }: { onClose: () => void 
             <label>에디터 타이포그래피 (읽기 편의)</label>
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 12, color: 'var(--muted)' }}>프리셋</span>
-              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 760, editorParaGap: 0.7, editorLineHeight: 1.0 })}>기본</button>
+              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 760, editorParaGap: 0, editorLineHeight: 1.0 })}>기본</button>
               <button className="minibtn" onClick={() => patchSettings({ editorWidth: 680, editorParaGap: 1.1, editorLineHeight: 1.9 })}>웹소설(여백 큼)</button>
-              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 620, editorParaGap: 0.8, editorLineHeight: 1.75 })}>집중(좁게)</button>
-              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 960, editorParaGap: 0.8, editorLineHeight: 1.7 })}>넓게</button>
+              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 620, editorParaGap: 0, editorLineHeight: 1.75 })}>집중(좁게)</button>
+              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 960, editorParaGap: 0, editorLineHeight: 1.7 })}>넓게</button>
             </div>
             <div className="row" style={{ marginTop: 6 }}>
               <span style={{ flex: '0 0 110px', fontSize: 12 }}>편집창 폭(px)</span>
               <input className="field" type="number" min={420} max={1400} step={20} value={project.settings.editorWidth ?? 760} onChange={(e) => patchSettings({ editorWidth: Math.max(420, Math.min(1400, parseInt(e.target.value) || 760)) })} />
               <span style={{ flex: '0 0 110px', fontSize: 12 }}>문단 간격(em)</span>
-              <input className="field" type="number" min={0} max={3} step={0.1} value={project.settings.editorParaGap ?? 0.7} onChange={(e) => patchSettings({ editorParaGap: Math.max(0, Math.min(3, parseFloat(e.target.value) || 0)) })} />
+              <input className="field" type="number" min={0} max={3} step={0.1} value={project.settings.editorParaGap ?? 0} onChange={(e) => patchSettings({ editorParaGap: Math.max(0, Math.min(3, parseFloat(e.target.value) || 0)) })} />
             </div>
             <div className="row" style={{ marginTop: 6 }}>
               <span style={{ flex: '0 0 110px', fontSize: 12 }}>줄간격(배수)</span>
