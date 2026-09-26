@@ -6,7 +6,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # design-v2 푸시도 배포를 돌린다: 사이트 본체는 항상 main 을 체크아웃해 빌드하고, 브랜치 빌드는 /v2/ 에만 들어간다
+    branches: [main, design-v2]
     # 사이트에 포함되지 않는 문서만 바뀐 커밋은 재배포하지 않음
     paths-ignore:
       - 'docs/**'
@@ -30,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main # 어느 브랜치가 트리거했든 본 사이트(랜딩 + /app/)는 main 기준
 
       - uses: actions/setup-node@v4
         with:
