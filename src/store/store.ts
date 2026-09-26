@@ -33,6 +33,11 @@ import { normalizeProject } from '../persistence/pack'
 import { CHARACTER_FIELDS, DOC_TEMPLATES, SETTING_FIELDS, characterToRtf } from '../templates/docTemplates'
 import { STRUCTURES, type Beat } from '../templates/structures'
 
+
+// 디자인 2 미리보기(/v2/)는 같은 origin 의 /app/ 과 localStorage 를 공유하므로 스킨 선택 키를 분리한다.
+const IS_V2_PATH = ((): boolean => { try { return /\/v2\//.test(location.pathname) } catch { return false } })()
+export const UI_SKIN_KEY = IS_V2_PATH ? 'sry:uiSkin:v2' : 'sry:uiSkin'
+
 /** 도구가 프로젝트에 항목을 추가할 때 쓰는 사양(브리지 공용). */
 export interface ProjectEntrySpec {
   kind?: 'text' | 'character' | 'setting'
@@ -381,7 +386,7 @@ export const useStore = create<AppState>((set, get) => ({
   inspectorVisible: true,
   favorites: loadFavorites(),
   // 디자인 2 미리보기 경로(/v2/)에서는 아직 선택이 없으면 오로라로 시작(같은 origin 의 /app/ 은 저장된 값이 없으면 클래식)
-  uiSkin: ((): 'classic' | 'studio' | 'aurora' => { try { const v = localStorage.getItem('sry:uiSkin'); if (v === 'studio' || v === 'aurora') return v; if (v == null && /\/v2\//.test(location.pathname)) return 'aurora'; return 'classic' } catch { return 'classic' } })(),
+  uiSkin: ((): 'classic' | 'studio' | 'aurora' => { try { const v = localStorage.getItem(UI_SKIN_KEY); if (v === 'studio' || v === 'aurora') return v; if (v == null && IS_V2_PATH) return 'aurora'; return 'classic' } catch { return 'classic' } })(),
   binderVisible: true,
   composition: false,
   renameId: null,
@@ -1745,7 +1750,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   setView: (v) => set({ viewMode: v }),
   setInspectorTab: (t) => set({ inspectorTab: t }),
-  setUiSkin: (skin) => { try { localStorage.setItem('sry:uiSkin', skin) } catch { /* noop */ } ; set({ uiSkin: skin }) },
+  setUiSkin: (skin) => { try { localStorage.setItem(UI_SKIN_KEY, skin) } catch { /* noop */ } ; set({ uiSkin: skin }) },
   toggleFavorite: (fav) => set((s) => {
     const exists = s.favorites.some((f) => f.id === fav.id)
     const favorites = exists ? s.favorites.filter((f) => f.id !== fav.id) : [...s.favorites, { id: fav.id, label: fav.label }]
