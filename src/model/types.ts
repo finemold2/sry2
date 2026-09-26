@@ -321,7 +321,7 @@ export interface ProjectSettings {
   serialCadence?: number
   /** 연재 발행 요일(0=일 ~ 6=토). '다음 발행일 자동 채움'이 이 요일들에만 예약 날짜를 배정한다. */
   serialDays?: number[]
-  // --- 에디터 타이포그래피(읽기 편의; 미지정 시 기본값 760px / 문단 간격 0(Enter 줄과 자동 줄바꿈 줄 간격 동일) / 줄간격 1.0) ---
+  // --- 에디터 타이포그래피(읽기 편의; 미지정 시 기본값 760px / 문단 간격 0(Enter 줄과 자동 줄바꿈 줄 간격 동일) / 줄간격 1.7) ---
   /** 본문 편집 영역 폭(px). */
   editorWidth?: number
   /** 문단 사이 간격(em). */

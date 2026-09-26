@@ -34,6 +34,12 @@ export function unpackProject(index: string, bodies: Record<string, string>): Pr
 /** 옛 스키마/누락 필드를 가진 프로젝트에 하위호환 기본값을 채운다(IDB 로드·임포트 공용). 렌더 중 undefined.length 류 크래시 방지. */
 export function normalizeProject(project: Project): Project {
   if (!project.snapshots) project.snapshots = {}
+  // 옛 기본 타이포(문단 간격 0.7em · 줄간격 1.0)가 '기본' 프리셋으로 저장된 프로젝트 → 새 기본(0 · 1.7)으로 이관.
+  // Enter 로 나눈 줄과 자동 줄바꿈 줄의 간격을 같게 하고, 줄이 붙어 보이지 않게 한다. 사용자가 다른 값을 고른 경우는 그대로.
+  if (project.settings && project.settings.editorParaGap === 0.7 && (project.settings.editorLineHeight == null || project.settings.editorLineHeight === 1.0)) {
+    project.settings.editorParaGap = 0
+    project.settings.editorLineHeight = 1.7
+  }
   if (!project.collections) project.collections = []
   if (!project.customFields) project.customFields = []
   if (!project.styles) project.styles = []
