@@ -149,7 +149,7 @@ interface AppState {
   /** 즐겨찾기(앱 전역, 프로젝트 무관 — localStorage 영속). 어떤 도구/뷰/메뉴 명령이든 id 로 즐겨찾기. */
   favorites: Favorite[]
   /** UI 스킨: 'classic'(기존) | 'studio'(새 모던 셸). 전환해도 같은 store 를 읽어 데이터·원고 100% 보존. */
-  uiSkin: 'classic' | 'studio'
+  uiSkin: 'classic' | 'studio' | 'aurora'
 
   // ---- 프로젝트 ----
   newProject: () => void
@@ -258,7 +258,7 @@ interface AppState {
   toggleFavorite: (fav: Favorite) => void
   removeFavorite: (id: string) => void
   reorderFavorites: (ids: string[]) => void
-  setUiSkin: (skin: 'classic' | 'studio') => void
+  setUiSkin: (skin: 'classic' | 'studio' | 'aurora') => void
   toggleInspector: () => void
   toggleBinder: () => void
   toggleComposition: () => void
@@ -380,7 +380,7 @@ export const useStore = create<AppState>((set, get) => ({
   inspectorTab: 'notes',
   inspectorVisible: true,
   favorites: loadFavorites(),
-  uiSkin: ((): 'classic' | 'studio' => { try { return localStorage.getItem('sry:uiSkin') === 'studio' ? 'studio' : 'classic' } catch { return 'classic' } })(),
+  uiSkin: ((): 'classic' | 'studio' | 'aurora' => { try { const v = localStorage.getItem('sry:uiSkin'); return v === 'studio' || v === 'aurora' ? v : 'classic' } catch { return 'classic' } })(),
   binderVisible: true,
   composition: false,
   renameId: null,

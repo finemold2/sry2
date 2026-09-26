@@ -1,0 +1,229 @@
+/* =====================================================================
+   Aurora 스킨(디자인 2) — `.app-aurora` 범위 안에서만 적용.
+   · 큼직한 내비게이션/아이콘/버튼, 카드형 작업 공간, 부드러운 그림자·라운드·그라디언트 강조.
+   · 기존 클래식/스튜디오 스타일은 건드리지 않는다(스킨 전환으로 언제든 복귀).
+   · 공용 컨트롤(.minibtn/.btn-primary/.linkbtn/.field/.toolwin/.modal…)은 이 범위 안에서만 크기·라운드를 키운다.
+   ===================================================================== */
+
+.app-aurora {
+  /* 디자인 토큰 */
+  --au-radius-xl: 22px;
+  --au-radius-lg: 16px;
+  --au-radius-md: 12px;
+  --au-radius-sm: 9px;
+  --au-nav-w: 104px;
+  --au-gap: 12px;
+  --au-glow: 0 10px 30px color-mix(in srgb, var(--accent) 28%, transparent);
+  --au-card-shadow: 0 8px 28px rgba(15, 18, 26, 0.10), 0 1px 2px rgba(15, 18, 26, 0.06);
+  --au-surface: color-mix(in srgb, var(--panel) 92%, #ffffff);
+  --au-surface-2: color-mix(in srgb, var(--bg) 70%, var(--panel));
+  --au-ink: var(--text);
+  --au-grad: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-2) 70%, #7c4dff));
+  /* 기본 글자 한 단계 크게 */
+  font-size: 14.5px;
+  letter-spacing: -0.005em;
+  background:
+    radial-gradient(1200px 600px at 8% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, #7c4dff 10%, transparent), transparent 55%),
+    var(--bg);
+}
+[data-theme='dark'] .app-aurora {
+  --au-surface: color-mix(in srgb, var(--panel) 92%, #000);
+  --au-surface-2: color-mix(in srgb, var(--bg) 60%, var(--panel));
+  --au-card-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- 루트 레이아웃 ---------- */
+.aurora-root {
+  flex: 1; min-height: 0; width: 100%; display: flex; overflow: hidden;
+  color: var(--au-ink); font-family: inherit;
+}
+
+/* ---------- 좌측 대형 내비 ---------- */
+.au-nav {
+  flex: 0 0 var(--au-nav-w); width: var(--au-nav-w);
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+  padding: 14px 10px 12px;
+  background: color-mix(in srgb, var(--au-surface) 88%, transparent);
+  backdrop-filter: blur(14px);
+  border-right: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+}
+.au-brand {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0 0 6px; flex-shrink: 0;
+}
+.au-brand-mark {
+  display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px; color: #fff;
+  background: var(--au-grad); box-shadow: var(--au-glow);
+}
+.au-brand-name { display: none; }
+.au-nav-group { display: flex; flex-direction: column; gap: 4px; }
+.au-nav-spacer { flex: 1; min-height: 10px; }
+.au-nav-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  width: 100%; min-height: 54px; padding: 5px 4px 4px; flex-shrink: 0;
+  border: 1px solid transparent; border-radius: var(--au-radius-lg);
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: background .16s, color .16s, transform .12s, box-shadow .16s, border-color .16s;
+}
+.au-nav-ico {
+  display: grid; place-items: center; width: 44px; height: 34px; border-radius: 13px;
+  background: transparent; transition: background .16s, color .16s;
+}
+.au-nav-label { font-size: 11px; font-weight: 700; line-height: 1.15; text-align: center; letter-spacing: -.01em; }
+.au-nav-btn:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--text); }
+.au-nav-btn:hover .au-nav-ico { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.au-nav-btn:active { transform: scale(.96); }
+.au-nav-btn.active { color: var(--text); background: color-mix(in srgb, var(--accent) 12%, var(--au-surface)); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.au-nav-btn.active .au-nav-ico { background: var(--au-grad); color: #fff; box-shadow: var(--au-glow); }
+.au-nav-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.au-nav-tools .au-nav-btn { min-height: 44px; padding: 4px 2px; }
+.au-nav-tools .au-nav-label { display: none; }
+.au-nav-tools .au-nav-ico { width: 38px; height: 34px; }
+.au-nav-tools .au-nav-btn:nth-child(5) { grid-column: 1 / -1; }
+
+/* ---------- 상단 커맨드 바 ---------- */
+.au-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.au-top {
+  display: flex; flex-direction: column; gap: 6px; padding: 10px 16px 10px;
+  background: color-mix(in srgb, var(--au-surface) 82%, transparent); backdrop-filter: blur(14px);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  position: relative; z-index: 50;
+}
+.au-top:has(.dropdown) { z-index: 350; } /* 메뉴가 열린 동안만 도구창(200~289) 위로 */
+.au-top-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.au-top-row-2 { min-height: 50px; }
+.au-top-spacer { flex: 1; }
+.au-status { font-size: 12.5px; color: var(--accent-2); font-weight: 600; }
+.au-menubar { display: inline-flex; align-items: center; gap: 4px; }
+.au-menubar .menu-wrap { position: relative; }
+.au-menu-btn {
+  height: 38px; padding: 0 16px; border: 1px solid transparent; border-radius: 999px; background: transparent;
+  color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: background .14s, border-color .14s;
+}
+.au-menu-btn:hover, .au-menu-btn.active { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.au-title-wrap { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.au-title {
+  font-size: 19px; font-weight: 800; letter-spacing: -.01em; color: var(--text);
+  background: transparent; border: 1px solid transparent; border-radius: var(--au-radius-sm);
+  padding: 3px 8px; max-width: 420px; min-width: 120px;
+}
+.au-title:hover { border-color: var(--border); }
+.au-title:focus { border-color: var(--accent); background: var(--au-surface); outline: none; }
+.au-crumbs { display: flex; align-items: center; gap: 4px; padding: 0 8px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; max-width: 520px; }
+.au-crumb { display: inline-flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; }
+.au-crumb-last { color: var(--text); font-weight: 600; }
+.au-crumb-sep { opacity: .5; }
+.au-scale { display: inline-flex; align-items: center; background: var(--au-surface-2); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; height: 36px; }
+.au-scale-btn { height: 100%; min-width: 36px; padding: 0 10px; border: 0; background: transparent; color: var(--text); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.au-scale-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.au-scale-btn:disabled { opacity: .4; cursor: default; }
+.au-scale-val { min-width: 52px; }
+.au-skins { display: inline-flex; padding: 3px; gap: 2px; background: var(--au-surface-2); border: 1px solid var(--border); border-radius: 999px; }
+.au-skin { height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.au-skin:hover { color: var(--text); }
+.au-skin.active { background: var(--au-surface); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); cursor: default; }
+.au-action {
+  display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent); border-radius: 999px;
+  background: var(--au-surface-2); color: var(--text); cursor: pointer; font-size: 13.5px; font-weight: 700;
+  transition: background .14s, border-color .14s, color .14s, transform .1s, box-shadow .14s; flex-shrink: 0;
+}
+.au-action-ico { padding: 0; width: 42px; justify-content: center; }
+.au-action:hover { background: color-mix(in srgb, var(--accent) 12%, var(--au-surface)); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.au-action:active { transform: scale(.97); }
+.au-action.active { color: #fff; background: var(--au-grad); border-color: transparent; box-shadow: var(--au-glow); }
+.au-save {
+  display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 18px; border-radius: 999px; cursor: pointer;
+  font-size: 14px; font-weight: 800; border: 1px solid transparent; color: #fff; background: var(--au-grad); box-shadow: var(--au-glow);
+  flex-shrink: 0; transition: transform .1s, filter .14s;
+}
+.au-save:hover { filter: brightness(1.05); }
+.au-save:active { transform: scale(.97); }
+.au-save.ok { background: var(--au-surface-2); color: var(--muted); border-color: var(--border); box-shadow: none; }
+.au-save.err { background: var(--warn); box-shadow: none; }
+
+/* ---------- 카드형 작업 공간 ---------- */
+.au-body {
+  flex: 1; min-height: 0; display: flex; gap: var(--au-gap); padding: var(--au-gap);
+  overflow: hidden; position: relative; /* 좁은 화면 패널 오버레이 기준 */
+}
+.au-panel {
+  min-height: 0; overflow: hidden; display: flex; flex-direction: column;
+  background: var(--au-surface); border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: var(--au-radius-xl); box-shadow: var(--au-card-shadow);
+}
+.au-binder > .binder, .au-binder > * { flex: 1; min-width: 0; }
+.au-inspector > .inspector { flex: 1; min-width: 0; width: 100%; }
+.au-center { flex: 1; min-width: 0; }
+.au-resizer { flex: 0 0 8px; margin: 0 -6px; cursor: col-resize; border-radius: 4px; background: transparent; transition: background .12s; z-index: 1; }
+.au-resizer:hover { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+/* 오버레이 패널(좁은 화면)도 카드 모양 유지 */
+.au-body .pane-overlay { border-radius: var(--au-radius-xl); box-shadow: 0 18px 48px rgba(0,0,0,.28); }
+.au-body .pane-overlay-left { left: var(--au-gap); top: var(--au-gap); bottom: var(--au-gap); }
+.au-body .pane-overlay-right { right: var(--au-gap); top: var(--au-gap); bottom: var(--au-gap); }
+
+/* ---------- 공용 컨트롤 크기 키우기(이 스킨 범위에서만) ---------- */
+.app-aurora .minibtn {
+  font-size: 13px; padding: 6px 12px; border-radius: var(--au-radius-sm);
+  border-color: color-mix(in srgb, var(--border-dark) 80%, transparent); line-height: 1.2;
+  transition: background .12s, border-color .12s, transform .08s;
+}
+.app-aurora .minibtn:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--paper)); }
+.app-aurora .minibtn:active { transform: scale(.97); }
+.app-aurora .minibtn svg { width: 17px; height: 17px; }
+.app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: var(--au-radius-md); background: var(--au-grad); border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
+.app-aurora .linkbtn { font-size: 13px; padding: 6px 12px; gap: 6px; }
+.app-aurora .linkbtn svg { width: 16px; height: 16px; }
+.app-aurora .field { font-size: 14px; padding: 9px 12px; border-radius: var(--au-radius-sm); }
+.app-aurora .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); outline: none; }
+.app-aurora .kw-chip { font-size: 12.5px; padding: 5px 12px; border-radius: 999px; }
+.app-aurora .binder-row { padding: 6px 10px; font-size: 14px; border-radius: 10px; margin: 0 6px; gap: 6px; }
+.app-aurora .binder-row svg, .app-aurora .binder-row img.emoji { transform: scale(1.15); }
+.app-aurora .insp-tabs button { font-size: 13px; padding: 10px 12px; font-weight: 700; }
+.app-aurora .insp-tabs button[aria-selected='true'] { color: var(--accent); }
+.app-aurora .toolwin { border-radius: var(--au-radius-lg); box-shadow: 0 22px 56px rgba(0,0,0,.32); border-color: color-mix(in srgb, var(--border-dark) 70%, transparent); }
+.app-aurora .toolwin-head { padding: 10px 14px; font-size: 14px; background: color-mix(in srgb, var(--chrome) 70%, var(--panel)); }
+.app-aurora .toolwin-head .minibtn { padding: 4px 8px; }
+.app-aurora .toolwin-body { font-size: 14px; }
+.app-aurora .modal { border-radius: var(--au-radius-xl); box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+.app-aurora .modal h2 { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.app-aurora .modal-backdrop { backdrop-filter: blur(6px); background: rgba(10, 12, 18, .42); }
+.app-aurora .dropdown { border-radius: var(--au-radius-lg); padding: 8px; box-shadow: 0 22px 56px rgba(0,0,0,.28); min-width: 240px; }
+.app-aurora .dropdown button { font-size: 14px; padding: 9px 12px; border-radius: 10px; }
+.app-aurora .dropdown button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.app-aurora .dropdown .divider { margin: 6px 4px; }
+.app-aurora .card { border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.14); }
+.app-aurora .paper { border-radius: 16px; }
+.app-aurora .formatbar { padding: 8px 12px; gap: 6px; }
+.app-aurora .formatbar .minibtn, .app-aurora .formatbar button { border-radius: 9px; }
+.app-aurora .toolhub-card, .app-aurora .cmd-item { border-radius: 14px; }
+.app-aurora .cmd-palette { border-radius: var(--au-radius-xl); }
+.app-aurora .cmd-input { font-size: 17px; padding: 14px 16px; }
+.app-aurora .tool-dock-chip { border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+.app-aurora .stash-icon { transform: scale(1.15); }
+.app-aurora ::-webkit-scrollbar { width: 10px; height: 10px; }
+.app-aurora ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--muted) 35%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+.app-aurora ::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- 반응형 ---------- */
+@media (max-width: 1180px) {
+  .au-action-tx { display: none; }
+  .au-action { padding: 0 12px; }
+  .au-crumbs { display: none; }
+}
+@media (max-width: 900px) {
+  .app-aurora { --au-nav-w: 76px; --au-gap: 8px; }
+  .au-nav-label { display: none; }
+  .au-nav-btn { min-height: 52px; }
+  .au-brand-name { display: none; }
+  .au-title { max-width: 180px; font-size: 16px; }
+  .au-skins { display: none; } /* 좁은 폭에서는 메뉴/팔레트로 전환 */
+  .au-menu-btn { padding: 0 10px; font-size: 13px; }
+  .au-save-tx { display: none; }
+  .au-top-row { flex-wrap: wrap; }
+}
+
+/* 하단 상태바(공용 .footer) — 카드형 작업 공간과 어울리게 */
+.app-aurora .footer { font-size: 12.5px; padding: 0 16px; gap: 14px; background: color-mix(in srgb, var(--au-surface) 82%, transparent); border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent); white-space: nowrap; overflow: hidden; }

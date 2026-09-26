@@ -15,8 +15,9 @@ const STEPS_TO_CLASSIC: CoachStep[] = [
   { emoji: '↩️', title: '언제든 돌아갈 수 있어요', body: '오른쪽 위 ‘Studio’ 버튼으로 언제든 모던 UI 로 복귀! 원고·데이터는 완전히 동일하게 보존됩니다.', target: '.toolbar' },
 ]
 
-export default function SkinCoach({ skin, onClose }: { skin: 'classic' | 'studio'; onClose: () => void }) {
-  const steps = skin === 'studio' ? STEPS_TO_STUDIO : STEPS_TO_CLASSIC
+export default function SkinCoach({ skin, onClose }: { skin: 'classic' | 'studio' | 'aurora'; onClose: () => void }) {
+  // 오로라(디자인 2)는 헤더의 디자인 스위처가 항상 보이므로 스튜디오 안내(레일·메뉴 위치가 같은 구조)를 재사용
+  const steps = skin === 'classic' ? STEPS_TO_CLASSIC : STEPS_TO_STUDIO
   const [i, setI] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const [pos, setPos] = useState({ left: 0, top: 0 })
