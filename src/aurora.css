@@ -244,17 +244,25 @@
   background: transparent; color: var(--muted); cursor: pointer; flex-shrink: 0;
   transition: transform .16s cubic-bezier(.34,1.56,.64,1), color .14s, background .14s;
 }
+/* 독 아이콘은 글에 집중되도록 전부 짙은 회색('참고문헌' 톤) — 뷰 색(--c)은 현재 뷰의 작은 점과 활성 테두리에만 살짝 */
 .au-dock-ico {
-  display: grid; place-items: center; width: 60px; height: 60px; border-radius: 20px; color: #fff;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--c) 92%, #fff), color-mix(in srgb, var(--c) 78%, #000));
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 35%, transparent), inset 0 1px 0 rgba(255,255,255,.35);
-  transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s;
+  display: grid; place-items: center; width: 60px; height: 60px; border-radius: 20px; color: var(--au-dock-ico-fg, #e6e9f0);
+  background: linear-gradient(145deg, var(--au-dock-ico-a, #58606e), var(--au-dock-ico-b, #3a414d));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255,255,255,.14);
+  transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s, background .16s;
 }
-.au-dock-btn:hover .au-dock-ico { transform: translateY(-4px) scale(1.06); }
+.au-dock-btn:hover .au-dock-ico { transform: translateY(-4px) scale(1.06); background: linear-gradient(145deg, var(--au-dock-ico-hover-a, #6a7382), var(--au-dock-ico-hover-b, #4a5261)); }
 .au-dock-btn:active .au-dock-ico { transform: scale(.95); }
 .au-dock-btn.active { color: var(--text); }
-.au-dock-btn.active .au-dock-ico { animation: auBounce .5s cubic-bezier(.34,1.56,.64,1); transform: translateY(-8px) scale(1.12); box-shadow: 0 12px 26px color-mix(in srgb, var(--c) 55%, transparent), 0 0 0 4px color-mix(in srgb, var(--c) 28%, transparent); }
+.au-dock-btn.active .au-dock-ico { animation: auBounce .5s cubic-bezier(.34,1.56,.64,1); transform: translateY(-8px) scale(1.12); background: linear-gradient(145deg, var(--au-dock-ico-hover-a, #6a7382), var(--au-dock-ico-hover-b, #4a5261)); box-shadow: 0 12px 26px rgba(0, 0, 0, .4), 0 0 0 3px color-mix(in srgb, var(--c) 45%, transparent); }
 .au-dock-btn.active::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--c); margin-top: 1px; }
+/* 오른쪽 도구 묶음(창작 스튜디오·도구 허브·장르·내보내기·설정)은 한 단계 더 짙은 슬레이트 — 뷰 묶음과 구분되되 회색 톤 유지 */
+.au-dock-tool .au-dock-ico { background: linear-gradient(145deg, var(--au-dock-tool-a, #3d4452), var(--au-dock-tool-b, #262b36)); color: var(--au-dock-tool-fg, #c9cfda); }
+.au-dock-btn.au-dock-tool:hover .au-dock-ico, .au-dock-btn.au-dock-tool.active .au-dock-ico { background: linear-gradient(145deg, var(--au-dock-tool-hover-a, #4c5463), var(--au-dock-tool-hover-b, #333a47)); }
+[data-theme='light'] .app-aurora, [data-theme='sepia'] .app-aurora {
+  --au-dock-ico-fg: #ffffff; --au-dock-ico-a: #7a8493; --au-dock-ico-b: #5b6472; --au-dock-ico-hover-a: #8b95a4; --au-dock-ico-hover-b: #6b7482;
+  --au-dock-tool-fg: #f1f3f7; --au-dock-tool-a: #5b6472; --au-dock-tool-b: #3f4653; --au-dock-tool-hover-a: #6b7482; --au-dock-tool-hover-b: #4d5563;
+}
 .au-dock-label { font-size: 12.5px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
 .au-dock-tool { width: 76px; }
 .au-dock-tool .au-dock-ico { width: 52px; height: 52px; border-radius: 16px; }
