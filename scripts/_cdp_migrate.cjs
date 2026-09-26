@@ -18,7 +18,7 @@ async function main(){
   const proj = `{id:'mig-test-1',title:'옛프로젝트_MIG',modified:123456,items:{},rootOrder:[],snapshots:{},settings:{theme:'dark'}}`
   await ev(ws,sid, idbPut('scrivener-web','projects',proj))
   // 옛 localStorage 키 심기 + 마이그레이션 플래그 제거(마치 업데이트 직후처럼)
-  await ev(ws,sid,`localStorage.setItem('scrivweb:migtest','보존값123');localStorage.setItem('scrivener-web:lastProjectId','mig-test-1');localStorage.removeItem('sry:ls-migrated');localStorage.removeItem('sry:idb-migrated');return 1`)
+  await ev(ws,sid,`localStorage.setItem('scrivweb:migtest','보존값123');localStorage.setItem('scrivener-web:lastProjectId','mig-test-1');localStorage.removeItem('sry:ls-migrated');localStorage.removeItem('sry:idb-migrated');localStorage.removeItem('sry:lastProjectId');return 1`) // 업데이트 전 상태에는 sry:lastProjectId 가 없다(#34: 첫 실행 기본 프로젝트도 즉시 기록되므로 제거해야 위장이 성립)
   // 새 sry DB 는 비워둔다(마이그레이션 트리거 조건). 이미 만들어졌을 수 있으니 삭제.
   await ev(ws,sid,`await new Promise(r=>{const q=indexedDB.deleteDatabase('sry');q.onsuccess=()=>r(1);q.onerror=()=>r(1);q.onblocked=()=>r(1)});return 1`)
   // 2) 리로드 → 부팅 시 마이그레이션 실행

@@ -61,7 +61,7 @@ async function main() {
 
   const ok = [], bad = []
   const t = (c, m) => { if (c) ok.push(m); else { bad.push(m); console.log('[ISSUE] ' + m) } }
-  const waitHook = async () => { for (let i = 0; i < 35; i++) { await sleep(400); try { if (await ev(ws, sid, "return typeof window.__scriv==='object'&&typeof window.__setModal==='function'&&typeof window.__sryfmt==='object'")) return true } catch { /* loading */ } } return false }
+  const waitHook = async () => { for (let i = 0; i < 75; i++) { await sleep(400); try { if (await ev(ws, sid, "return typeof window.__scriv==='object'&&typeof window.__setModal==='function'&&typeof window.__sryfmt==='object'")) return true } catch { /* loading */ } } return false }
   const dismiss = () => ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.modal button,.tour-skip')).find(function(x){return /시작하기|다시 보지|그만 보기/.test(x.textContent||'')});if(b)b.click();return 1").catch(() => {})
 
   // ── 결정성 확보: 클래식 스킨으로 고정(저장 버튼 .save-btn 확인용) 후 1회 새로고침 ──

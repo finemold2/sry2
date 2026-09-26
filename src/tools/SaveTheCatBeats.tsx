@@ -91,7 +91,7 @@ function loadStore(): Store {
   }
 }
 
-export default function SaveTheCatBeats() {
+export default function SaveTheCatBeats({ payload }: { payload?: Record<string, unknown> } = {}) {
   const [store, setStore] = useState<Store>(() => loadStore())
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [cardDraft, setCardDraft] = useState<Record<string, string>>({})
@@ -99,6 +99,14 @@ export default function SaveTheCatBeats() {
   const [editText, setEditText] = useState('')
   const [note, setNote] = useState('')
   const [copied, setCopied] = useState('')
+  // [연계] 시놉시스 도구 등이 보낸 작품 제목(payload.title) — 비어 있을 때만 채움
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const t = typeof payload.title === 'string' ? payload.title.trim() : ''
+    if (t) setStore((prev) => (prev.title ? prev : { ...prev, title: t }))
+  }, [payload]) // eslint-disable-line
   const mounted = useRef(true)
 
   useEffect(() => {

@@ -31,7 +31,8 @@ async function main() {
   // 실제 마우스 이벤트(합성 PointerEvent 금지 — React 핸들러 미발화)
   const M = (sid, type, x, y) => rpc(ws, 'Input.dispatchMouseEvent', type === 'mouseMoved' ? { type, x: Math.round(x), y: Math.round(y), button: 'left', buttons: 1 } : { type, x: Math.round(x), y: Math.round(y), button: 'left', buttons: 1, clickCount: 1 }, sid)
   // 윈도 keydown 디스패치(앱은 window keydown 에서 ctrl+숫자=뷰 전환을 처리; 스킨 무관)
-  const keyView = (sid, key) => ev(ws, sid, "window.dispatchEvent(new KeyboardEvent('keydown',{key:'" + key + "',ctrlKey:true,bubbles:true,cancelable:true}));return 1")
+  // #30: 빈 문서 오토포커스로 에디터가 포커스를 쥐면 isTyping() 가드가 ⌘숫자 뷰 전환을 무시 → 먼저 blur
+  const keyView = (sid, key) => ev(ws, sid, "try{if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur()}catch(e){};window.dispatchEvent(new KeyboardEvent('keydown',{key:'" + key + "',ctrlKey:true,bubbles:true,cancelable:true}));return 1")
   const closeModal = (sid) => ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.modal button,.tour-skip')).find(function(x){return /시작하기|다시 보지|그만 보기/.test(x.textContent||'')});if(b)b.click();return 1")
 
   // 한 스킨에서: 캔버스 진입 → 카드 2개 추가 → 맨 위 카드를 +160,+110 드래그 → 효과·독립·뷰왕복 단언.

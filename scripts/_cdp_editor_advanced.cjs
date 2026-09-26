@@ -53,6 +53,9 @@ async function main() {
   const ws = new WebSocket(await bws()); await new Promise((r) => ws.addEventListener('open', r))
   const { targetId } = await rpc(ws, 'Target.createTarget', { url: 'http://localhost:4178/' })
   const { sessionId: sid } = await rpc(ws, 'Target.attachToTarget', { targetId, flatten: true })
+  // #27: 편집(dirty) 후 Page.navigate 시 앱의 beforeunload(원고 안전) 다이얼로그가 헤드리스 navigate 를 막아 timeout → 자동 수락
+  await rpc(ws, 'Page.enable', {}, sid)
+  ws.addEventListener('message', (e) => { let d; try { d = JSON.parse(e.data) } catch { return } if (d.sessionId === sid && d.method === 'Page.javascriptDialogOpening') rpc(ws, 'Page.handleJavaScriptDialog', { accept: true }, sid).catch(() => {}) })
 
   // 실제 키보드/텍스트 입력(Input 도메인) — Runtime.enable 미사용으로 타임아웃 없음.
   const key = async (mods, vk, code, k) => {

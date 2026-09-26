@@ -14,7 +14,7 @@ async function ev(ws, sid, x) { const r = await rpc(ws, 'Runtime.evaluate', { ex
 
 // 뷰 전환 버튼 클릭 — App.tsx viewBtn: button.tbtn[aria-label="<라벨>"] 정확 매칭(.seg 의존 안 함). 반환=클릭 후 aria-pressed.
 const VIEW_LABEL = { editor: '에디터 (⌘1)', corkboard: '코르크보드 (⌘2)', outliner: '아웃라이너 (⌘3)' }
-const clickView = (key) => { const lbl = VIEW_LABEL[key]; return `const b=document.querySelector('button.tbtn[aria-label='+${JSON.stringify(JSON.stringify(lbl))}+']');if(!b)return'no:'+${JSON.stringify(lbl)};b.click();return b.getAttribute('aria-pressed')` }
+const clickView = (key) => { const lbl = VIEW_LABEL[key]; return `const b=document.querySelector('button.tbtn[aria-label='+${JSON.stringify(JSON.stringify(lbl))}+']');if(!b)return'no:'+${JSON.stringify(lbl)};b.click();return new Promise(r=>setTimeout(()=>r(b.getAttribute('aria-pressed')),150))` } // React 재렌더 후 판독
 // 바인더 '+ 글' 버튼(검증된 셀렉터: _cdp_binder.cjs). 활성 항목 컨테이너(기본 root-draft) 끝에 텍스트 추가 + 인라인 rename 시작.
 const addDocBtn = `const b=document.querySelector('.binder .minibtn[title="새 글"]')||document.querySelector('.binder .minibtn[title="새 텍스트"]');if(b){b.click();return 1}return 0`
 // 인라인 rename input(.binder-rename)에 제목 입력 + Enter 커밋.

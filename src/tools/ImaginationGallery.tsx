@@ -147,6 +147,14 @@ export default function ImaginationGallery({ payload }: { payload?: Record<strin
   const [err, setErr] = useState('')
   const [prompt, setPrompt] = useState(PROMPTS[0])
   const [note, setNote] = useState('') // 연계 동작 안내 메시지
+  // [연계] 무드링(cat) 이 보낸 갤러리 카테고리로 시작
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const c = typeof payload.cat === 'string' ? payload.cat : ''
+    if (CATS.some((x) => x.key === c)) setCat(c as Cat)
+  }, [payload]) // eslint-disable-line
   const nonce = useRef(0)
   const acRef = useRef<AbortController | null>(null)
   const alive = useRef(true)

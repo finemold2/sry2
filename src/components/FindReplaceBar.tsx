@@ -56,8 +56,11 @@ function findRanges(
   }
   const hay = caseSensitive ? full : full.toLowerCase()
   const needle = caseSensitive ? query : query.toLowerCase()
-  const locate = (pos: number) => {
-    for (const m of map) if (pos <= m.start + m.len) return { node: m.node, offset: pos - m.start }
+  // 시작 위치는 그 위치를 '포함'하는 노드(pos < end)를, 끝 위치는 pos <= end 인 노드를 고른다.
+  // 시작에도 <= 를 쓰면 문단 첫 글자 매치가 '앞 문단 텍스트 노드의 끝'에서 시작해 선택이 블록 경계를 넘고
+  // (selection.toString() 이 "\n고양이"), 바꾸기 1개가 매치 판정에 실패하던 버그가 있었다.
+  const locate = (pos: number, isEnd = false) => {
+    for (const m of map) if (isEnd ? pos <= m.start + m.len : pos < m.start + m.len) return { node: m.node, offset: pos - m.start }
     const last = map[map.length - 1]
     return last ? { node: last.node, offset: last.len } : null
   }
@@ -78,7 +81,7 @@ function findRanges(
   while (idx >= 0 && guard++ < 100000) {
     if (boundaryOk(idx)) {
       const s = locate(idx)
-      const e = locate(idx + needle.length)
+      const e = locate(idx + needle.length, true)
       if (s && e) {
         const r = document.createRange()
         try {

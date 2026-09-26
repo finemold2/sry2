@@ -15,7 +15,7 @@ await rpc(ws,'Page.navigate',{url:APP},s)
 for(let i=0;i<40;i++){await sleep(400);try{if((await ev(ws,s,'typeof window.__openTool'))==='function')break}catch{}}
 await sleep(500)
 // 깨끗한 상태
-await ev(ws,s,`Object.keys(localStorage).filter(k=>k.indexOf('scrivweb:stash')===0).forEach(k=>localStorage.removeItem(k))`)
+await ev(ws,s,`Object.keys(localStorage).filter(k=>k.indexOf('sry:stash')===0).forEach(k=>localStorage.removeItem(k))`)
 await rpc(ws,'Page.navigate',{url:APP},s);await sleep(1500)
 ok(await ev(ws,s,`!!document.querySelector('.stash-icon')`),'플로팅 수집함 아이콘 표시')
 ok(await ev(ws,s,click('.stash-icon'))==='ok','아이콘 클릭')
@@ -24,11 +24,14 @@ ok(await ev(ws,s,`!!document.querySelector('.stash-win')`),'수집함 창 열림
 ok(await ev(ws,s,click('.stash-head button','메모'))==='ok','➕메모 클릭')
 await sleep(300)
 // 메모 텍스트 입력 후 blur
-await ev(ws,s,`(function(){var t=document.querySelector('.stash-memo-edit');if(t){t.value='갑자기 떠오른 아이디어';t.dispatchEvent(new Event('input',{bubbles:true}));t.blur();}return 1})()`);await sleep(300)
+await ev(ws,s,`(function(){var t=document.querySelector('.stash-memo-edit');if(t){t.value='갑자기 떠오른 아이디어';t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new FocusEvent('focusout',{bubbles:true}));t.blur();}return 1})()`);await sleep(300)
 const cnt1=await ev(ws,s,`document.querySelectorAll('.stash-item').length`)
 ok(cnt1>=1,'메모 항목 추가됨('+cnt1+')')
-// 영속: 새로고침 후에도 유지
+// 영속: 새로고침 후에도 유지(저장 반영 여유를 두고 재로드)
+await sleep(800)
+console.log('  (디버그) 저장 키: '+await ev(ws,s,`Object.keys(localStorage).filter(k=>k.indexOf('sry:stash:items')===0).map(k=>k+'='+(localStorage.getItem(k)||'').length).join(', ')`)+' / projId='+await ev(ws,s,`window.__scriv.state().id`))
 await rpc(ws,'Page.navigate',{url:APP},s);await sleep(1600)
+console.log('  (디버그) 재로드 projId='+await ev(ws,s,`window.__scriv.state().id`))
 ok((await ev(ws,s,`document.querySelector('.stash-badge')?document.querySelector('.stash-badge').innerText:'0'`))!=='0','새로고침 후 배지 유지(영속)')
 await ev(ws,s,click('.stash-icon'));await sleep(400)
 const cnt2=await ev(ws,s,`document.querySelectorAll('.stash-item').length`)
@@ -39,6 +42,6 @@ const cnt3=await ev(ws,s,`document.querySelectorAll('.stash-item').length`)
 ok(cnt3===cnt2-1,'× 제거 시 항목만 빠짐('+cnt2+'→'+cnt3+')')
 ok(exc.length===0,'예외 없음 ('+exc.slice(0,2).join(' | ')+')')
 // 정리
-await ev(ws,s,`Object.keys(localStorage).filter(k=>k.indexOf('scrivweb:stash')===0).forEach(k=>localStorage.removeItem(k))`)
+await ev(ws,s,`Object.keys(localStorage).filter(k=>k.indexOf('sry:stash')===0).forEach(k=>localStorage.removeItem(k))`)
 console.log('\n=== 수집함 E2E: '+P+' 통과 / '+F+' 실패 ===')
 ws.close();if(F>0)process.exit(1)})().catch(e=>{console.log('SCRIPT ERR '+e.message);process.exit(1)})

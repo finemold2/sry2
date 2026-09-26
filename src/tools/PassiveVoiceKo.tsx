@@ -259,10 +259,19 @@ function runChecks(text: string): Hit[] {
 const KIND_COLOR: Record<Kind, string> = { error: 'var(--warn)', warn: 'var(--accent)', info: 'var(--muted)' }
 const KIND_LABEL: Record<Kind, string> = { error: '이중피동', warn: '어색한 피동', info: '번역투' }
 
-export default function PassiveVoiceKo() {
+export default function PassiveVoiceKo({ payload }: { payload?: Record<string, unknown> } = {}) {
   const [text, setText] = useState('')
   const [copied, setCopied] = useState(false)
   const [filter, setFilter] = useState<'all' | Kind>('all')
+
+  // [연계] 다른 도구가 보낸 본문(payload.text)을 점검 대상으로 채움 — 같은 payload 는 1회만 처리(부모 리렌더 시 재적용 방지)
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const t = typeof payload.text === 'string' ? payload.text : ''
+    if (t.trim()) setText(t)
+  }, [payload]) // eslint-disable-line
   const copyTimer = useRef<number | null>(null)
   const taRef = useRef<HTMLTextAreaElement | null>(null)
 

@@ -172,11 +172,27 @@ export default function RelationshipMap({ payload }: RelationshipMapProps) {
       const id = addNamedNode(nm, summarizeChar(c as Partial<SharedCharacter>))
       if (id) added++
     }
+    // [연계] 인물 대조(foil) 생성기 등: pair:[a,b] → 두 노드 + 관계선(대조), focus → 노드
+    const p = payload as Record<string, unknown>
+    const pair = (Array.isArray(p.pair) ? p.pair : []).filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim().slice(0, 40))
+    const focus = typeof p.focus === 'string' ? p.focus.trim() : ''
+    for (const nm of [...pair, focus]) { if (nm && addNamedNode(nm)) added++ }
+    if (pair.length === 2 && pair[0] !== pair[1]) pendingPair.current = [pair[0], pair[1]]
     if (mounted.current) {
       if (added > 0) setNote(`인물 ${added}명을 노드로 추가했어요.`)
-      else if (list.length) setNote('받은 인물이 이미 모두 추가되어 있어요.')
+      else if (list.length || pair.length) setNote('받은 인물이 이미 모두 추가되어 있어요.')
     }
   }, [payload]) // eslint-disable-line
+  // pair 로 받은 두 인물이 노드로 존재하면 '기타(대조)' 관계선을 1회 연결(이미 있으면 생략)
+  const pendingPair = useRef<[string, string] | null>(null)
+  useEffect(() => {
+    const pp = pendingPair.current
+    if (!pp) return
+    const na = nodes.find((n) => n.name.trim() === pp[0]), nb = nodes.find((n) => n.name.trim() === pp[1])
+    if (!na || !nb) return
+    pendingPair.current = null
+    setEdges((prev) => prev.some((e) => (e.a === na.id && e.b === nb.id) || (e.a === nb.id && e.b === na.id)) ? prev : [...prev, { id: newId(), a: na.id, b: nb.id, type: 'other', label: '대조' }])
+  }, [nodes])
 
   // ===== [연계] 공유 라이브러리 인물 전체를 노드로 불러오기 =====
   const importLibraryChars = () => {

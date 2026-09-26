@@ -117,7 +117,7 @@ function loadState(): { list: Conflict[]; openId: string | null } {
   } catch { return { list: [], openId: null } }
 }
 
-export default function ConflictBuilder() {
+export default function ConflictBuilder({ payload }: { payload?: Record<string, unknown> } = {}) {
   const init = useRef(loadState())
   const [list, setList] = useState<Conflict[]>(init.current.list)
   const [openId, setOpenId] = useState<string | null>(init.current.openId)
@@ -144,6 +144,18 @@ export default function ConflictBuilder() {
     return () => window.clearTimeout(t)
   }, [copied])
 
+  // [연계] 갈등 리액터·장르 갈등 합성기 등이 보낸 내용으로 새 갈등 폼을 미리 채움(사용자가 확인 후 저장)
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const s = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string).trim() : '')
+    const has = ['title', 'character', 'desire', 'obstacle', 'stakes', 'text', 'note'].some((k) => s(k))
+    if (!has) return
+    setEditing({ ...emptyForm(), id: newId(), title: s('title'), character: s('character'), desire: s('desire'), obstacle: s('obstacle'), stakes: s('stakes'), notes: [s('text'), s('note')].filter(Boolean).join('\n') })
+    setOpenId(null); setConfirmDel(null)
+    setNote('연계로 받은 내용을 새 갈등 폼에 채웠어요. 다듬은 뒤 저장하세요.')
+  }, [payload]) // eslint-disable-line
   const startNew = () => { setEditing({ ...emptyForm(), id: newId() }); setOpenId(null); setConfirmDel(null) }
   const startEdit = (c: Conflict) => { setEditing({ ...c, checks: { ...c.checks } }); setConfirmDel(null) }
   const cancelEdit = () => setEditing(null)

@@ -66,9 +66,14 @@ async function runSkin(ws, sid, skin, t, errs) {
   await setStyle('apa'); await sleep(250)
 
   // 본문 인용: 참고문헌 뷰엔 라이브 에디터가 없어 클립보드 폴백 메시지가 떠야 함
+  // 헤드리스 크롬은 clipboard.writeText 가 권한 프롬프트에 걸려 영원히 대기 → 스텁으로 즉시 성공 처리(메시지 경로 검증 목적)
+  await E(`try{Object.defineProperty(navigator,'clipboard',{value:{writeText:function(){return Promise.resolve()}},configurable:true})}catch(e){};return 1`)
   await clickBtn('본문에 인용', true); await sleep(600)
   const flashMsg = await E(`return [].slice.call(document.querySelectorAll('span')).some(function(x){return /복사했|클립보드|실패|삽입했/.test(x.textContent||'')})`)
-  t(flashMsg, `[${skin}] '본문에 인용' 클릭 → 상태 메시지 표시(폴백 안내)`)
+  // 문서가 열려 있지 않으면 버튼이 disabled + '먼저 문서를 열어주세요' 툴팁으로 안내(현재 설계)
+  const disabledHint = await E(`var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return (x.textContent||'').trim()==='본문에 인용'});return !!(b&&b.disabled&&/문서를 열어/.test(b.title||''))`)
+  if (!flashMsg && !disabledHint) console.log('  (디버그) 인용 버튼: ' + await E(`var bs=[].slice.call(document.querySelectorAll('button')).filter(function(x){return /본문에 인용/.test(x.textContent||'')});return JSON.stringify(bs.map(function(b){return {t:(b.textContent||'').trim(),d:b.disabled,title:b.title}}))`))
+  t(flashMsg || disabledHint, `[${skin}] '본문에 인용' 클릭 → 상태 메시지 또는 비활성+안내 툴팁`)
 
   // scriv:insertCitation — 에디터 뷰에서 실제 본문 커서에 인용 삽입
   await setView('editor')

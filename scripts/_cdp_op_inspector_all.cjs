@@ -93,10 +93,11 @@ async function runSkin(ws, skin, ok, bad) {
   await E('var i=document.querySelector(\'.insp-body input.field[placeholder="새 키워드"]\'); if(i)i.dispatchEvent(new KeyboardEvent(\'keydown\',{key:\'Enter\',bubbles:true})); return 1'); await sleep(280)
   const kwAfter = await E("return document.querySelectorAll('.insp-body .kw-chip').length")
   t(kwAfter > kwBefore, '키워드 추가됨(칩 ' + kwBefore + '→' + kwAfter + ')')
-  await E("var c=document.querySelector('.insp-body .kw-chip'); if(c)c.click(); return 1"); await sleep(220)
-  const tagged = await E("var c=document.querySelector('.insp-body .kw-chip'); return c?c.classList.contains('on'):false")
+  const QA_CHIP = "[].slice.call(document.querySelectorAll('.insp-body .kw-chip')).find(function(c){return /QA키워드/.test(c.textContent||'')})||document.querySelector('.insp-body .kw-chip')"
+  await E("var c=" + QA_CHIP + "; if(c&&!c.classList.contains('on'))c.click(); return 1"); await sleep(220)
+  const tagged = await E("var c=" + QA_CHIP + "; return c?c.classList.contains('on'):false")
   await TAB('meta'); await TAB('keywords') // 왕복
-  const stillTagged = await E("var c=document.querySelector('.insp-body .kw-chip'); return c?c.classList.contains('on'):false")
+  const stillTagged = await E("var c=" + QA_CHIP + "; return c?c.classList.contains('on'):false")
   t(tagged && stillTagged, '키워드 칩 태깅(.on) → 왕복 후 영속')
 
   // ── 스냅샷 탭: 지금찍기 → 본문 실편집 → 되돌리기 로 원복 ──

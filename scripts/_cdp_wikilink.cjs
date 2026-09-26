@@ -38,7 +38,7 @@ async function main() {
   // 문서 여러 개 생성(추천 후보 확보) — "+ 글" 버튼(title=새 텍스트). count 가 오를 때까지 반복.
   let docCount = 0
   for (let i = 0; i < 8 && docCount < 4; i++) {
-    await ev(ws, sid, `(()=>{const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('title')==='새 텍스트');if(b)b.click()})()`)
+    await ev(ws, sid, `(()=>{const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('title')==='새 글'||x.getAttribute('title')==='새 텍스트');if(b)b.click()})()`)
     await sleep(450)
     docCount = await ev(ws, sid, `window.__scriv?window.__scriv.entries().filter(e=>e.type==='text').length:0`)
   }

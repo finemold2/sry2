@@ -33,6 +33,8 @@ async function main() {
   const MARK = 'SAVECYCLE-MARK-' + Date.now()
   const RTF = '{\\rtf1\\ansi\\deff0 ' + MARK + '\\par}' // 최소 유효 RTF + 마커
   const seed = await ev(ws, sid, `
+    // #30: 빈 문서 오토포커스 — 포커스된 에디터는 외부 setBody 를 무시하고 blur 시 옛 DOM 으로 되덮으므로 먼저 blur
+    try { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur() } catch (e) {}
     const id = window.__scriv.setBody(${JSON.stringify(RTF)});
     const s = window.__scriv.state();
     return { id, projId: s.id };`)
@@ -52,10 +54,16 @@ async function main() {
   await rpc(ws, 'Page.navigate', { url: 'http://localhost:4178/' }, sid); await sleep(3800)
   await dismissWelcome(ws, sid); await sleep(400)
   // 재로딩이 같은 프로젝트를 복원했는지 + 같은 문서의 본문 마커가 살아있는지
-  const afterReload = await ev(ws, sid, `
+  let afterReload = null
+  for (let i = 0; i < 16; i++) { // 복원은 비동기(IDB) — 최대 8초 폴링
+    afterReload = await ev(ws, sid, `
     const s = window.__scriv.state();
     const body = window.__scriv.bodyOf(${JSON.stringify(docId)});
     return { projId: s.id, hasDoc: !!window.__scriv.entries().find(e=>e.id===${JSON.stringify(docId)}), body };`)
+    if (afterReload && (afterReload.body || '').includes(MARK)) break
+    await sleep(500)
+  }
+  if (!(afterReload && (afterReload.body || '').includes(MARK))) console.log('  (디버그) projId=' + projId + ' docId=' + docId + ' → ' + JSON.stringify({ ...afterReload, body: String(afterReload && afterReload.body).slice(0, 100) }))
   t(afterReload && afterReload.projId === projId, '새로고침 후 같은 프로젝트 복원(id 일치: ' + (afterReload && afterReload.projId === projId) + ')')
   t(!!(afterReload && afterReload.hasDoc), '새로고침 후 같은 문서가 바인더에 존재(IDB 영속)')
   t(!!(afterReload && (afterReload.body || '').includes(MARK)), '새로고침 후 본문 마커 유지 — IDB 자동저장 영속 확인(핵심)')
@@ -131,8 +139,10 @@ async function main() {
   await ev(ws, sid, openFileMenu()); await sleep(250)
   await ev(ws, sid, clickMenuItem('빈 프로젝트로 시작')); await sleep(500)
   // requestSwitch 가 띄운 '프로젝트 전환' 확인 모달 존재 확인
+  // #31: 저장할 변경이 없으면(clean) 확인 모달 없이 즉시 전환 — 모달 또는 즉시 전환 둘 다 정상
   const switchAsk = await ev(ws, sid, `return [...document.querySelectorAll('.modal h2')].some(h=>/프로젝트 전환/.test(h.textContent||''))?1:0`)
-  t(!!switchAsk, '빈 프로젝트 메뉴 → "프로젝트 전환" 확인 모달 표시')
+  const switchedNow = (await ev(ws, sid, `return window.__scriv.state().id`)) !== beforeSwitch.id
+  t(!!switchAsk || switchedNow, '빈 프로젝트 메뉴 → "프로젝트 전환" 확인 모달 표시(또는 clean 상태 즉시 전환)')
   // '그냥 전환' 클릭(파일 내보내기 없이 진행)
   await ev(ws, sid, `const b=[...document.querySelectorAll('.modal button')].find(x=>/^그냥 전환$/.test((x.textContent||'').trim()));if(b)b.click();return b?1:0`)
   await sleep(1500) // newProject + idbSave + setLastProjectId

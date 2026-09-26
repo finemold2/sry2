@@ -26,13 +26,29 @@ const TOOL_ID = 'moodboard-grid'
 
 interface Props { payload?: Record<string, unknown> }
 
-export default function MoodboardGrid({ payload: _payload }: Props = {}) {
+export default function MoodboardGrid({ payload }: Props = {}) {
   const [query, setQuery] = useState('')
   const [submitted, setSubmitted] = useState('')
   const [pics, setPics] = useState<Pic[]>([])
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
   const [hidden, setHidden] = useState<Record<string, boolean>>({})
+  // [연계] 감정 색보정(query) → 즉시 검색 / 클리블랜드·메트 명화(image) → 보드 맨 앞에 카드 추가
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const s = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string).trim() : '')
+    if (s('image')) {
+      const pic: Pic = { id: 'linked:' + s('image'), url: s('image'), title: s('title') || '연계 이미지', creator: s('credit'), source: s('source'), license: s('license') || 'Public Domain' }
+      setPics((prev) => (prev.some((x) => x.url === pic.url) ? prev : [pic, ...prev]))
+      setSubmitted((prev) => prev || pic.title)
+      setErr('')
+    } else if (s('query') || s('q')) {
+      const q = s('query') || s('q')
+      setQuery(q); search(q)
+    }
+  }, [payload]) // eslint-disable-line
   const [saved, setSaved] = useState<Record<string, boolean>>({})
   const [copied, setCopied] = useState(false)
   const [addedToProject, setAddedToProject] = useState(false)

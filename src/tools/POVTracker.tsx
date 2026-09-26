@@ -92,7 +92,7 @@ function majority(values: string[]): string | null {
   return best
 }
 
-export default function POVTracker() {
+export default function POVTracker({ payload }: { payload?: Record<string, unknown> } = {}) {
   const initial = useRef<Row[]>(loadRows())
   const [rows, setRows] = useState<Row[]>(initial.current)
   const [note, setNote] = useState('')
@@ -123,6 +123,17 @@ export default function POVTracker() {
   }, [rows])
 
   // ===== CRUD =====
+  // [연계] 시점 교체 시뮬레이터(pov/person)·인물 중력장(text) 이 보낸 인물로 행 추가
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const s = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string).trim() : '')
+    const pov = s('pov') || s('name'), person = s('person'), text = s('text')
+    if (!pov && !text) return
+    setRows((prev) => [...prev, { ...blankRow(), pov, person: person || blankRow().person, note: text.slice(0, 200) }])
+    setNote(pov ? `‘${pov}’ 행을 추가했어요.` : '연계 메모를 새 행에 담았어요.')
+  }, [payload]) // eslint-disable-line
   const addRow = () => {
     setRows((prev) => [...prev, blankRow()])
   }

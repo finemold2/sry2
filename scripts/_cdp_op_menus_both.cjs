@@ -13,6 +13,8 @@ async function main() {
   const ws = new WebSocket(await bws()); await new Promise(r => ws.addEventListener('open', r))
   const { targetId } = await rpc(ws, 'Target.createTarget', { url: 'http://localhost:4178/' })
   const { sessionId: sid } = await rpc(ws, 'Target.attachToTarget', { targetId, flatten: true })
+  // 노트북급 뷰포트 고정(드롭다운 가림 판정 기준; 기본 타깃 크기는 600px 높이라 긴 메뉴가 스크롤 영역으로 들어간다)
+  await rpc(ws, 'Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false }, sid)
   await sleep(3800)
   const ok = [], bad = [], notes = []; const t = (c, m) => (c ? ok : bad).push(m)
   const E = (x) => ev(ws, sid, x)
@@ -60,7 +62,7 @@ async function main() {
     t(await dropOpen(scope), P + '파일 메뉴 드롭다운 열림')
     // (studio) 드롭다운 항목 가시성/비가림 검증
     if (skin === 'studio') {
-      const occ = JSON.parse(await E("var d=document.querySelector('.st-menubar .dropdown');if(!d)return JSON.stringify({err:'no-drop'});var bad=[];[].slice.call(d.querySelectorAll('button:not([disabled])')).forEach(function(b){var r=b.getBoundingClientRect();if(r.width<1||r.height<1)return;var cx=r.left+r.width/2,cy=r.top+r.height/2;var el=document.elementFromPoint(cx,cy);if(!d.contains(el))bad.push((b.textContent||'').trim().slice(0,14))});return JSON.stringify({total:d.querySelectorAll('button').length,vis:d.querySelectorAll('button').length-bad.length,occluded:bad});"))
+      const occ = JSON.parse(await E("var d=document.querySelector('.st-menubar .dropdown');if(!d)return JSON.stringify({err:'no-drop'});var bad=[];[].slice.call(d.querySelectorAll('button:not([disabled])')).forEach(function(b){b.scrollIntoView({block:'nearest'});var r=b.getBoundingClientRect();if(r.width<1||r.height<1)return;var cx=r.left+r.width/2,cy=r.top+r.height/2;var el=document.elementFromPoint(cx,cy);if(!d.contains(el))bad.push((b.textContent||'').trim().slice(0,14)+'←'+(el?el.tagName+'.'+String(el.className||'').slice(0,24)+'@'+Math.round(cy):'null@'+Math.round(cy)))});return JSON.stringify({total:d.querySelectorAll('button').length,vis:d.querySelectorAll('button').length-bad.length,occluded:bad});"))
       t(!occ.err && occ.total > 5, P + '파일 드롭다운에 항목 다수 렌더(' + (occ.total || 0) + '개)')
       t(!occ.err && occ.occluded.length === 0, P + '드롭다운 항목이 본문에 가려지지 않고 클릭 가능(가림 ' + ((occ.occluded || []).length) + '개)')
       if (occ.occluded && occ.occluded.length) notes.push('[APP-BUG] studio 파일 드롭다운 항목이 본문에 가려 클릭 불가: ' + occ.occluded.join(', '))
@@ -105,6 +107,8 @@ async function main() {
   await E("var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return (x.getAttribute('aria-label')||'')==='Studio UI 로 전환'});if(b)b.click();return 1"); await sleep(600)
   t(await E("return localStorage.getItem('sry:uiSkin')==='studio'"), '[studio] 스킨 전환 localStorage 영속(sry:uiSkin=studio)')
   t(await E("return !!document.querySelector('.studio-root') && !!document.querySelector('.st-menubar .menu-wrap')"), '[studio] 스튜디오 셸/메뉴바 렌더')
+  // 스튜디오 첫 진입 시 뜨는 투어/스킨 코치 말풍선(.tour-bubble)이 드롭다운을 덮어 가림 판정을 오염 → 먼저 닫기
+  await E("var b=[].slice.call(document.querySelectorAll('.tour-skip,.tour-bubble button,.modal button')).find(function(x){return /그만 보기|다시 보지|건너뛰기|닫기|시작하기/.test(x.textContent||'')});if(b)b.click();return 1"); await sleep(400)
   await runSkin('studio', '.st-menubar', '바인더')
   // 스튜디오 보기 메뉴: 명령 팔레트 → 모달(스튜디오 보기 드롭다운은 뷰전환 대신 액션 제공)
   await clickTrigger('.st-menubar', '보기'); await sleep(280)

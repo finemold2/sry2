@@ -94,6 +94,14 @@ export default function WorldWiki({ payload }: { payload?: Record<string, unknow
   const bodyRef = useRef<HTMLTextAreaElement | null>(null)
   const copyTimer = useRef<number | null>(null)
   const payloadDone = useRef(false) // payload.place/character 를 1회만 소비(중복 페이지 생성 방지)
+  // [연계] 참고 도구가 보낸 검색어(payload.q | title 문자열)로 위키 검색
+  const handledQuery = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledQuery.current === payload) return
+    handledQuery.current = payload
+    const q = typeof payload.q === 'string' ? payload.q.trim() : typeof payload.title === 'string' ? payload.title.trim() : ''
+    if (q) setQuery(q)
+  }, [payload]) // eslint-disable-line
 
   useEffect(() => {
     mounted.current = true

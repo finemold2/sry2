@@ -759,7 +759,7 @@ export default function HorrorDevices({ payload }: { payload?: Record<string, un
               </button>
               <button className="linkbtn" onClick={() => openToolLinked('plot-pyramid')} title="플롯 구조에 이 장치를 배치"><Emoji e="📐" /> 플롯 피라미드</button>
               <button className="linkbtn" onClick={() => openToolLinked('scene-forge', { genre: '호러·공포' })} title="이 장치로 공포 장면 만들기"><Emoji e="🎬" /> 장면 만들기</button>
-              <button className="linkbtn" onClick={() => openToolLinked('tension-curve-editor')} title="긴장 곡선에 이 비트를 얹기"><Emoji e="📈" /> 긴장 곡선</button>
+              <button className="linkbtn" onClick={() => openToolLinked('tension-curve')} title="긴장 곡선에 이 비트를 얹기"><Emoji e="📈" /> 긴장 곡선</button>
               <button className="linkbtn" onClick={() => openToolLinked('plot-twist-deck')} title="반전 카드로 비틀기 더 굴리기"><Emoji e="🃏" /> 반전 카드덱</button>
             </div>
           </div>

@@ -11,17 +11,17 @@ const CLOSE_WELCOME = "(()=>{var b=[].slice.call(document.querySelectorAll('.mod
 const OVERRIDE_PROMPT = "(()=>{window.prompt=function(){return 'https://example.org/page'};return 1})()"
 const RESET_STASH = "(()=>{var pid=window.__scriv.state().id;try{localStorage.removeItem('sry:stash:items:'+pid)}catch(e){};window.dispatchEvent(new Event('sry:stash-reload'));return pid})()"
 const OPEN_STASH = "(()=>{var i=document.querySelector('.stash-icon');if(i){i.click();return true}return false})()"
-const ENSURE_CANVAS = "(()=>{if(document.querySelector('.stash-canvas'))return true;var b=[].slice.call(document.querySelectorAll('.stash-win button')).find(function(x){return /캔버스 보기/.test(x.getAttribute('aria-label')||x.title||'')});if(b)b.click();return !!document.querySelector('.stash-canvas')})()"
-const ENSURE_LIST = "(()=>{if(document.querySelector('.stash-list'))return true;var b=[].slice.call(document.querySelectorAll('.stash-win button')).find(function(x){return /목록 보기/.test(x.getAttribute('aria-label')||x.title||'')});if(b)b.click();return !!document.querySelector('.stash-list')})()"
+const ENSURE_CANVAS = "(()=>{if(document.querySelector('.stash-canvas'))return true;var b=[].slice.call(document.querySelectorAll('.stash-win button')).find(function(x){return /캔버스 보기/.test(x.getAttribute('aria-label')||x.title||'')});if(b)b.click();return new Promise(function(r){setTimeout(function(){r(!!document.querySelector('.stash-canvas'))},250)})})()"
+const ENSURE_LIST = "(()=>{if(document.querySelector('.stash-list'))return true;var b=[].slice.call(document.querySelectorAll('.stash-win button')).find(function(x){return /목록 보기/.test(x.getAttribute('aria-label')||x.title||'')});if(b)b.click();return new Promise(function(r){setTimeout(function(){r(!!document.querySelector('.stash-list'))},250)})})()"
 const ADD_MEMO = "(()=>{var b=[].slice.call(document.querySelectorAll('.stash-win button')).find(function(x){return (x.title||'').indexOf('메모 추가')===0});if(b){b.click();return true}return false})()"
-const COMMIT_MEMO = "(()=>{var t=document.querySelector('.stash-memo-edit');if(!t)return false;var s=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;s.call(t,'수집메모하나');t.dispatchEvent(new Event('input',{bubbles:true}));t.blur();return true})()"
+const COMMIT_MEMO = "(()=>{var t=document.querySelector('.stash-memo-edit');if(!t)return false;var s=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;s.call(t,'수집메모하나');t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new FocusEvent('focusout',{bubbles:true}));t.blur();return true})()"
 const ADD_URL = "(()=>{var b=[].slice.call(document.querySelectorAll('.stash-win button')).find(function(x){return (x.title||'')==='URL 추가'});if(b){b.click();return true}return false})()"
 const MEMO_LABEL_OK = "(()=>{return [].slice.call(document.querySelectorAll('.stash-item-label')).some(function(x){return /수집메모하나/.test(x.textContent||'')})})()"
 const URL_PRESENT = "(()=>{return (document.querySelectorAll('.stash-item.k-url').length+document.querySelectorAll('.stash-row.k-url').length)>0})()"
 const ITEM_COUNT = "(()=>{return document.querySelectorAll('.stash-item').length})()"
-const CLICK_URL_ROW = "(()=>{var r=document.querySelector('.stash-row.k-url');if(r){r.click();return true}return false})()"
-const VIEWER_OPEN = "(()=>{return !!document.querySelector('.stash-viewer')})()"
-const CLOSE_VIEWER = "(()=>{var b=[].slice.call(document.querySelectorAll('.stash-viewer-head button')).find(function(x){return /닫기/.test(x.textContent||'')});if(b){b.click();return true}var bk=document.querySelector('.stash-viewer-backdrop');if(bk){bk.click();return true}return false})()"
+const CLICK_URL_ROW = "(()=>{window.__opened=[];window.open=function(u){window.__opened.push(String(u));return null};var r=document.querySelector('.stash-row.k-url');if(r){r.click();return true}return false})()"
+const VIEWER_OPEN = "(()=>{return !!document.querySelector('.stash-viewer')||((window.__opened||[]).length>0)})()" // #24: URL 은 새 탭(window.open)
+const CLOSE_VIEWER = "(()=>{if(!document.querySelector('.stash-viewer'))return true;var b=[].slice.call(document.querySelectorAll('.stash-viewer-head button')).find(function(x){return /닫기/.test(x.textContent||'')});if(b){b.click();return true}var bk=document.querySelector('.stash-viewer-backdrop');if(bk){bk.click();return true}return false})()" // 뷰어가 없으면(새 탭 방식) 닫기 불필요
 const MEMO_DOM_LEFT = "(()=>{var it=document.querySelector('.stash-item.k-memo');return it?Math.round(parseFloat(it.style.left)||0):-1})()"
 const MEMO_PERSIST_X = "(()=>{var pid=window.__scriv.state().id;var arr=JSON.parse(localStorage.getItem('sry:stash:items:'+pid)||'[]');var m=arr.find(function(i){return i.kind==='memo'});return m?Math.round(m.x):-1})()"
 const MEMO_RECT = "(()=>{var it=document.querySelector('.stash-item.k-memo');if(!it)return '';var r=it.getBoundingClientRect();return JSON.stringify({x:r.left+r.width/2,y:r.top+r.height/2})})()"
@@ -53,7 +53,7 @@ async function runSkin(ws, sid, skin, t, M) {
   t(await ev(ws, sid, VIEWER_OPEN), '[' + skin + '] 항목 뷰어 열림')
   t(await ev(ws, sid, CLOSE_VIEWER), '[' + skin + '] 뷰어 닫기 버튼 클릭')
   await sleep(300)
-  t(!(await ev(ws, sid, VIEWER_OPEN)), '[' + skin + '] 뷰어 닫힘')
+  t(!(await ev(ws, sid, "(()=>{return !!document.querySelector('.stash-viewer')})()")), '[' + skin + '] 뷰어 닫힘(새 탭 방식이면 뷰어 없음)')
   t(await ev(ws, sid, ENSURE_CANVAS), '[' + skin + '] 캔버스 보기로 복귀(.stash-canvas)')
   await sleep(250)
 

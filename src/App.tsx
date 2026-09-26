@@ -872,6 +872,12 @@ export default function App() {
         const firstText = Object.values(st.project.items).find((i) => i.type === 'text' && !i.root)
         if (firstText) st.select(firstText.id)
       }
+      // 데이터 안전: 첫 실행의 기본 프로젝트를 즉시 IDB 에 기록하고 마지막 프로젝트로 기억한다.
+      // 그렇지 않으면 원고를 한 글자도 안 고친 채 수집함·공유 라이브러리(프로젝트별 키)에 담은 내용이
+      // 새로고침 시 '새 프로젝트 id' 로 바뀌어 고아가 되던 문제(수집함 E2E 에서 확인).
+      // (레거시 마이그레이션이 비동기로 lastProjectId 를 채울 수 있으므로, 그 사이 값이 생겼으면 덮어쓰지 않는다.)
+      const fresh = st.project
+      idbSave(fresh).then(() => { if (!getLastProjectId()) setLastProjectId(fresh.id) }).catch(() => {})
       return
     }
     ;(async () => {

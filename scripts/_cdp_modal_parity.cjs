@@ -19,7 +19,7 @@ const DIALOG = ".modal-backdrop,.modal-overlay,[role='dialog']:not(.toolwin):not
 const INTERACT = "var SEL=" + JSON.stringify(DIALOG) + ";" +
   "var d=document.querySelector(SEL);if(!d)return 'no-dialog';" +
   // ① 텍스트 입력/textarea 가 있으면 네이티브 setter 로 값 주입 후 되읽기
-  "var inp=d.querySelector('input[type=\\\"text\\\"],input[type=\\\"search\\\"],input.field,input:not([type]):not([type=\\\"checkbox\\\"]):not([type=\\\"radio\\\"]),textarea');" +
+  "var inp=d.querySelector('input[type=\\\"text\\\"],input[type=\\\"search\\\"],input.field,input:not([type]):not([type=\\\"checkbox\\\"]):not([type=\\\"radio\\\"]),textarea:not([readonly])');" +
   "if(inp){var proto=inp.tagName==='TEXTAREA'?window.HTMLTextAreaElement.prototype:window.HTMLInputElement.prototype;var set=Object.getOwnPropertyDescriptor(proto,'value').set;set.call(inp,'테스트입력');inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));return inp.value==='테스트입력'?'input-ok':'input-fail';}" +
   // ② select 면 다른 옵션으로 변경
   "var sel=d.querySelector('select');if(sel&&sel.options.length>1){var s2=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value').set;var i=sel.selectedIndex>0?0:1;var nv=sel.options[i].value;s2.call(sel,nv);sel.dispatchEvent(new Event('change',{bubbles:true}));return sel.value===nv?'select-ok':'select-fail';}" +

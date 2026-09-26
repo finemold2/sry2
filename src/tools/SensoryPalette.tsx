@@ -291,6 +291,19 @@ export default function SensoryPalette({ payload }: ToolProps = {}) {
     setCopiedAll(false)
   }
 
+  // [연계] 무드링(placeKey)·은유 엔진(word) 이 보낸 장소/단어로 팔레트 선택
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const s = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string).trim() : '')
+    const byKey = PLACES.find((p) => p.key === s('placeKey') || p.key === s('place'))
+    const word = s('word') || s('query') || s('moodName')
+    const byName = word ? PLACES.find((p) => p.name.includes(word) || word.includes(p.name)) : undefined
+    const target = byKey || byName
+    if (target) { selectPlace(target.key); setLinkMsg(`‘${target.name}’ 팔레트를 열었어요.`) }
+    else if (word) setLinkMsg(`‘${word}’ 에 딱 맞는 장소는 없어 현재 팔레트를 유지해요.`)
+  }, [payload]) // eslint-disable-line
   const randomPlace = () => {
     // 같은 장소가 연달아 나오지 않도록 한 번 더 시도
     let p = pick(PLACES)

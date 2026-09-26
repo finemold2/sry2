@@ -85,7 +85,11 @@ async function runSkin(ws, sid, skin, t, getExc, getConErr) {
       else if (c.cat === 'modal') { pass = await ev(ws, sid, "return window.__qa.dialogOpen()"); detail = '모달출현=' + pass }
       else if (c.cat === 'view') { pass = await ev(ws, sid, "return window.__qa.hasSel('" + c.sel + "')"); detail = '뷰컨테이너=' + pass }
       else if (c.cat === 'add') { const after = await ev(ws, sid, "return window.__qa.itemCount()"); pass = before >= 0 && after > before; detail = '항목 ' + before + '→' + after }
-      else if (c.cat === 'comp') { pass = await ev(ws, sid, "return window.__qa.compOpen()"); detail = '집중모드오버레이=' + pass }
+      else if (c.cat === 'comp') {
+        // #28: 집중 모드는 '현재 창에서 / 새 창에서' 선택 모달을 먼저 띄운다 → '현재 창' 선택 후 오버레이 판정
+        await ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.focus-chooser button, .modal button')).find(function(x){return /현재 창/.test(x.textContent||'')});if(b)b.click();return !!b"); await sleep(400)
+        pass = await ev(ws, sid, "return window.__qa.compOpen()"); detail = '집중모드오버레이=' + pass
+      }
       else { const alive = await ev(ws, sid, "return window.__qa.alive()"); pass = alive && getExc() === e0; detail = getExc() > e0 ? ('예외+' + (getExc() - e0)) : '생존(예외0)' }
 
       // 효과형(modal/view/add/comp) 도 새 예외가 생기면 실패로 간주

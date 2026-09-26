@@ -4,6 +4,21 @@
 
 ## ▶▶ 다음 세션 이어받기 (2026-09-26, 최신) — 여기부터 읽으세요
 
+### 2026-09-26 #34: 전 기능 실동작 배터리(97 스크립트) 완주 + 도구 연계(payload) 전수 점검·수정 + 확정 버그 6건
+- **환경**: 클라우드 세션(npm 은 `NO_PROXY= npm ci --proxy $HTTPS_PROXY --https-proxy $HTTPS_PROXY --noproxy ""` 로 프록시 경유 필요). 러너: preview(:4178) 1개 + 스크립트마다 새 헤드리스 Chromium(:9222, 새 프로필) — `chrome --headless=new --no-sandbox --remote-debugging-port=9222 --user-data-dir=<tmp>`.
+- **실제 앱 버그 수정(확정, 전부 실동작 재검증)**
+  1. **찾기·바꾸기: 문단 첫 글자에서 시작하는 매치가 '앞 문단 끝'에서 선택되어(selection "\n고양이") 바꾸기 1개가 실패** — `FindReplaceBar.findRanges.locate` 시작 위치를 `pos < end` 로(끝만 `<=`). `_cdp_find_replace` 38/0.
+  2. **중첩 목록 저장 누락**: 브라우저 `execCommand('indent')` 가 `<ul>` 바로 아래 `<ul>` 을 만들면 `html.ts processList` 가 건너뛰어 **들여쓴 항목이 RTF 에서 통째로 사라짐** → 한 단계 깊은 목록으로 처리. `_cdp_editor_advanced` 36/0.
+  3. **첫 실행 기본 프로젝트가 IDB 에 저장되지 않아**, 원고를 고치기 전 수집함/공유 라이브러리(프로젝트별 키)에 담은 내용이 새로고침 후 새 프로젝트 id 로 바뀌며 고아가 되던 문제 → 부팅 시 즉시 `idbSave`+`setLastProjectId`(App). `_cdp_stash` 9/0.
+  4. **드롭다운 메뉴가 낮은 화면(600~700px)에서 뷰포트 아래로 잘려 하단 항목 클릭 불가** → `.dropdown { max-height: calc(100vh - 64px); overflow-y: auto }`.
+  5. 공포 장치 → '긴장 곡선' 버튼이 존재하지 않는 도구 id(`tension-curve-editor`)를 열어 무반응 → `tension-curve`.
+  6. 스토리 타로 '다시 섞기' 가 화면 변화 없음(전부 뒷면) → 피드백 토스트.
+- **도구 연계(payload) 전수 정적 점검**: `openToolLinked` 586건/대상 126종을 스캔 → **payload 를 전혀 읽지 않던 대상 18종 중 실제 내용을 버리던 10종 수정**(갈등 설계기·부사/시대착오/이중피동 점검기·워밍업·상징 사전·음악 갤러리(커스텀 무드 칩)·POV 추적기·Save the Cat·플롯 피라미드) + **키 불일치 7종 수정**(관계도 `pair/focus`→노드+‘대조’ 관계선, 무드보드 `image/query`, 감각 팔레트 `placeKey/word`, 상상 갤러리 `cat`, 세력 빌더 `title/intro`, 인물 시트 평평한 `job/role/themeSong`, 세계관 위키 `q`). 관례: `export default function X({ payload }: { payload?: Record<string, unknown> } = {})` + `handledPayload` ref 로 같은 payload 1회 처리.
+- **신규 E2E**: `_cdp_char_to_relmap.cjs`(인물 시트→관계도 실사용 흐름 26/0: 생성→라이브러리 저장→관계도 버튼→창 열림/이미 열린 창 payload 갱신→중복 방지→일괄 불러오기→역방향 가져오기) · `_cdp_link_payloads.cjs`(수정한 17종 payload 수신 22/0).
+- **하니스 현행화(앱 버그 아님)**: 옛 키(`scrivweb:*`, `scrivener-web`)→`sry:*`, React onBlur 는 `focusout` 으로, 체크박스는 `.click()`, 클릭 직후 동기 판독→리렌더 대기, #28 집중 모드 선택 모달·#30 오토포커스(setBody 전 blur)·#24 URL 새 탭·#31 clean 전환 등 설계 변경 반영, `Page.javascriptDialogOpening` 자동 수락, 투어 말풍선 닫기, 뷰포트 명시. 외부 API 도구(deckofcardsapi 등)는 샌드박스 차단으로 `tools_ops` 2건 미판정.
+- **최종 결과**: 단위 174/174 · tsc 0 · 실동작 97 스크립트 중 all_tools 555/0·ui_all 72/0·binder_deep 100/0·views 전부 0실패·datasafety 15/0·savecycle 18/0·save_open 29/3*·menus_all 142/0·modal_parity 165/0·panel_parity 56/0·action_parity 62/0·keyboard 48/0·stash/stash_deep/stash_detail 0실패·연계 3종 0실패 … (*·a11y 1·write 1·views_ab 2·views_ef 1·aux 3·inspector_deep 1 = #32 기록된 하니스/의도 아티팩트, 신규 회귀 0).
+- **다음 과제**: ① 외부 API 도구는 네트워크 허용 환경에서 `tools_ops` 재확인 ② `payload` 를 받지만 `genre` 힌트만 버리는 대상(plot-twist-deck·emotion-arc·scene-list 등)은 장르 프리셋이 생기면 연결 ③ 남은 하니스 아티팩트(*)는 정리 대상.
+
 ### 2026-09-26 #33: GitHub 저장소 `finemold2/sry2` 로 이식 + GitHub Pages 자동 배포 구축
 - **저장소**: 로컬 `D:\tof3\4 dev\cc_sry` 를 사용자가 `https://github.com/finemold2/sry2`(main) 로 푸시. 이후 작업의 원격 루트는 이 저장소.
 - **배포 설계**(#29 "남은 과제 ①" 이행): 랜딩 `site/` = 루트, 앱 `dist/` = `/app/`. 신규 `scripts/build-pages.cjs`(site→`_site/`, dist→`_site/app/`, README/DESIGN.md 제외, `.nojekyll`) + `npm run build:pages`. `site/index.html` **`SRY_APP_READY=true`**(시작 버튼→`./app/`), `og:url`/`og:image`/`twitter:image` 를 Pages 절대 URL 로. `.gitignore` 에 `_site`.

@@ -10,7 +10,8 @@ const ok = (c, m) => { if (c) { PASS++; console.log('  ✓ ' + m) } else { FAIL+
 
 // 마지막 도구창에서 텍스트를 포함하는 버튼 클릭
 const clickBtn = (txt) => `(function(){var w=document.querySelectorAll('.toolwin');if(!w.length)return'noWin';var last=w[w.length-1];var b=[].slice.call(last.querySelectorAll('button')).find(x=>(x.innerText||'').includes(${JSON.stringify(txt)}));if(!b)return'noBtn';if(b.disabled)return'disabled';b.click();return'clicked'})()`
-const libCount = (kind) => `(function(){try{var l=JSON.parse(localStorage.getItem('scrivweb:shared-library')||'{}');return (l[${JSON.stringify(kind)}]||[]).length}catch(e){return -1}})()`
+// 라이브러리 키는 'sry:shared-library'(전역) 또는 'sry:shared-library:<pid>'(프로젝트별) — 현재 활성 키 중 가장 많은 항목을 가진 쪽을 읽는다.
+const libCount = (kind) => `(function(){try{var n=-1;for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('sry:shared-library')===0){var l=JSON.parse(localStorage.getItem(k)||'{}');n=Math.max(n,(l[${JSON.stringify(kind)}]||[]).length)}}return n}catch(e){return -1}})()`
 const winCount = `document.querySelectorAll('.toolwin').length`
 
 async function main() {
@@ -23,7 +24,7 @@ async function main() {
   for (let i = 0; i < 50; i++) { await sleep(400); try { if ((await ev(ws, s, 'typeof window.__openTool')) === 'function') break } catch {} }
   await sleep(700)
   // 라이브러리 초기화
-  await ev(ws, s, `localStorage.removeItem('scrivweb:shared-library')`)
+  await ev(ws, s, `(function(){var ks=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('sry:shared-library')===0)ks.push(k)}ks.forEach(function(k){localStorage.removeItem(k)})})()`)
 
   console.log('\n[A] 장면 생성기 → 배경/스니펫 라이브러리 저장')
   await ev(ws, s, `window.__openTool('scene-forge')`); await sleep(1200)

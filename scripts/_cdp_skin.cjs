@@ -38,7 +38,7 @@ async function main(){
   t(await ev(ws,sid,'/'+MARK+'/.test(document.body.innerText||"")'),'★복귀 후에도 원고 텍스트 보존(Studio→클래식)')
   // 5) localStorage 영속(스킨 기억) — studio 로 다시 전환 후 확인
   await ev(ws,sid,'(()=>{const b=Array.from(document.querySelectorAll(".toolbar button")).find(x=>/Studio/.test(x.textContent||""));if(b)b.click()})()');await sleep(400)
-  t(await ev(ws,sid,'localStorage.getItem("scrivweb:uiSkin")==="studio"'),'스킨 선택 localStorage 영속')
+  t(await ev(ws,sid,'localStorage.getItem("sry:uiSkin")==="studio"'),'스킨 선택 localStorage 영속')
   t(!await ev(ws,sid,'/화면 표시 중 문제/.test(document.body.innerText||"")'),'무크래시(에러바운더리 없음)')
   console.log('=== 스킨 전환 + 데이터 보존 스모크 ===')
   ok.forEach(m=>console.log('  ✓ '+m));bad.forEach(m=>console.log('  ✗ '+m))

@@ -185,7 +185,7 @@ async function main() {
         _setVal(ep,'7');
         ep.dispatchEvent(new Event('input',{bubbles:true}));
         ep.dispatchEvent(new Event('change',{bubbles:true}));
-        ep.dispatchEvent(new Event('blur',{bubbles:true}));   // onBlur 가 setEpisodeMeta 커밋
+        ep.dispatchEvent(new FocusEvent('focusout',{bubbles:true}));   // React onBlur 는 focusout 을 듣는다 → setEpisodeMeta 커밋
         return title;
       }
     }

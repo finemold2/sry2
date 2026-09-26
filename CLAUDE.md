@@ -24,7 +24,11 @@ node scripts/_gentools.cjs        # 도구 레지스트리 재생성(도구 추�
 node scripts/_cdp_tools.cjs "<ids>"      # CDP 렌더 전수검증
 node scripts/_cdp_interact.cjs "<ids>"   # CDP 상호작용(클릭/입력) 베타
 node scripts/_cdp_datasafety.cjs         # 데이터 안전 E2E 베타
+node scripts/_cdp_char_to_relmap.cjs     # 도구 연계 실사용 흐름(인물 시트→관계도) E2E
+node scripts/_cdp_link_payloads.cjs      # 도구 연계 payload 수신 E2E(17종)
 ```
+- 클라우드 세션(네트워크 정책) 에서 npm 이 403 이면: `NO_PROXY= npm ci --proxy "$HTTPS_PROXY" --https-proxy "$HTTPS_PROXY" --noproxy ""`.
+- CDP 배터리는 preview(:4178) + 스크립트마다 새 헤드리스 Chromium(:9222, 새 프로필) 로 돌린다(세션 #34). 하니스 규칙: React onBlur 는 `focusout`, 체크박스는 `.click()`, 클릭 직후 판정은 리렌더 대기, `setBody` 전 `activeElement.blur()`.
 도구 ids 추출: `grep -oE "id: '[^']+'" src/tools/registry.tsx | sed "s/id: //;s/'//g" | tr '\n' ','`
 
 ## 구조 요약 (상세는 docs/)

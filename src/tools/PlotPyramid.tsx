@@ -54,7 +54,7 @@ function load(): SaveShape {
 // 단계별 기본 긴장도(슬라이더 초깃값 가이드)
 const DEFAULT_TENSION: Record<StageKey, number> = { exposition: 2, rising: 5, climax: 9, falling: 5, denouement: 2 }
 
-export default function PlotPyramid() {
+export default function PlotPyramid({ payload }: { payload?: Record<string, unknown> } = {}) {
   const [beats, setBeats] = useState<Beat[]>(() => load().beats)
   const [title, setTitle] = useState<string>(() => load().title)
   const [active, setActive] = useState<StageKey>('exposition')   // 현재 편집 중 단계
@@ -66,6 +66,14 @@ export default function PlotPyramid() {
   const [note, setNote] = useState('')
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState('')
+  // [연계] 보낸 작품 제목(payload.title) — 비어 있을 때만 채움
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const t = typeof payload.title === 'string' ? payload.title.trim() : ''
+    if (t) setTitle((prev) => prev || t)
+  }, [payload]) // eslint-disable-line
   const mounted = useRef(true)
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])

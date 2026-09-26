@@ -178,9 +178,11 @@ export default function FactionBuilder({ payload }: { payload?: Record<string, u
 
   // payload 로 새 세력 이름 프리필(다른 도구에서 열 때).
   useEffect(() => {
-    const nm = payload && typeof payload.name === 'string' ? payload.name.trim() : ''
+    // 비밀결사·귀족 작위 참고 도구는 title/intro 로 보낸다 — 이름/메모로 수용
+    const str = (k: string) => (payload && typeof payload[k] === 'string' ? (payload[k] as string).trim() : '')
+    const nm = str('name') || str('title')
     if (nm) {
-      setEditing({ ...emptyForm(), id: newId(), name: nm })
+      setEditing({ ...emptyForm(), id: newId(), name: nm, notes: str('intro') })
       setOpenId(null)
     }
   }, [payload])

@@ -81,7 +81,7 @@ async function fetchTrack(q: string, signal: AbortSignal, dayPage: number): Prom
   }
 }
 
-export default function MusicGallery() {
+export default function MusicGallery({ payload }: { payload?: Record<string, unknown> } = {}) {
   const [mood, setMood] = useState<Mood>(MOODS[0])
   const [track, setTrack] = useState<Track | null>(null)
   const [loading, setLoading] = useState(false)
@@ -89,6 +89,17 @@ export default function MusicGallery() {
   const [prompt, setPrompt] = useState(PROMPTS[0])
   const [saved, setSaved] = useState(false)
   const [proj, setProj] = useState('')
+  // [연계] 무드링(mood/moodName/q)·사운드 큐시트(query) 가 보낸 분위기로 즉시 검색(커스텀 무드)
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const s = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string).trim() : '')
+    const known = MOODS.find((m) => m.key === s('mood'))
+    if (known) { setMood(known); return }
+    const q = s('q') || s('query') || s('mood')
+    if (q) setMood({ key: 'linked:' + q, label: '🔗 ' + (s('moodName') || q), q })
+  }, [payload]) // eslint-disable-line
   const nonce = useRef(0)
   const acRef = useRef<AbortController | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -165,6 +176,8 @@ export default function MusicGallery() {
       <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>분위기를 고르면 저작권 걱정 없는 음악(CC0/퍼블릭도메인)을 가져옵니다. 들으며 떠오른 장면을 바로 적어보세요.</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {MOODS.map((m) => <button key={m.key} className={'minibtn' + (mood.key === m.key ? ' active' : '')} onClick={() => setMood(m)}>{emojify(m.label)}</button>)}
+        {/* [연계] 다른 도구가 보낸 커스텀 분위기(기본 목록에 없음)는 활성 칩으로 함께 표시 */}
+        {!MOODS.some((m) => m.key === mood.key) && <button className="minibtn active" onClick={() => setMood(mood)} title={'검색어: ' + mood.q}>{emojify(mood.label)}</button>}
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>

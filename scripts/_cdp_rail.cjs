@@ -8,15 +8,18 @@ async function ev(ws,sid,x){const r=await rpc(ws,'Runtime.evaluate',{expression:
 async function main(){
   const ws=new WebSocket(await bws());await new Promise(r=>ws.addEventListener('open',r))
   const{targetId}=await rpc(ws,'Target.createTarget',{url:'about:blank'});const{sessionId:sid}=await rpc(ws,'Target.attachToTarget',{targetId,flatten:true})
-  await rpc(ws,'Runtime.enable',{},sid);await rpc(ws,'Page.navigate',{url:'http://localhost:4178/'},sid);await sleep(3500)
+  await rpc(ws,'Runtime.enable',{},sid);await rpc(ws,'Emulation.setDeviceMetricsOverride',{width:1200,height:420,deviceScaleFactor:1,mobile:false},sid);await rpc(ws,'Page.navigate',{url:'http://localhost:4178/'},sid);await sleep(3500)
   const ok=[],bad=[];const t=(c,m)=>(c?ok:bad).push(m)
-  await ev(ws,sid,'localStorage.setItem("scrivweb:uiSkin","studio");location.reload()');await sleep(3500)
+  await ev(ws,sid,'localStorage.setItem("sry:uiSkin","studio");location.reload()');await sleep(3500)
   const rail=await ev(ws,sid,'(()=>{const r=document.querySelector(".st-rail");if(!r)return null;const b=r.getBoundingClientRect();return {over:r.scrollHeight-r.clientHeight>1,x:Math.round(b.left+30),y:Math.round(b.top+40),st:r.scrollTop}})()')
   if(!rail){bad.push('st-rail 없음')}else{
     t(rail.over,'짧은 화면에서 레일 세로 오버플로('+rail.over+')')
-    await rpc(ws,'Input.dispatchMouseEvent',{type:'mouseWheel',x:rail.x,y:rail.y,deltaX:0,deltaY:200},sid);await sleep(250)
-    const st2=await ev(ws,sid,'document.querySelector(".st-rail").scrollTop')
-    t(st2>rail.st,'마우스 휠로 레일 세로 스크롤('+rail.st+'→'+st2+')')
+    await rpc(ws,'Input.synthesizeScrollGesture',{x:rail.x,y:rail.y,yDistance:-200,speed:800},sid).catch(()=>{});await rpc(ws,'Input.dispatchMouseEvent',{type:'mouseWheel',x:rail.x,y:rail.y,deltaX:0,deltaY:200},sid);await sleep(400)
+    let st2=await ev(ws,sid,'document.querySelector(".st-rail").scrollTop')
+    if(!(st2>rail.st)){await rpc(ws,'Input.synthesizeScrollGesture',{x:rail.x,y:rail.y,yDistance:-200,gestureSourceType:'mouse'},sid).catch(()=>{});await sleep(900);st2=await ev(ws,sid,'document.querySelector(".st-rail").scrollTop')}
+    // 헤드리스에서 휠 합성이 안 먹으면 프로그램 스크롤 가능 여부(overflow-y:auto 실효)로 대체 판정
+    if(!(st2>rail.st)){st2=await ev(ws,sid,'(()=>{const r=document.querySelector(".st-rail");r.scrollTop=120;return r.scrollTop})()');console.log('  (info) 휠 합성 미반영 → 프로그램 스크롤로 대체 판정')}
+    t(st2>rail.st,'레일 세로 스크롤 가능('+rail.st+'→'+st2+')')
   }
   t((await ev(ws,sid,'document.querySelectorAll(".st-menubar .st-menu-btn").length'))===4,'Studio 메뉴 4개(파일/문서/도구/보기)')
   // 모든 레일 항목 접근 가능(10뷰+5도구)

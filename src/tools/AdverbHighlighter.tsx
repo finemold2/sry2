@@ -219,10 +219,19 @@ function buildSegments(text: string, hits: Hit[]): Seg[] {
 const KIND_COLOR: Record<Kind, string> = { filler: 'var(--warn)', form: 'var(--accent)', conj: 'var(--muted)' }
 const KIND_LABEL: Record<Kind, string> = { filler: '정도·군더더기 부사', form: '부사형 어미', conj: '논리 연결어' }
 
-export default function AdverbHighlighter() {
+export default function AdverbHighlighter({ payload }: { payload?: Record<string, unknown> } = {}) {
   const [text, setText] = useState('')
   const [copied, setCopied] = useState(false)
   const [filter, setFilter] = useState<'all' | Kind>('all')
+
+  // [연계] 다른 도구가 보낸 본문(payload.text)을 점검 대상으로 채움 — 같은 payload 는 1회만 처리(부모 리렌더 시 재적용 방지)
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const t = typeof payload.text === 'string' ? payload.text : ''
+    if (t.trim()) setText(t)
+  }, [payload]) // eslint-disable-line
   const copyTimer = useRef<number | null>(null)
 
   // 언마운트 시 복사 타이머 정리

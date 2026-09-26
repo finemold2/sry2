@@ -351,6 +351,31 @@ export default function CharacterSheet({ payload }: { payload?: Record<string, u
     showFlash('전달받은 인물을 새로 추가했어요.')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payload])
+  // [연계] 직업 참고(job/profession)·음악 갤러리(themeSong) 처럼 인물 객체 없이 평평한 값으로 오는 경우:
+  // 선택된 인물이 있으면 그 인물에 반영(빈 칸만 채움/메모 추가), 없으면 새 인물로 추가.
+  const consumedFlat = useRef<unknown>(undefined)
+  useEffect(() => {
+    if (!payload || payload.character || consumedFlat.current === payload) return
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string).trim() : '')
+    const song = payload.themeSong && typeof payload.themeSong === 'object' ? (payload.themeSong as Record<string, unknown>) : null
+    const songLine = song ? `테마곡: ${String(song.title || '')} — ${String(song.creator || '')}${song.license ? ` (${String(song.license)})` : ''}${song.mood ? ` · ${String(song.mood)}` : ''}` : ''
+    const role = str('role') || str('job') || str('profession')
+    const name = str('name')
+    if (!role && !name && !songLine) return
+    consumedFlat.current = payload
+    setChars((prev) => {
+      const cur = prev.find((c) => c.id === selId)
+      if (cur && !name) {
+        return prev.map((c) => (c.id === cur.id ? { ...c, role: c.role || role, etc: songLine ? (c.etc ? c.etc + '\n' : '') + songLine : c.etc } : c))
+      }
+      const c = { ...emptyChar(), name, role, etc: songLine }
+      setSelId(c.id)
+      return [...prev, c]
+    })
+    setQuery('')
+    showFlash(songLine ? '테마곡을 인물 메모에 적었어요.' : role ? `직업 ‘${role}’ 을(를) 인물에 반영했어요.` : '전달받은 인물을 추가했어요.')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payload])
 
   const showFlash = (msg: string) => {
     setFlash(msg)

@@ -345,6 +345,10 @@ function collectRuns(node: Node, style: RunStyle, runs: Run[]) {
 function processList(listEl: HTMLElement, blocks: Block[], level: number) {
   const type: BlockType = listEl.tagName === 'UL' ? 'li-ul' : 'li-ol'
   for (const li of Array.from(listEl.children)) {
+    // 브라우저 execCommand('indent') 는 <li> 안이 아니라 <ul> 바로 아래에 <ul>/<ol> 을 만든다
+    // (<ul><li>L1</li><ul><li>L2</li></ul></ul>). 이를 건너뛰면 들여쓴 항목이 RTF 저장에서 통째로 사라지므로
+    // 한 단계 깊은 목록으로 처리한다.
+    if (li.tagName === 'UL' || li.tagName === 'OL') { processList(li as HTMLElement, blocks, level + 1); continue }
     if (li.tagName !== 'LI') continue
     const runs: Run[] = []
     const nested: HTMLElement[] = []

@@ -1,6 +1,6 @@
 // 상징 사전 — 색·동물·식물·숫자·날씨·보석·방위 등 200+ 상징의 의미를 모은 로컬 사전.
 // 자급식: 외부 네트워크·라이브러리 없음. Math.random + localStorage(즐겨찾기·마지막 카테고리)만 사용.
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { addToProject, hasProjectBridge, Emoji } from './linkbus'
 
 export const meta = { id: 'symbolism-dict', name: '상징 사전', icon: '🔮', group: '영감·발상', intro: '색·동물·식물·숫자·날씨·보석·방위의 상징적 의미를 찾아 장면에 심으세요', w: 600, h: 560 }
@@ -264,7 +264,7 @@ const ALL_KEY = '__all__'
 const flatAll = (): { cat: CatDef; item: Sym }[] =>
   CATS.flatMap((c) => c.items.map((item) => ({ cat: c, item })))
 
-export default function SymbolismDict() {
+export default function SymbolismDict({ payload }: { payload?: Record<string, unknown> } = {}) {
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState<string>(() => {
     try {
@@ -288,6 +288,14 @@ export default function SymbolismDict() {
   const [random, setRandom] = useState<{ cat: CatDef; item: Sym } | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  // [연계] 상징 참고·은유 엔진 등이 보낸 검색어(payload.query|word)로 바로 검색
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const q = typeof payload.query === 'string' ? payload.query : typeof payload.word === 'string' ? payload.word : ''
+    if (q.trim()) { setQuery(q.trim()); setOnlyFav(false) }
+  }, [payload]) // eslint-disable-line
 
   // 영속 저장
   useEffect(() => {

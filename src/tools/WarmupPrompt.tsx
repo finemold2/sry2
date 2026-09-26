@@ -80,13 +80,22 @@ function fmt(s: number): string {
   return `${m}:${ss < 10 ? '0' : ''}${ss}`
 }
 
-export default function WarmupPrompt() {
+export default function WarmupPrompt({ payload }: { payload?: Record<string, unknown> } = {}) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * PROMPTS.length))
   const [text, setText] = useState('')
   const [left, setLeft] = useState(DURATION)
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(false)
   const [saved, setSaved] = useState('')
+
+  // [연계] 다른 도구가 보낸 본문(payload.text)을 점검 대상으로 채움 — 같은 payload 는 1회만 처리(부모 리렌더 시 재적용 방지)
+  const handledPayload = useRef<unknown>(null)
+  useEffect(() => {
+    if (!payload || handledPayload.current === payload) return
+    handledPayload.current = payload
+    const t = typeof payload.text === 'string' ? payload.text : ''
+    if (t.trim()) setText(t)
+  }, [payload]) // eslint-disable-line
   const timerRef = useRef<number | null>(null)
 
   // 초안 복원(미지원/거부 시 graceful).

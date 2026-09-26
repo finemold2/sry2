@@ -18,7 +18,7 @@ const press = (ws, sid, key, o) => ev(ws, sid, kdExpr(key, o))
 
 // 현재 화면이 뷰 v 인지 — 컨테이너 클래스(에디터/코르크/아웃라이너/칸반/캔버스/연재/DB) 또는
 // 본문 영역의 고유 텍스트(타임라인/참고문헌/논증)로 판별. 스킨 무관(.center|.st-center).
-const VIEW_DETECT = "var V=__V__;var c=document.querySelector('.st-center,.center')||document.body;var t=(c.textContent||'');switch(V){case 'editor':return !!document.querySelector('.paper');case 'corkboard':return !!document.querySelector('.corkboard');case 'outliner':return !!document.querySelector('.outliner');case 'board':return !!document.querySelector('.board');case 'canvas':return !!document.querySelector('.canvas-area');case 'serial':return !!document.querySelector('.serial-board');case 'timeline':return /스윔레인|타임라인/.test(t);case 'references':return /참고문헌|서지/.test(t);case 'argument':return (/주제문/.test(t)&&/반박/.test(t));case 'database':return !!document.querySelector('.db-table');}return false"
+const VIEW_DETECT = "var V=__V__;var c=document.querySelector('.st-center,.center')||document.body;var t=(c.textContent||'');switch(V){case 'editor':return !!document.querySelector('.paper');case 'corkboard':return !!document.querySelector('.corkboard');case 'outliner':return !!document.querySelector('.outliner');case 'board':return !!document.querySelector('.board');case 'canvas':return !!document.querySelector('.canvas-area');case 'serial':return !!document.querySelector('.serial-board');case 'timeline':return /스윔레인|타임라인/.test(t);case 'references':return /참고문헌|서지/.test(t);case 'argument':return /논증 작업대/.test(t)||(/주제문/.test(t)&&/반박/.test(t));case 'database':return !!document.querySelector('.db-table');}return false"
 const viewIs = (ws, sid, v) => ev(ws, sid, VIEW_DETECT.replace('__V__', JSON.stringify(v)))
 const activeId = (ws, sid) => ev(ws, sid, "return (window.__scriv&&window.__scriv.state().activeId)||null")
 const dirty = (ws, sid) => ev(ws, sid, "return !!(window.__scriv&&window.__scriv.state().dirty)")
@@ -85,6 +85,8 @@ async function runSkin(ws, sid, skin, t, bugs) {
   // ── ⌘⇧↵ 집중 모드 토글(.composition on→off) ──
   await press(ws, sid, '1', { ctrl: true }); await sleep(250)
   await press(ws, sid, 'Enter', { ctrl: true, shift: true }); await sleep(420)
+  // #28: 선택 모달(현재 창/새 창) → '현재 창' 선택
+  await ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.focus-chooser button, .modal button')).find(function(x){return /현재 창/.test(x.textContent||'')});if(b)b.click();return !!b"); await sleep(400)
   const comp1 = await has(ws, sid, '.composition')
   await press(ws, sid, 'Enter', { ctrl: true, shift: true }); await sleep(420)
   const comp2 = await has(ws, sid, '.composition')

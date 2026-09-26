@@ -17,7 +17,7 @@ const OPEN_TOOLS_MENU = "var w=[].slice.call(document.querySelectorAll('.menu-wr
 // 드롭다운 항목 클릭(라벨 부분일치). 못 찾으면 메뉴 닫고 no-item.
 const clickDropItem = (label) => "var b=[].slice.call(document.querySelectorAll('.dropdown button')).find(function(x){return ((x.textContent||'').replace(/\\s+/g,' ')).indexOf('" + label + "')>=0});if(!b){document.body.click();return 'no-item';}b.click();return 'ok'"
 // 패널 닫기(닫기 버튼 셀렉터, 닫혔는지 확인할 패널 셀렉터)
-const closePanel = (btnSel, panelSel) => "var b=document.querySelector(\"" + btnSel + "\");if(b)b.click();return !document.querySelector(\"" + panelSel + "\")"
+const closePanel = (btnSel, panelSel) => "var b=document.querySelector(\"" + btnSel + "\");if(b)b.click();return new Promise(function(r){setTimeout(function(){r(!document.querySelector(\"" + panelSel + "\"))},250)})" // 클릭 후 리렌더(언마운트) 대기
 // 바인더가 보이도록 보장(없으면 바인더 토글 버튼 클릭)
 const ENSURE_BINDER = "if(!document.querySelector('.binder')){var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return /바인더/.test(x.getAttribute('aria-label')||x.getAttribute('title')||'')});if(b)b.click();}return !!document.querySelector('.binder')"
 // 원고 폴더 펼치기(텍스트 문서가 트리에 나타나도록)
@@ -91,7 +91,7 @@ async function runSkin(ws, sid, skin, t, opened) {
     await ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.sprintbar button')).find(function(x){return /시작/.test(x.textContent||'')});if(b)b.click();return 1"); await sleep(350)
     const running = await ev(ws, sid, "return !!document.querySelector('.sprint-time')")
     t(running, '[' + skin + '] 스프린트 시작 → 카운트다운(.sprint-time) 표시')
-    const stopped = await ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.sprintbar button')).find(function(x){return /중지/.test(x.textContent||'')});if(b)b.click();return !document.querySelector('.sprint-time')")
+    const stopped = await ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.sprintbar button')).find(function(x){return /중지/.test(x.textContent||'')});if(b)b.click();return new Promise(function(r){setTimeout(function(){r(!document.querySelector('.sprint-time'))},250)})")
     t(stopped, '[' + skin + '] 스프린트 중지 → 설정 화면 복귀')
   }
   t(await ev(ws, sid, closePanel(".sprintbar button[aria-label='스프린트 닫기']", '.sprintbar')), '[' + skin + '] 스프린트 타이머 닫기')

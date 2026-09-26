@@ -17,11 +17,11 @@ const HUB = 'http://localhost:9222'; let _id = 0
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 async function bws() { const r = await fetch(HUB + '/json/version'); return (await r.json()).webSocketDebuggerUrl }
 function rpc(ws, m, p, sid) { return new Promise((res, rej) => { const id = ++_id; const msg = { id, method: m, params: p || {} }; if (sid) msg.sessionId = sid; const on = e => { let d; try { d = JSON.parse(e.data) } catch { return } if (d.id === id) { ws.removeEventListener('message', on); d.error ? rej(new Error(d.error.message)) : res(d.result) } }; ws.addEventListener('message', on); ws.send(JSON.stringify(msg)); setTimeout(() => rej(new Error('to@' + m)), 15000) }) }
-async function ev(ws, sid, x) { const r = await rpc(ws, 'Runtime.evaluate', { expression: '(()=>{' + x + '})()', returnByValue: true }, sid); if (r.exceptionDetails) throw new Error('PAGE:' + (r.exceptionDetails.exception && r.exceptionDetails.exception.description || r.exceptionDetails.text)); return r.result && r.result.value }
+async function ev(ws, sid, x) { const r = await rpc(ws, 'Runtime.evaluate', { expression: '(()=>{' + x + '})()', returnByValue: true, awaitPromise: true }, sid); if (r.exceptionDetails) throw new Error('PAGE:' + (r.exceptionDetails.exception && r.exceptionDetails.exception.description || r.exceptionDetails.text)); return r.result && r.result.value }
 
 // 뷰 전환 버튼(App.tsx viewBtn: button.tbtn[aria-label="<라벨>"] 정확 매칭). 반환=클릭 후 aria-pressed.
 const VIEW_LABEL = { editor: '에디터 (⌘1)', outliner: '아웃라이너 (⌘3)', timeline: '스토리 타임라인 (⌘7)' }
-const clickView = (key) => { const lbl = VIEW_LABEL[key]; return `var b=document.querySelector('button.tbtn[aria-label='+${JSON.stringify(JSON.stringify(lbl))}+']');if(!b)return'no:'+${JSON.stringify(lbl)};b.click();return b.getAttribute('aria-pressed')` }
+const clickView = (key) => { const lbl = VIEW_LABEL[key]; return `var b=document.querySelector('button.tbtn[aria-label='+${JSON.stringify(JSON.stringify(lbl))}+']');if(!b)return'no:'+${JSON.stringify(lbl)};b.click();return new Promise(r=>setTimeout(()=>r(b.getAttribute('aria-pressed')),150))` } // React 재렌더 후 판독
 // 바인더 '새 글' 버튼(검증된 셀렉터: _cdp_binder/_cdp_views_core). 활성 컨테이너(원고 루트) 끝에 텍스트 추가 + 인라인 rename 시작.
 const addDocBtn = `var b=document.querySelector('.binder .minibtn[title="새 글"]')||document.querySelector('.binder .minibtn[title="새 텍스트"]');if(b){b.click();return 1}return 0`
 // 인라인 rename input(.binder-rename)에 제목 입력 + Enter 커밋.
@@ -184,7 +184,7 @@ async function main() {
   const setSort = (on) => ev(ws, sid, `
     var lab=[].slice.call(document.querySelectorAll('label')).find(function(l){return /스토리시간순/.test(l.textContent||'')});
     var cb=lab&&lab.querySelector('input[type=checkbox]'); if(!cb)return 'no-cb';
-    if(cb.checked!==${on}){var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'checked').set;s.call(cb,${on});cb.dispatchEvent(new Event('change',{bubbles:true}))}
+    if(cb.checked!==${on}){cb.click()}
     return String(cb.checked);`)
   const cardDraggable = () => ev(ws, sid, `var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return ((x.getAttribute('title')||'').split(String.fromCharCode(10))[0]).indexOf(${JSON.stringify(tok)})===0});return b?b.getAttribute('draggable'):'no-card'`)
   const hintHas = (re) => ev(ws, sid, `return [].slice.call(document.querySelectorAll('span')).some(function(s){return ${re}.test(s.textContent||'')})`)

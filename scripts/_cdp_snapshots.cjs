@@ -26,6 +26,7 @@ async function main() {
   t(sa === sb + 1, `"지금 찍기"로 스냅샷 1개 생성 (${sb}→${sa})`)
 
   // 본문 변경 후 되돌리기 → 스냅샷 시점으로 원복
+  await ev(ws, sid, `try{if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur()}catch(e){};return 1`); await sleep(150) // #30 오토포커스 에디터 blur
   await ev(ws, sid, `window.__scriv.setBody('{\\\\rtf1\\\\ansi 완전히바뀐본문ABC\\\\par}');return 1`); await sleep(300)
   const changed = await ev(ws, sid, `return (window.__scriv.bodyOf(window.__scriv.state().activeId)||'')`)
   t(/바뀐본문ABC/.test(changed), '본문 변경 반영')

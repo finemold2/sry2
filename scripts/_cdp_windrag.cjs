@@ -10,10 +10,12 @@ async function main(){
   const ws=new WebSocket(await bws());await new Promise(r=>ws.addEventListener('open',r))
   const{targetId}=await rpc(ws,'Target.createTarget',{url:'about:blank'});const{sessionId:sid}=await rpc(ws,'Target.attachToTarget',{targetId,flatten:true})
   const errs=[];ws.addEventListener('message',e=>{let d;try{d=JSON.parse(e.data)}catch{return}if(d.sessionId!==sid)return;if(d.method==='Runtime.exceptionThrown')errs.push('EX')})
-  await rpc(ws,'Runtime.enable',{},sid);await rpc(ws,'Page.navigate',{url:'http://localhost:4178/'},sid);await sleep(3500)
+  await rpc(ws,'Runtime.enable',{},sid);await rpc(ws,'Emulation.setDeviceMetricsOverride',{width:1680,height:1000,deviceScaleFactor:1,mobile:false},sid);await rpc(ws,'Page.navigate',{url:'http://localhost:4178/'},sid);await sleep(3500)
+  // 환영/투어 모달을 닫아야 포인터 드래그가 창 헤더에 닿는다
+  await ev(ws,sid,'(()=>{const b=[...document.querySelectorAll(".modal button,.tour-skip")].find(x=>/시작하기|다시 보지|그만 보기/.test(x.textContent||""));if(b)b.click();return 1})()');await sleep(400)
   const ok=[],bad=[];const t=(c,m)=>(c?ok:bad).push(m)
   // 즐겨찾기 비우고 시작
-  await ev(ws,sid,'localStorage.setItem("scrivweb:favorites","[]")')
+  await ev(ws,sid,'localStorage.setItem("sry:favorites","[]")')
   // 인스펙터 즐겨찾기 탭 열기(데이터 드롭존 존재) + 도구 열기
   await ev(ws,sid,'(()=>{const b=Array.from(document.querySelectorAll(".insp-tabs button")).find(x=>/즐겨찾기/.test(x.textContent||""));if(b)b.click()})()')
   await ev(ws,sid,'window.__openTool&&window.__openTool("scene-forge")');await sleep(900)
@@ -28,7 +30,7 @@ async function main(){
   t(await ev(ws,sid,'!!document.querySelector(".fav-drop-zone.fav-drop-active")'),'드래그 중 즐겨찾기 패널 강조(드롭존 활성)')
   await mouse(ws,sid,'mouseReleased',zp.x,zp.y);await sleep(500)
   // 결과: 즐겨찾기에 추가됨 + 창 최소화(독 칩)
-  t(await ev(ws,sid,'JSON.parse(localStorage.getItem("scrivweb:favorites")||"[]").some(f=>f.id==="tool:scene-forge")'),'창 드롭 → 즐겨찾기에 추가됨')
+  t(await ev(ws,sid,'JSON.parse(localStorage.getItem("sry:favorites")||"[]").some(f=>f.id==="tool:scene-forge")'),'창 드롭 → 즐겨찾기에 추가됨')
   t(await ev(ws,sid,'Array.from(document.querySelectorAll(".tool-dock-chip")).some(c=>/장면/.test(c.textContent||""))'),'드롭한 창이 최소화(하단 독)됨')
   t(await ev(ws,sid,'!document.querySelector(".fav-drop-zone.fav-drop-active")'),'드롭 후 강조 해제')
   t(!await ev(ws,sid,'/화면 표시 중 문제/.test(document.body.innerText||"")'),'무크래시')

@@ -155,6 +155,8 @@ async function runSkin(ws, sid, skin, t, errs) {
   {
     const via = await reachAndClick(ws, sid, skin, 'focus'); await sleep(320)
     t(via !== null, reach('집중 모드', via))
+    // #28: 집중 모드는 '현재 창에서 / 새 창에서' 선택 모달을 먼저 띄운다 → '현재 창' 선택
+    await ev(ws, sid, "var b=[].slice.call(document.querySelectorAll('.focus-chooser button, .modal button')).find(function(x){return /현재 창/.test(x.textContent||'')});if(b)b.click();return !!b"); await sleep(400)
     t(await ev(ws, sid, Q('.composition')), '[' + skin + '] 집중 모드 실제 진입(.composition)')
     await ev(ws, sid, "var x=document.querySelector('.comp-exit');if(x)x.click();return 1"); await sleep(240)
     t(!(await ev(ws, sid, Q('.composition'))), '[' + skin + '] 집중 모드 해제')

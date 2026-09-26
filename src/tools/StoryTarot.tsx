@@ -296,6 +296,8 @@ export default function StoryTarot({ payload }: { payload?: ToolPayload }) {
     setSeed((Math.random() * 0xffffffff) >>> 0)
     setRestored(null)
     setFlipped({})
+    // 카드가 전부 뒷면으로 돌아가 화면 변화가 없어 "안 눌린 것" 처럼 보이던 문제 — 피드백 토스트
+    flash('카드를 새로 섞었어요. 카드를 눌러 한 장씩 펼쳐보세요.')
   }
   const drawToday = () => {
     setSeed(todaySeed())

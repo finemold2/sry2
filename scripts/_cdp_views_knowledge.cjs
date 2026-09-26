@@ -74,7 +74,7 @@ async function main() {
   await ev(ws, sid, setReactInput("input[placeholder='문헌 제목']", TITLE)); await sleep(350)
   // 저자(textarea, onBlur 커밋)·연도(input placeholder='2024', onChange 커밋)로 서지 라인이 자연스럽게 생성되게.
   await ev(ws, sid, setReactInput("textarea[placeholder*='홍길동']", '홍길동')); await sleep(120)
-  await ev(ws, sid, `const el=document.querySelector("textarea[placeholder*='홍길동']");if(el)el.dispatchEvent(new Event('blur',{bubbles:true}));return 1`); await sleep(200)
+  await ev(ws, sid, `const el=document.querySelector("textarea[placeholder*='홍길동']");if(el)el.dispatchEvent(new FocusEvent('focusout',{bubbles:true}));return 1`); await sleep(200)
   await ev(ws, sid, setReactInput("input[placeholder='2024']", '2025')); await sleep(300)
 
   // (a) 좌측 목록 항목 제목에 반영됐는가(목록 span 의 r.title 표시).
@@ -135,7 +135,7 @@ async function main() {
 
   // 주장 텍스트 입력(영속 확인용) — 주장 카드 textarea(placeholder='주장을 입력하세요.', ClaimCard 227행) defaultValue+onBlur 커밋.
   const CLAIM = '검증 자동화는 원고 안전을 높인다'
-  await ev(ws, sid, `(()=>{const el=document.querySelector("textarea[placeholder='주장을 입력하세요.']");if(!el)return'no';const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(el,${JSON.stringify(CLAIM)});el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('blur',{bubbles:true}));return'ok'})()`); await sleep(350)
+  await ev(ws, sid, `(()=>{const el=document.querySelector("textarea[placeholder='주장을 입력하세요.']");if(!el)return'no';const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(el,${JSON.stringify(CLAIM)});el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new FocusEvent('focusout',{bubbles:true}));return'ok'})()`); await sleep(350)
 
   // =====================================================================
   // 5) 논증 영속 — 다른 뷰로 갔다 돌아와도 주장 카운트/근거행/주장 텍스트가 남아있는가(store 영속)
@@ -143,7 +143,8 @@ async function main() {
   await ev(ws, sid, switchView(V.editor)); await sleep(350)
   await ev(ws, sid, switchView(V.argument)); await sleep(500)
   const c2 = await ev(ws, sid, `return ${claimCount()}`)
-  const claimPersisted = await ev(ws, sid, `return document.body.innerText.indexOf(${JSON.stringify(CLAIM)})>=0`)
+  // 주장 텍스트는 textarea 값(innerText 에 포함되지 않음) — 값으로 확인
+  const claimPersisted = await ev(ws, sid, `return [...document.querySelectorAll("textarea[placeholder='주장을 입력하세요.']")].some(t=>t.value===${JSON.stringify(CLAIM)})`)
   t(c2 === c1 && claimPersisted, `뷰 왕복 후 주장 ${c2}개 유지 + 입력한 주장 텍스트 영속`)
 
   // =====================================================================
@@ -161,7 +162,7 @@ async function main() {
   t(k0 >= 0 && k1 === k0 + 1 && nodeInDom >= 1, `'+ 카드' → 카드 ${k0} → ${k1} (1 증가), .canvas-node ${nodeInDom}개 렌더`)
 
   // 새 카드는 추가 직후 편집모드(textarea autoFocus) — blur 시켜 편집 해제(드래그는 editing 중이면 무시됨).
-  await ev(ws, sid, `const el=document.querySelector('.canvas-node textarea.canvas-node-text');if(el){el.dispatchEvent(new Event('blur',{bubbles:true}))}return 1`); await sleep(300)
+  await ev(ws, sid, `const el=document.querySelector('.canvas-node textarea.canvas-node-text');if(el){el.dispatchEvent(new FocusEvent('focusout',{bubbles:true}))}return 1`); await sleep(300)
 
   // 드래그 이동: 마지막 .canvas-node 의 화면 좌표에서 mousedown(노드) → window mousemove(>4px, 6회) → mouseup.
   // onNodeDown 은 dxr+dyr<4 미만이면 무시하므로 충분히 크게 움직인다.

@@ -27,3 +27,10 @@
 ## 적용 현황
 - 리트로핏 완료(12): imagination-gallery, met-museum-art, moodboard-grid, character-model, character-sheet, relationship-map, setting-bible, sensory-palette, name-mixer, name-analyzer, cover-mockup, poke-creature.
 - 신규 도구는 같은 연계 규약으로 저작. 창작 스튜디오 무작위 생성기 → 라이브러리 연계는 남은 과제.
+
+## payload 수신 규약 (#34 전수 점검 후 확정)
+- 링크 대상 도구는 **반드시** `export default function X({ payload }: { payload?: Record<string, unknown> } = {})` 로 payload 를 받고, 보낸 키를 실제로 화면에 반영한다(입력칸 프리필·노드 추가·검색 실행 등). 받기만 하고 버리면 "연계가 안 된다"로 보인다.
+- 같은 payload 객체가 부모 리렌더로 다시 들어와도 1회만 처리: `const handledPayload = useRef<unknown>(null)` + `if (!payload || handledPayload.current === payload) return`.
+- 제목처럼 덮어쓰면 안 되는 값은 **비어 있을 때만** 채운다(플롯 피라미드·Save the Cat). 인물/장소는 선택 항목이 있으면 그 항목에 반영, 없으면 새로 추가(인물 시트 `job/themeSong`).
+- 정적 점검 스크립트(세션 #34): `src/tools` 에서 `openToolLinked('id', {…})` 를 모두 추출해 (a) 존재하지 않는 id, (b) 대상 파일에 `payload` 가 없음, (c) 보낸 키를 대상이 읽지 않음 을 표로 뽑았다. 새 링크를 추가하면 같은 방식으로 확인.
+- 실동작 검증: `node scripts/_cdp_link_payloads.cjs`(수신 17종) · `node scripts/_cdp_char_to_relmap.cjs`(인물 시트→관계도 실사용 흐름) · `node scripts/_cdp_linkage.cjs`.

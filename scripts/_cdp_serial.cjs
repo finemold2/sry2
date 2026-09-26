@@ -41,6 +41,7 @@ async function main() {
   ok(booted, '앱 부팅')
 
   // 활성 문서에 본문 주입(미리보기에 보일 내용)
+  await ev(ws, sid, `try{if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur()}catch(e){};1`) // #30 오토포커스 에디터 blur
   await ev(ws, sid, `window.__scriv && window.__scriv.setBody && window.__scriv.setBody('{\\\\rtf1 첫 문단입니다. 충분한 분량을 시뮬레이션합니다.\\\\par 둘째 문단도 있습니다.\\\\par}')`)
   await sleep(300)
 
