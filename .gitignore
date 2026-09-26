@@ -1,6 +1,8 @@
 node_modules
 dist
 dist-ssr
+# GitHub Pages 조립 산출물(scripts/build-pages.cjs) — CI 가 생성
+_site
 *.local
 .DS_Store
 .vite

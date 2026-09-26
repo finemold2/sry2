@@ -9,19 +9,20 @@
   <meta name="color-scheme" content="light dark" />
 
   <!-- 소셜 미리보기 (og:image 는 래스터 PNG — 소셜 크롤러는 SVG 미지원)
-       배포 도메인이 정해지면 og:image·og:url 을 절대 URL(https://도메인/assets/og.png)로 바꾸는 걸 권장합니다. -->
+       배포 도메인: GitHub Pages(https://finemold2.github.io/sry2/). 도메인이 바뀌면 og:url·og:image·twitter:image 를 함께 갱신. -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="sry" />
+  <meta property="og:url" content="https://finemold2.github.io/sry2/" />
   <meta property="og:title" content="sry — 브라우저에서 완성하는 한 편의 글" />
   <meta property="og:description" content="서버 없이 브라우저에서. 원고는 실제 RTF로. 2,445+ 창작 도구가 함께하는 한국어 글쓰기 스튜디오." />
-  <meta property="og:image" content="./assets/og.png" />
+  <meta property="og:image" content="https://finemold2.github.io/sry2/assets/og.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="sry — 브라우저에서 완성하는 한 편의 글" />
   <meta name="twitter:description" content="서버 없이 브라우저에서. 원고는 실제 RTF로. 한국어 글쓰기 스튜디오." />
-  <meta name="twitter:image" content="./assets/og.png" />
+  <meta name="twitter:image" content="https://finemold2.github.io/sry2/assets/og.png" />
 
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <meta name="theme-color" content="#f7f7f8" id="themeColorMeta" />
@@ -34,11 +35,11 @@
   <noscript><style>.reveal{opacity:1 !important;transform:none !important}</style></noscript>
 
   <!-- 앱 배포 설정:
-       · 아직 배포 전이면 SRY_APP_READY = false → '시작하기' 클릭 시 "곧 출시됩니다" 안내가 뜹니다.
-       · 배포 후엔 SRY_APP_URL 을 실제 위치로 바꾸고 SRY_APP_READY = true 로 두면 버튼이 앱으로 연결됩니다. -->
+       · GitHub Pages 배포(.github/workflows/deploy-pages.yml)가 앱을 이 페이지 아래 ./app/ 에 함께 게시하므로 READY = true.
+       · 앱을 내리거나 준비 중으로 돌리려면 SRY_APP_READY = false → '시작하기' 클릭 시 "곧 출시됩니다" 안내가 뜹니다. -->
   <script>
     window.SRY_APP_URL = './app/';
-    window.SRY_APP_READY = false;
+    window.SRY_APP_READY = true;
   </script>
   <!-- FOUC 방지: js 표시 + 저장된 테마를 첫 페인트 전에 적용 -->
   <script>

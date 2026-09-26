@@ -1,0 +1,58 @@
+# GitHub Pages 배포: main 푸시마다 앱을 빌드해 소개 페이지(site/) + 앱(/app/) 구성으로 게시.
+#   https://finemold2.github.io/sry2/      → 소개(랜딩) 페이지
+#   https://finemold2.github.io/sry2/app/  → 실제 앱 (PWA)
+# 저장소 Settings → Pages → Source 가 "GitHub Actions" 여야 함(configure-pages 가 최초 1회 자동 설정 시도).
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # 검증 루틴(CLAUDE.md): tsc 0 → 단위 테스트 → 빌드. 하나라도 실패하면 배포하지 않음.
+      - run: npm run typecheck
+      - run: npm test
+
+      - run: npm run build:pages
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
