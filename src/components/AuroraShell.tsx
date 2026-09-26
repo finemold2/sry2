@@ -22,7 +22,7 @@ export interface AuroraProps extends Omit<StudioProps, 'onSetClassic'> {
   onSetTheme?: (theme: ThemeName) => void // 라벨 있는 테마 세그먼트(라이트/다크/세피아). 없으면 레일의 순환 버튼만.
 }
 
-// 뷰 10종. color/fg 는 더 이상 셸에 쓰지 않는다(전체 회색 톤) — 코르크보드 라벨 등 '내용' 색과 무관, 향후 옵션용으로만 보관.
+// 뷰 10종. color/fg 는 셸(배지·칩·독·레일)에는 쓰지 않고, 에디터를 뺀 뷰의 '내용 영역'(.au-stage-body) 강조색으로만 주입한다.
 const VIEWS: { key: ViewKey; icon: string; label: string; hint: string; color: string; fg: string }[] = [
   { key: 'editor', icon: 'editor', label: '에디터', hint: '원고를 씁니다', color: '#5b7cfa', fg: '#fff' },
   { key: 'corkboard', icon: 'corkboard', label: '코르크보드', hint: '카드로 구상합니다', color: '#f0a23b', fg: '#1c1204' },
@@ -194,7 +194,8 @@ export default function AuroraShell(p: AuroraProps) {
             <button className={'au-chip' + (binderVisible ? ' active' : '')} onClick={p.onToggleBinder} aria-label="바인더" aria-pressed={binderVisible} title="바인더 서랍 (⌘⇧B)"><Icon name="binder" size={18} mono /><span className="au-chip-tx">바인더</span></button>
             <button className={'au-chip' + (inspectorVisible ? ' active' : '')} onClick={p.onToggleInspector} aria-label="인스펙터" aria-pressed={inspectorVisible} title="인스펙터 서랍 (⌘⇧I)"><Icon name="inspector" size={18} mono /><span className="au-chip-tx">인스펙터</span></button>
           </div>
-          <div className="au-stage-body">
+          {/* 내용 영역 강조색: 에디터는 셸과 같은 회색, 다른 뷰는 뷰 고유 색(카드 띠·선택 행·격자 등 내용에만 적용) */}
+          <div className="au-stage-body" style={viewMode === 'editor' ? undefined : ({ ['--au-content' as string]: cur.color, ['--au-content-fg' as string]: cur.fg } as React.CSSProperties)}>
             {p.showFind && <FindReplaceBar onClose={() => p.setShowFind(false)} />}
             <ActiveView />
           </div>

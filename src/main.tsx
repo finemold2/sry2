@@ -12,6 +12,14 @@ import { useStore } from './store/store'
 if ('serviceWorker' in navigator) {
   const hadController = !!navigator.serviceWorker.controller
   let reloaded = false
+  // 열린 탭은 스스로 새 배포를 알아채지 못한다(브라우저는 탐색/24시간 주기로만 워커를 재검사). 탭이 다시 보일 때·포커스될 때·
+  // 60초마다 업데이트 검사를 요청해, 새 워커가 설치되면 아래 controllerchange 로 이어져 자동 새로고침된다.
+  navigator.serviceWorker.ready.then((reg) => {
+    const check = () => { try { void reg.update() } catch { /* noop */ } }
+    window.setInterval(check, 60 * 1000)
+    window.addEventListener('focus', check)
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check() })
+  }).catch(() => { /* noop */ })
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!hadController || reloaded) return
     if (useStore.getState().dirty) return // 입력 중 강제 새로고침 금지 — 다음 새로고침 때 반영
