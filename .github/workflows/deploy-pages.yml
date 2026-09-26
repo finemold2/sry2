@@ -6,8 +6,10 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    # design-v2 푸시도 배포를 돌린다: 사이트 본체는 항상 main 을 체크아웃해 빌드하고, 브랜치 빌드는 /v2/ 에만 들어간다
-    branches: [main, design-v2]
+    # 배포는 main 푸시에서만: github-pages 환경의 보호 규칙이 main 외 브랜치의 배포를 거부한다(design-v2 트리거는 deploy 잡에서 실패).
+    # 브랜치 미리보기(/v2/)는 main 배포 때 design-v2 를 함께 빌드해 갱신된다. 환경 설정(Settings → Environments → github-pages →
+    # Deployment branches)에 design-v2 를 허용하면 여기 branches 에 design-v2 를 추가해 브랜치 푸시마다 갱신할 수 있다.
+    branches: [main]
     # 사이트에 포함되지 않는 문서만 바뀐 커밋은 재배포하지 않음
     paths-ignore:
       - 'docs/**'
