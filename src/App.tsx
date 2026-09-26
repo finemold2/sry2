@@ -1935,6 +1935,7 @@ export default function App() {
           onToggleComposition={requestFocusMode}
           onToggleBinder={userToggleBinder} onToggleInspector={userToggleInspector}
           onSetClassic={() => setUiSkin('classic')}
+          onSetAurora={() => setUiSkin('aurora')}
         />
       ) : (
       <>
