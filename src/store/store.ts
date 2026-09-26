@@ -380,7 +380,8 @@ export const useStore = create<AppState>((set, get) => ({
   inspectorTab: 'notes',
   inspectorVisible: true,
   favorites: loadFavorites(),
-  uiSkin: ((): 'classic' | 'studio' | 'aurora' => { try { const v = localStorage.getItem('sry:uiSkin'); return v === 'studio' || v === 'aurora' ? v : 'classic' } catch { return 'classic' } })(),
+  // 디자인 2 미리보기 경로(/v2/)에서는 아직 선택이 없으면 오로라로 시작(같은 origin 의 /app/ 은 저장된 값이 없으면 클래식)
+  uiSkin: ((): 'classic' | 'studio' | 'aurora' => { try { const v = localStorage.getItem('sry:uiSkin'); if (v === 'studio' || v === 'aurora') return v; if (v == null && /\/v2\//.test(location.pathname)) return 'aurora'; return 'classic' } catch { return 'classic' } })(),
   binderVisible: true,
   composition: false,
   renameId: null,
