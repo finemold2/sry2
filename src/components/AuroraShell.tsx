@@ -22,8 +22,7 @@ export interface AuroraProps extends Omit<StudioProps, 'onSetClassic'> {
   onSetTheme?: (theme: ThemeName) => void // 라벨 있는 테마 세그먼트(라이트/다크/세피아). 없으면 레일의 순환 버튼만.
 }
 
-// 뷰 10종 — 각각 고유 색(독 아이콘·스테이지 제목·레일 강조·코르크보드 격자에 사용)
-// fg: 뷰 색 위에 올라가는 글자/아이콘 색 — 밝은 색(주황·청록·초록·황갈·시안)은 어두운 글자로 대비 확보(WCAG 4.5:1 이상)
+// 뷰 10종. color/fg 는 더 이상 셸에 쓰지 않는다(전체 회색 톤) — 코르크보드 라벨 등 '내용' 색과 무관, 향후 옵션용으로만 보관.
 const VIEWS: { key: ViewKey; icon: string; label: string; hint: string; color: string; fg: string }[] = [
   { key: 'editor', icon: 'editor', label: '에디터', hint: '원고를 씁니다', color: '#5b7cfa', fg: '#fff' },
   { key: 'corkboard', icon: 'corkboard', label: '코르크보드', hint: '카드로 구상합니다', color: '#f0a23b', fg: '#1c1204' },
@@ -119,8 +118,7 @@ export default function AuroraShell(p: AuroraProps) {
   const isNarrow = useIsNarrow(980)
   const cur = VIEWS.find((v) => v.key === viewMode) || VIEWS[0]
   const rootRef = useRef<HTMLDivElement>(null)
-  // 현재 뷰 색을 CSS 변수로 — 독 활성 아이콘·스테이지 제목·레일·코르크보드 격자 강조에 쓰인다
-  useEffect(() => { rootRef.current?.style.setProperty('--au-view', cur.color); rootRef.current?.style.setProperty('--au-view-fg', cur.fg) }, [cur.color, cur.fg])
+  // 셸은 전부 회색 톤(글에 집중) — 뷰별 색은 주입하지 않는다. --au-view 는 aurora.css 의 중립 회색 토큰을 그대로 쓴다.
   // 오로라 첫 진입: 서랍을 닫아 캔버스(원고)만 보이게 하고, 테마가 라이트면 다크로 시작(오로라의 기본 인상).
   // 이후에는 사용자가 고른 테마(라이트/다크/세피아)와 서랍 상태를 그대로 둔다 — 테마 토글은 세 스킨 모두 동일하게 동작.
   useEffect(() => {
@@ -190,7 +188,7 @@ export default function AuroraShell(p: AuroraProps) {
         )}
         <main className={'au-stage' + (binderVisible && !isNarrow ? ' with-left' : '') + (inspectorVisible && !isNarrow ? ' with-right' : '')}>
           <div className="au-stage-head">
-            <span className="au-stage-badge" style={{ background: cur.color, color: cur.fg }}><Icon name={cur.icon} size={20} mono /></span>
+            <span className="au-stage-badge"><Icon name={cur.icon} size={20} mono /></span>
             <div className="au-stage-title"><b>{cur.label}</b><span>{cur.hint}</span></div>
             <span className="au-stage-spacer" />
             <button className={'au-chip' + (binderVisible ? ' active' : '')} onClick={p.onToggleBinder} aria-label="바인더" aria-pressed={binderVisible} title="바인더 서랍 (⌘⇧B)"><Icon name="binder" size={18} mono /><span className="au-chip-tx">바인더</span></button>
@@ -232,7 +230,7 @@ export default function AuroraShell(p: AuroraProps) {
       <nav className="au-dock" aria-label="주요 내비게이션">
         <div className="au-dock-views" role="group" aria-label="보기">
           {VIEWS.map((v) => (
-            <button key={v.key} className={'au-dock-btn' + (viewMode === v.key ? ' active' : '')} style={{ ['--c' as string]: v.color }} onClick={() => setView(v.key)} title={v.label + ' — ' + v.hint} aria-label={v.label} aria-pressed={viewMode === v.key}>
+            <button key={v.key} className={'au-dock-btn' + (viewMode === v.key ? ' active' : '')} onClick={() => setView(v.key)} title={v.label + ' — ' + v.hint} aria-label={v.label} aria-pressed={viewMode === v.key}>
               <span className="au-dock-ico"><Icon name={v.icon} size={28} mono strokeWidth={1.6} /></span>
               <span className="au-dock-label">{v.label}</span>
             </button>
@@ -247,7 +245,7 @@ export default function AuroraShell(p: AuroraProps) {
             { id: 'compile', icon: 'compile', label: '내보내기', color: '#2fb3a6' },
             { id: 'settings', icon: 'settings', label: '설정', color: '#7a8493' },
           ].map((t) => (
-            <button key={t.id} className={'au-dock-btn au-dock-tool' + (p.activeModal === t.id ? ' active' : '')} style={{ ['--c' as string]: t.color }} onClick={() => p.onOpenModal(t.id)} title={t.label} aria-label={t.label}>
+            <button key={t.id} className={'au-dock-btn au-dock-tool' + (p.activeModal === t.id ? ' active' : '')} onClick={() => p.onOpenModal(t.id)} title={t.label} aria-label={t.label}>
               <span className="au-dock-ico"><Icon name={t.icon} size={26} mono strokeWidth={1.6} /></span>
               <span className="au-dock-label">{t.label}</span>
             </button>
