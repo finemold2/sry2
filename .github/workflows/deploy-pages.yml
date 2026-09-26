@@ -46,6 +46,16 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=6144
 
+      # 디자인 2 미리보기: design-v2 브랜치를 함께 빌드해 /v2/ 아래에 게시(없거나 실패해도 본 배포는 계속)
+      - name: Build design-v2 preview into _site/v2
+        continue-on-error: true
+        run: |
+          git fetch --depth=1 origin design-v2 || exit 0
+          git worktree add ../v2 origin/design-v2
+          cd ../v2 && npm ci && npm run build && rm -rf "$GITHUB_WORKSPACE/_site/v2" && cp -r dist "$GITHUB_WORKSPACE/_site/v2"
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+
       - uses: actions/configure-pages@v5
         with:
           enablement: true
