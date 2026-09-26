@@ -3,6 +3,7 @@
 //  · 좌측 레일 없음: 뷰 10종은 화면 하단의 **대형 컬러 독**
 //  · 액션(찾기·스냅샷·분할·집중·테마·명령·저장)은 오른쪽 가장자리의 **세로 플로팅 레일**
 //  · 바인더/인스펙터는 캔버스 위로 미끄러져 나오는 **유리 서랍**(처음엔 닫혀 있음 — 원고에 집중)
+//  · 테마(라이트/다크/세피아)는 다른 스킨과 같은 토글로 동작 — 첫 진입만 다크로 시작
 //  · 파일/문서/도구/보기 메뉴는 전 항목을 한 화면에 펼치는 **타일 런처**
 // 같은 zustand store 와 같은 뷰/바인더/인스펙터/도구 컴포넌트를 렌더하므로 기능은 100% 동일하다.
 import { useEffect, useRef, useState } from 'react'
@@ -116,12 +117,14 @@ export default function AuroraShell(p: AuroraProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   // 현재 뷰 색을 CSS 변수로 — 독 활성 아이콘·스테이지 제목·레일·코르크보드 격자 강조에 쓰인다
   useEffect(() => { rootRef.current?.style.setProperty('--au-view', cur.color) }, [cur.color])
-  // 오로라 첫 진입: 서랍을 닫아 캔버스(원고)만 보이게 — 이후에는 사용자가 연 상태를 그대로 둔다
+  // 오로라 첫 진입: 서랍을 닫아 캔버스(원고)만 보이게 하고, 테마가 라이트면 다크로 시작(오로라의 기본 인상).
+  // 이후에는 사용자가 고른 테마(라이트/다크/세피아)와 서랍 상태를 그대로 둔다 — 테마 토글은 세 스킨 모두 동일하게 동작.
   useEffect(() => {
     try {
       if (localStorage.getItem(INTRO_KEY)) return
       localStorage.setItem(INTRO_KEY, '1')
       useStore.setState({ binderVisible: false, inspectorVisible: false })
+      if (useStore.getState().project.settings.theme === 'light') useStore.getState().setTheme('dark')
     } catch { /* noop */ }
   }, [])
 
@@ -198,7 +201,7 @@ export default function AuroraShell(p: AuroraProps) {
           {rail('snapshot', '스냅샷', p.onSnapshot, { title: '스냅샷 찍기(버전 저장)' })}
           {rail('split', '분할', () => { if (p.splitId) p.onCycleSplitDir(); else p.onToggleSplit() }, { active: !!p.splitId, pressed: !!p.splitId, title: p.splitId ? '분할 방향 전환 (현재: ' + (p.splitDir === 'horizontal' ? '가로' : '세로') + ' · 우클릭: 닫기)' : '편집기 분할 (⌘⇧K)', onContextMenu: (e) => { if (p.splitId) { e.preventDefault(); p.onCloseSplit() } } })}
           {rail('focus', '집중', p.onToggleComposition, { title: '집중 모드 (⌘⇧↵)' })}
-          {rail(p.theme === 'dark' ? 'moon' : p.theme === 'sepia' ? 'book' : 'sun', '테마', p.onCycleTheme, { title: '종이 색 전환 — 오로라에서는 세피아만 밝은 종이 (⌘⇧L)' })}
+          {rail(p.theme === 'dark' ? 'moon' : p.theme === 'sepia' ? 'book' : 'sun', '테마', p.onCycleTheme, { title: '테마 전환: 라이트 / 다크 / 세피아 (⌘⇧L)' })}
           {rail('palette', '명령', () => p.onOpenModal('palette'), { title: '명령 팔레트 (⌘K) — 모든 기능' })}
           <div className="au-rail-sep" />
           <button

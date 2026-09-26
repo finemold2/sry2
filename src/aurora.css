@@ -1,6 +1,6 @@
 /* =====================================================================
    Aurora 스킨(디자인 2) — `.app-aurora` 범위.
-   컨셉: "어두운 캔버스 위의 원고". 상단 바·좌측 레일·카드 프레임 없이,
+   컨셉: "캔버스 위의 원고"(기본 다크, 라이트/세피아 테마 지원). 상단 바·좌측 레일·카드 프레임 없이,
      · 캔버스 위 세리프 타이포그래피(브랜드·제목·뷰 이름)
      · 오른쪽 세로 플로팅 레일(액션) · 하단 대형 컬러 독(뷰) · 유리 서랍(바인더/인스펙터) · 타일 런처(메뉴)
      · 바인더·인스펙터·서식 바·코르크보드·아웃라이너·푸터 등 공용 컴포넌트도 이 범위 안에서 전부 다시 입힌다.
@@ -8,13 +8,21 @@
    ===================================================================== */
 
 .app-aurora {
-  /* 다크 전용 팔레트 — 공용 토큰을 이 범위에서 재정의 */
+  /* 기본(다크) 팔레트 — 공용 토큰을 이 범위에서 재정의. 라이트/세피아는 아래 [data-theme] 블록에서 같은 토큰만 바꾼다. */
   --bg: #07080d; --chrome: #12141d; --chrome-2: #0e1017; --panel: #13161f;
   --paper: #12141d;
   --binder-bg: transparent; --binder-fg: #d8dce6; --binder-sel: #5b7cfa;
   --border: #22263a; --border-dark: #2c3147; --text: #eceff6; --muted: #8790a6;
   --accent: #7d95ff; --accent-2: #aebcff; --shadow: 0 1px 3px rgba(0,0,0,.6);
   color-scheme: dark;
+  --au-fill: var(--au-fill);      /* 유리 위 얕은 채움(입력·탭·타일) */
+  --au-fill-2: var(--au-fill-2);    /* 호버/진행 막대 트랙 */
+  --au-paper-bg: #12151f; --au-paper-fg: #e6e9f2; --au-paper-line: var(--au-line);
+  --au-canvas-a: #090b13; --au-canvas-b: #05060a;
+  --au-backdrop: rgba(6, 8, 14, .5);
+  --au-soft-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+  --au-card-shadow: 0 16px 40px rgba(0, 0, 0, .35);
+  --au-on-view: #fff;                        /* 뷰 색 위 글자 */
   --au-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Apple SD Gothic Neo', 'Malgun Gothic', Georgia, serif;
   --au-r-xl: 26px; --au-r-lg: 20px; --au-r-md: 14px; --au-r-sm: 10px;
   --au-view: var(--accent);                 /* 현재 뷰 색(셸이 주입) */
@@ -28,13 +36,12 @@
     radial-gradient(1400px 800px at 8% -12%, color-mix(in srgb, var(--au-view) 26%, transparent), transparent 60%),
     radial-gradient(1100px 700px at 110% 6%, rgba(124, 77, 255, .18), transparent 58%),
     radial-gradient(900px 600px at 50% 115%, color-mix(in srgb, var(--au-view) 16%, transparent), transparent 60%),
-    linear-gradient(180deg, #090b13, #05060a);
+    linear-gradient(180deg, var(--au-canvas-a), var(--au-canvas-b));
   transition: background .6s;
 }
-/* 원고 종이: 오로라는 종이도 어둡다(라이트/다크 테마 무관). 밝은 종이가 필요하면 '세피아' 테마. */
-.app-aurora .paper { background: #12151f; color: #e6e9f2; border: 1px solid var(--au-line); box-shadow: 0 30px 80px rgba(0,0,0,.5); border-radius: 22px; max-width: 860px; padding: 72px 92px; }
-[data-theme='sepia'] .app-aurora .paper { background: #f6efe0; color: #3b3121; border-color: transparent; }
-.app-aurora .paper:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--au-view) 55%, transparent), 0 30px 80px rgba(0,0,0,.5); }
+/* 원고 종이: 테마 토큰을 따른다(다크=어두운 시트, 라이트=흰 종이, 세피아=크림) */
+.app-aurora .paper { background: var(--au-paper-bg); color: var(--au-paper-fg); border: 1px solid var(--au-paper-line); box-shadow: var(--au-card-shadow); border-radius: 22px; max-width: 860px; padding: 72px 92px; }
+.app-aurora .paper:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--au-view) 55%, transparent), var(--au-card-shadow); }
 .app-aurora .paper:not(.script-mode):not(:focus-within) > p:only-child:empty::before,
 .app-aurora .paper:not(.script-mode):not(:focus-within) > p:only-child:has(> br:only-child)::before { color: color-mix(in srgb, var(--muted) 70%, transparent); }
 .app-aurora .editor-scroll { padding: 22px 24px 140px; }
@@ -72,7 +79,7 @@
 .au-skins { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--au-glass); border: 1px solid var(--au-line); }
 .au-skin { height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
 .au-skin:hover { color: var(--text); }
-.au-skin.active { background: color-mix(in srgb, var(--au-view) 22%, transparent); color: #fff; cursor: default; }
+.au-skin.active { background: color-mix(in srgb, var(--au-view) 22%, transparent); color: var(--au-skin-active-fg, #fff); cursor: default; }
 
 /* ---------- 캔버스(스테이지) ---------- */
 .au-stage-wrap { flex: 1; min-height: 0; position: relative; display: flex; padding: 4px 0 6px; perspective: 1400px; }
@@ -148,7 +155,7 @@
 .au-drawer-x:hover { background: color-mix(in srgb, var(--au-view) 14%, transparent); color: var(--text); }
 .au-drawer-body { flex: 1; min-height: 0; display: flex; }
 .au-drawer-body > .binder, .au-drawer-body > .inspector, .au-drawer-body > * { flex: 1; min-width: 0; width: 100%; }
-.au-drawer-backdrop { position: absolute; inset: 0; z-index: 4; background: rgba(6, 8, 14, .32); }
+.au-drawer-backdrop { position: absolute; inset: 0; z-index: 4; background: color-mix(in srgb, var(--au-backdrop) 65%, transparent); }
 
 /* 바인더 — 트리 행을 큼직한 카드 행으로 */
 .app-aurora .binder { background: transparent; color: var(--text); border: 0; }
@@ -156,7 +163,7 @@
 .app-aurora .binder-head .minibtn { border-radius: 999px; padding: 6px 12px; }
 .app-aurora .binder-tree { padding: 4px 0 60px; }
 .app-aurora .binder-row { padding: 9px 12px; font-size: 14.5px; border-radius: 14px; margin: 2px 10px; gap: 8px; border: 1px solid transparent; transition: background .12s, transform .12s; }
-.app-aurora .binder-row:hover { background: rgba(255, 255, 255, .06); }
+.app-aurora .binder-row:hover { background: var(--au-fill); }
 .app-aurora .binder-row.selected { background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); color: #fff; box-shadow: var(--au-glow); }
 .app-aurora .binder-row.drop-into { background: color-mix(in srgb, var(--au-view) 30%, transparent); border-color: var(--au-view); }
 .app-aurora .binder-row.drop-before { border-top: 2px solid var(--au-view); }
@@ -170,11 +177,11 @@
 /* 인스펙터 — 탭은 알약 세그먼트, 섹션은 유리 카드 */
 .app-aurora .inspector { background: transparent; border: 0; }
 .app-aurora .insp-tabs { gap: 4px; padding: 4px 12px 10px; border: 0; background: transparent; }
-.app-aurora .insp-tabs button { flex: 0 0 auto; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; border-bottom: 0; background: rgba(255, 255, 255, .04); color: var(--muted); }
-.app-aurora .insp-tabs button:hover { color: var(--text); background: rgba(255, 255, 255, .09); }
+.app-aurora .insp-tabs button { flex: 0 0 auto; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; border-bottom: 0; background: var(--au-fill); color: var(--muted); }
+.app-aurora .insp-tabs button:hover { color: var(--text); background: var(--au-fill-2); }
 .app-aurora .insp-tabs button.active, .app-aurora .insp-tabs button[aria-selected='true'] { background: var(--au-view); color: #fff; box-shadow: var(--au-glow); border-bottom: 0; }
 .app-aurora .insp-body { padding: 4px 12px 40px; }
-.app-aurora .insp-section { background: rgba(255, 255, 255, .035); border: 1px solid var(--au-line); border-radius: 18px; padding: 12px 12px 10px; margin-bottom: 10px; }
+.app-aurora .insp-section { background: var(--au-fill); border: 1px solid var(--au-line); border-radius: 18px; padding: 12px 12px 10px; margin-bottom: 10px; }
 .app-aurora .insp-section > label { font-size: 10.5px; letter-spacing: .14em; font-weight: 800; margin-bottom: 8px; }
 .app-aurora .synopsis-card { background: transparent; border: 0; box-shadow: none; }
 .app-aurora .synopsis-card .syn-title { font-family: var(--au-serif); font-size: 15px; border-bottom-color: var(--au-line); padding: 4px 4px 8px; }
@@ -183,28 +190,28 @@
 /* 서식 바 — 떠 있는 캡슐 */
 .app-aurora .formatbar {
   margin: 6px auto 0; width: fit-content; max-width: calc(100% - 30px); padding: 8px 14px; gap: 4px; border-radius: 999px;
-  background: var(--au-glass-2); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid var(--au-line); box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  background: var(--au-glass-2); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid var(--au-line); box-shadow: var(--au-soft-shadow);
   position: relative; z-index: 3;
 }
 .app-aurora .fbtn { min-width: 36px; height: 36px; border-radius: 12px; }
 .app-aurora .fbtn:hover { background: color-mix(in srgb, var(--au-view) 16%, transparent); }
 .app-aurora .fbtn.active { background: var(--au-view); color: #fff; box-shadow: none; }
-.app-aurora .formatbar select, .app-aurora .formatbar input[type='color'] { height: 36px; border-radius: 999px; padding: 0 10px; font-size: 13px; background: rgba(255, 255, 255, .06); border-color: transparent; }
+.app-aurora .formatbar select, .app-aurora .formatbar input[type='color'] { height: 36px; border-radius: 999px; padding: 0 10px; font-size: 13px; background: var(--au-fill); border-color: transparent; }
 .app-aurora .formatbar .divider { height: 22px; background: var(--au-line); margin: 0 6px; }
 .app-aurora .swatch { width: 34px; height: 34px; border-radius: 10px; }
 
 /* 코르크보드 — 어두운 보드 + 뷰 색 격자, 유리 카드 */
 .app-aurora .corkboard { background: transparent; background-image: radial-gradient(color-mix(in srgb, var(--au-view) 30%, transparent) 1.3px, transparent 1.3px); background-size: 24px 24px; padding: 28px 28px 140px 4px; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-.app-aurora .card { background: var(--au-glass-2); border: 1px solid var(--au-line); border-top: 4px solid var(--au-view); border-radius: 18px; color: var(--text); box-shadow: 0 16px 40px rgba(0,0,0,.35); min-height: 170px; transition: transform .16s, box-shadow .16s; }
+.app-aurora .card { background: var(--au-glass-2); border: 1px solid var(--au-line); border-top: 4px solid var(--au-view); border-radius: 18px; color: var(--text); box-shadow: var(--au-card-shadow); min-height: 170px; transition: transform .16s, box-shadow .16s; }
 .app-aurora .card:hover { transform: translateY(-3px); box-shadow: 0 22px 50px rgba(0,0,0,.45); }
 .app-aurora .card.selected { outline: 2px solid var(--au-view); box-shadow: var(--au-glow); }
 .app-aurora .card .card-title { font-family: var(--au-serif); font-size: 15.5px; border-bottom-color: var(--au-line); padding: 12px 14px 8px; background: transparent; color: var(--text); }
 .app-aurora .card .card-body, .app-aurora .card .card-syn, .app-aurora .card textarea { color: var(--text); font-size: 13.5px; }
 
 /* 칸반·아웃라이너·데이터베이스·기타 표 */
-.app-aurora .board-col, .app-aurora .kanban-col { background: rgba(255, 255, 255, .035); border: 1px solid var(--au-line); border-radius: 18px; }
+.app-aurora .board-col, .app-aurora .kanban-col { background: var(--au-fill); border: 1px solid var(--au-line); border-radius: 18px; }
 .app-aurora .outliner table td, .app-aurora .outliner table th, .app-aurora .db-table td, .app-aurora .db-table th { border-color: var(--au-line); }
-.app-aurora .outliner tr:hover td { background: rgba(255, 255, 255, .04); }
+.app-aurora .outliner tr:hover td { background: var(--au-fill); }
 .app-aurora .outliner tr.selected td { background: color-mix(in srgb, var(--au-view) 22%, transparent); }
 
 /* 푸터 — 독 아래의 작은 유리 알약 */
@@ -213,7 +220,7 @@
   border-radius: 999px; background: var(--au-glass); border: 1px solid var(--au-line); font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden;
 }
 .app-aurora .footer .spacer { flex: 0 0 8px; }
-.app-aurora .progress { height: 6px; width: 110px; background: rgba(255, 255, 255, .12); border-radius: 999px; }
+.app-aurora .progress { height: 6px; width: 110px; background: var(--au-fill-2); border-radius: 999px; }
 .app-aurora .progress > span { background: var(--au-view); }
 
 /* ---------- 하단 대형 컬러 독 ---------- */
@@ -249,7 +256,7 @@
 @keyframes auBounce { 0% { transform: translateY(0) scale(1); } 45% { transform: translateY(-14px) scale(1.18); } 100% { transform: translateY(-8px) scale(1.12); } }
 
 /* ---------- 타일형 런처(메뉴) ---------- */
-.au-launcher-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(6, 8, 14, .5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; }
+.au-launcher-backdrop { position: fixed; inset: 0; z-index: 500; background: var(--au-backdrop); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; }
 .au-launcher {
   width: min(1180px, 100%); max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
   background: var(--au-glass-2); border: 1px solid var(--au-line); border-radius: var(--au-r-xl); box-shadow: 0 40px 100px rgba(0,0,0,.5);
@@ -257,7 +264,7 @@
 }
 .au-launcher-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--au-line); }
 .au-launcher-title { display: inline-flex; align-items: baseline; gap: 10px; font-family: var(--au-serif); font-size: 20px; font-weight: 700; }
-.au-launcher-search { flex: 1; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--au-line); background: rgba(255, 255, 255, .05); color: var(--text); font-size: 15px; }
+.au-launcher-search { flex: 1; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--au-line); background: var(--au-fill); color: var(--text); font-size: 15px; }
 .au-launcher-search:focus { outline: none; border-color: var(--au-view); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-view) 22%, transparent); }
 .au-launcher-x { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .au-launcher-x:hover { background: color-mix(in srgb, var(--au-view) 14%, transparent); color: var(--text); }
@@ -267,7 +274,7 @@
 .au-launcher-sep { height: 1px; background: var(--au-line); margin: 5px 4px; }
 .au-tile {
   display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 11px 14px; border-radius: var(--au-r-md); cursor: pointer;
-  border: 1px solid var(--au-line); background: rgba(255, 255, 255, .035); color: var(--text); font-size: 13.5px; font-weight: 600; line-height: 1.3;
+  border: 1px solid var(--au-line); background: var(--au-fill); color: var(--text); font-size: 13.5px; font-weight: 600; line-height: 1.3;
   transition: background .12s, border-color .12s, transform .1s;
 }
 .au-tile:hover:not(:disabled) { background: color-mix(in srgb, var(--au-view) 16%, transparent); border-color: color-mix(in srgb, var(--au-view) 45%, transparent); transform: translateY(-1px); }
@@ -275,7 +282,7 @@
 .au-tile-kbd { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; flex-shrink: 0; }
 
 /* ---------- 공용 컨트롤(이 스킨 범위에서만 크기·모양 변경) ---------- */
-.app-aurora .minibtn { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, .06); color: var(--text); border-color: transparent; line-height: 1.2; transition: background .12s, transform .08s; }
+.app-aurora .minibtn { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--au-fill); color: var(--text); border-color: transparent; line-height: 1.2; transition: background .12s, transform .08s; }
 .app-aurora .minibtn:hover { background: color-mix(in srgb, var(--au-view) 18%, transparent); }
 .app-aurora .minibtn:active { transform: scale(.97); }
 .app-aurora .minibtn svg { width: 17px; height: 17px; }
@@ -292,7 +299,7 @@
 .app-aurora .toolwin-body { font-size: 14px; }
 .app-aurora .modal { border-radius: var(--au-r-xl); box-shadow: 0 30px 80px rgba(0,0,0,.5); border: 1px solid var(--au-line); }
 .app-aurora .modal h2 { font-family: var(--au-serif); font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
-.app-aurora .modal-backdrop { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(6, 8, 14, .5); }
+.app-aurora .modal-backdrop { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: var(--au-backdrop); }
 .app-aurora .dropdown { border-radius: var(--au-r-lg); padding: 8px; box-shadow: 0 22px 56px rgba(0,0,0,.4); min-width: 240px; border-color: var(--au-line); }
 .app-aurora .dropdown button { font-size: 14px; padding: 9px 12px; border-radius: 10px; }
 .app-aurora .toolhub-card, .app-aurora .cmd-item { border-radius: 14px; }
@@ -303,12 +310,66 @@
 .app-aurora ::-webkit-scrollbar { width: 10px; height: 10px; }
 .app-aurora ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--muted) 35%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 .app-aurora ::-webkit-scrollbar-track { background: transparent; }
-/* 어두운 캔버스 위의 폼 컨트롤 */
-.app-aurora select, .app-aurora input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), .app-aurora textarea { background: rgba(255, 255, 255, .05); color: var(--text); border-color: var(--au-line); }
+/* 캔버스 위의 폼 컨트롤(테마 토큰) */
+.app-aurora select, .app-aurora input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), .app-aurora textarea { background: var(--au-fill); color: var(--text); border-color: var(--au-line); }
 .app-aurora select option { background: var(--chrome-2); color: var(--text); }
 .app-aurora ::placeholder { color: color-mix(in srgb, var(--muted) 80%, transparent); }
 /* 하단 독과 겹치지 않도록 최소화된 도구 칩은 독 위로 */
 .app-aurora .tool-dock { bottom: 150px; }
+
+
+/* ---------- 테마: 라이트 / 세피아 (다크는 위 기본값) ---------- */
+[data-theme='light'] .app-aurora {
+  --bg: #eef0f6; --chrome: #ffffff; --chrome-2: #f3f5f9; --panel: #ffffff;
+  --paper: #ffffff;
+  --binder-fg: #2a2f3d; --binder-sel: #5b7cfa;
+  --border: #dfe3ec; --border-dark: #cdd3df; --text: #1b1f2a; --muted: #6b7385;
+  --accent: #4f6ef7; --accent-2: #3d5be0; --shadow: 0 1px 3px rgba(20, 24, 40, .12);
+  color-scheme: light;
+  --au-glass: rgba(255, 255, 255, .64);
+  --au-glass-2: rgba(255, 255, 255, .9);
+  --au-line: rgba(20, 24, 40, .09);
+  --au-shadow: 0 18px 48px rgba(20, 24, 40, .14), 0 2px 6px rgba(20, 24, 40, .06);
+  --au-fill: rgba(20, 24, 40, .045);
+  --au-fill-2: rgba(20, 24, 40, .08);
+  --au-paper-bg: #ffffff; --au-paper-fg: #1f2329; --au-paper-line: rgba(20, 24, 40, .07);
+  --au-canvas-a: #f3f4f9; --au-canvas-b: #e9ecf4;
+  --au-backdrop: rgba(30, 34, 50, .28);
+  --au-soft-shadow: 0 10px 26px rgba(20, 24, 40, .12);
+  --au-card-shadow: 0 14px 36px rgba(20, 24, 40, .12);
+  --au-skin-active-fg: var(--au-view);
+  background:
+    radial-gradient(1400px 800px at 8% -12%, color-mix(in srgb, var(--au-view) 18%, transparent), transparent 60%),
+    radial-gradient(1100px 700px at 110% 6%, rgba(124, 77, 255, .10), transparent 58%),
+    radial-gradient(900px 600px at 50% 115%, color-mix(in srgb, var(--au-view) 10%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--au-canvas-a), var(--au-canvas-b));
+}
+[data-theme='sepia'] .app-aurora {
+  --bg: #efe6d3; --chrome: #fbf6e9; --chrome-2: #f3ecdb; --panel: #fbf6e9;
+  --paper: #fbf6e9;
+  --binder-fg: #3b3121; --binder-sel: #8a6d3b;
+  --border: #e2d8c2; --border-dark: #d2c6ab; --text: #3b3121; --muted: #7d6f58;
+  --accent: #8a6d3b; --accent-2: #6f5728; --shadow: 0 1px 3px rgba(60, 45, 20, .12);
+  color-scheme: light;
+  --au-glass: rgba(255, 251, 240, .66);
+  --au-glass-2: rgba(255, 251, 240, .92);
+  --au-line: rgba(60, 45, 20, .10);
+  --au-shadow: 0 18px 48px rgba(60, 45, 20, .14), 0 2px 6px rgba(60, 45, 20, .06);
+  --au-fill: rgba(60, 45, 20, .05);
+  --au-fill-2: rgba(60, 45, 20, .09);
+  --au-paper-bg: #fbf6e9; --au-paper-fg: #3b3121; --au-paper-line: rgba(60, 45, 20, .08);
+  --au-canvas-a: #f4ecda; --au-canvas-b: #eadfc7;
+  --au-backdrop: rgba(60, 45, 20, .26);
+  --au-soft-shadow: 0 10px 26px rgba(60, 45, 20, .12);
+  --au-card-shadow: 0 14px 36px rgba(60, 45, 20, .12);
+  --au-skin-active-fg: var(--au-view);
+  background:
+    radial-gradient(1400px 800px at 8% -12%, color-mix(in srgb, var(--au-view) 16%, transparent), transparent 60%),
+    radial-gradient(1100px 700px at 110% 6%, rgba(200, 150, 60, .12), transparent 58%),
+    linear-gradient(180deg, var(--au-canvas-a), var(--au-canvas-b));
+}
+/* 밝은 테마에서 그라디언트 브랜드 글자·툴팁 대비 */
+[data-theme='light'] .app-aurora .au-ib-tx, [data-theme='sepia'] .app-aurora .au-ib-tx { box-shadow: var(--au-soft-shadow); }
 
 /* ---------- 반응형 ---------- */
 @media (max-width: 1280px) {
