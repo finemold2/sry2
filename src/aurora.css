@@ -8,6 +8,7 @@
   /* 오로라는 다크 계열 전용 — 셸(아일랜드·스테이지·서랍·독) 크롬 토큰을 짙은 남색으로 고정.
      본문 종이(--paper)만 라이트/다크/세피아 테마를 따라가 '어두운 스튜디오 + 밝은 원고지' 느낌. */
   --bg: #090b12; --chrome: #141826; --chrome-2: #10131e; --panel: #151a29;
+  --paper: #10131e; /* 셸 안 카드·시놉시스·입력 표면도 어둡게(원고 종이는 아래에서 테마별로 되돌림) */
   --binder-bg: #0f1320; --binder-fg: #cfd6e6; --binder-sel: #5b7cfa;
   --border: #262c40; --border-dark: #303852; --text: #e8ecf5; --muted: #8b94ab;
   --accent: #6d8bff; --accent-2: #9db1ff; --shadow: 0 1px 3px rgba(0,0,0,.6);
@@ -31,6 +32,8 @@
 /* 세피아/라이트 테마여도 셸은 어둡고, 종이만 테마색 */
 .app-aurora .paper { box-shadow: 0 20px 60px rgba(0,0,0,.45); }
 [data-theme='light'] .app-aurora .paper, :root:not([data-theme]) .app-aurora .paper { background: #fbfbfd; color: #1f2329; }
+[data-theme='sepia'] .app-aurora .paper { background: #fbf6e9; color: #3b3121; }
+[data-theme='dark'] .app-aurora .paper { background: #1a1f2e; color: #e8ecf5; }
 
 .aurora-root { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; overflow: hidden; color: var(--text); font-family: inherit; }
 
@@ -206,6 +209,7 @@
 .app-aurora .insp-tabs button[aria-selected='true'] { color: var(--au-view); }
 .app-aurora .toolwin { border-radius: var(--au-r-lg); box-shadow: 0 26px 64px rgba(0,0,0,.34); border-color: color-mix(in srgb, var(--border-dark) 70%, transparent); }
 .app-aurora .toolwin-head { padding: 10px 14px; font-size: 14px; background: color-mix(in srgb, var(--chrome) 70%, var(--panel)); }
+.app-aurora .toolwin-title { color: var(--text); font-weight: 700; opacity: 1; }
 .app-aurora .toolwin-head .minibtn { padding: 4px 8px; }
 .app-aurora .toolwin-body { font-size: 14px; }
 .app-aurora .modal { border-radius: var(--au-r-xl); box-shadow: 0 30px 80px rgba(0,0,0,.4); }
