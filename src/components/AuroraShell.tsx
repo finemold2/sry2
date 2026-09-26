@@ -35,7 +35,8 @@ const VIEWS: { key: ViewKey; icon: string; label: string; hint: string; color: s
   { key: 'database', icon: 'database', label: '데이터베이스', hint: '모든 요소를 표로', color: '#2bb6c0', fg: '#03221f' },
 ]
 
-const INTRO_KEY = 'sry:aurora:intro'
+// v2: 테마 지원 이전에 오로라를 써 본 사용자도 한 번은 다크로 시작하도록 키를 올림
+const INTRO_KEY = 'sry:aurora:intro:2'
 
 function useIsNarrow(px: number) {
   const [narrow, setNarrow] = useState<boolean>(() => { try { return window.innerWidth < px } catch { return false } })
