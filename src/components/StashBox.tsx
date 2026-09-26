@@ -13,7 +13,9 @@ import { Icon } from '../ui/icons'
 type Kind = 'memo' | 'doc' | 'url' | 'image' | 'note' | 'audio' | 'video' | 'file'
 // media: applySryAux 가 blob 저장 실패(쿼터 등) 시 항목에 남기는 인라인 dataURL 폴백. blob 로드 실패/blobId 부재 시 표시용(데이터 보존).
 interface StashItem { id: string; kind: Kind; x: number; y: number; label: string; text?: string; url?: string; itemId?: string; credit?: string; blobId?: string; mime?: string; media?: string }
-interface Box { x: number; y: number }
+// 아이콘 위치. x/y 는 절대 px(하위 호환). ax/ay 가 있으면 오른쪽/아래 가장자리에서의 거리(rx/by)로 앵커해
+// 모니터·창 크기가 달라져도 같은 구석에 붙는다(큰 모니터에서 오른쪽 아래에 두면 작은 모니터에서도 오른쪽 아래).
+interface Box { x: number; y: number; ax?: 'left' | 'right'; ay?: 'top' | 'bottom'; rx?: number; by?: number }
 interface WinBox { x: number; y: number; w: number; h: number }
 
 const POS_KEY = 'sry:stash:pos'   // 위치/창은 전역 UI 선호(공통)
@@ -77,13 +79,26 @@ export default function StashBox() {
   // 화면 밖이면 항상 보이는 자리로 끌어들인다. 저장값은 건드리지 않아 큰 모니터로 돌아가면 원래 자리로 복귀.
   const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
   useEffect(() => {
-    const onResize = () => setVp({ w: window.innerWidth, h: window.innerHeight })
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    // resize 외에도 모니터 이동(배율 변화)·창 포커스·탭 복귀 때 다시 재고, ResizeObserver 로 뷰포트 변화를 놓치지 않는다
+    const sync = () => setVp((v) => (v.w === window.innerWidth && v.h === window.innerHeight ? v : { w: window.innerWidth, h: window.innerHeight }))
+    window.addEventListener('resize', sync)
+    window.addEventListener('focus', sync)
+    document.addEventListener('visibilitychange', sync)
+    let ro: ResizeObserver | null = null
+    try { ro = new ResizeObserver(sync); ro.observe(document.documentElement) } catch { /* noop */ }
+    let mq: MediaQueryList | null = null
+    const onDpr = () => { sync(); try { mq && mq.removeEventListener('change', onDpr) } catch { /* noop */ } try { mq = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`); mq.addEventListener('change', onDpr) } catch { /* noop */ } }
+    try { mq = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`); mq.addEventListener('change', onDpr) } catch { /* noop */ }
+    const iv = window.setInterval(sync, 1500) // 최후의 안전망(이벤트가 오지 않는 환경)
+    return () => { window.removeEventListener('resize', sync); window.removeEventListener('focus', sync); document.removeEventListener('visibilitychange', sync); try { ro && ro.disconnect() } catch { /* noop */ } try { mq && mq.removeEventListener('change', onDpr) } catch { /* noop */ } window.clearInterval(iv) }
   }, [])
   const iconZ = appZoom()
-  const iconLeft = clamp(pos.x, 0, Math.max(0, vp.w / iconZ - 56))
-  const iconTop = clamp(pos.y, 0, Math.max(0, vp.h / iconZ - 76))
+  const vpW = vp.w / iconZ, vpH = vp.h / iconZ
+  // 앵커가 있으면 가장자리 거리로 복원, 없으면(구버전 저장값) 절대 좌표 → 어느 쪽이든 화면 안으로 클램프
+  const rawX = pos.ax === 'right' && pos.rx != null ? vpW - pos.rx : pos.x
+  const rawY = pos.ay === 'bottom' && pos.by != null ? vpH - pos.by : pos.y
+  const iconLeft = clamp(rawX, 0, Math.max(0, vpW - 56))
+  const iconTop = clamp(rawY, 0, Math.max(0, vpH - 76))
   const [viewer, setViewer] = useState<{ kind: 'url' | 'image' | 'audio' | 'video' | 'file'; url: string; label: string; objectUrl?: boolean; local?: boolean } | null>(null)
   const closeViewer = () => { if (viewer?.objectUrl) { try { URL.revokeObjectURL(viewer.url) } catch { /* noop */ } } setViewer(null) }
   // 뷰어(이미지/파일/링크 미리보기)는 Esc 로도 닫히게 — 오버레이의 기본 기대 동작.
@@ -169,7 +184,11 @@ export default function StashBox() {
   }, [projectId])
 
   function load<T>(k: string, def: T): T { try { const r = localStorage.getItem(k); if (r) return JSON.parse(r) as T } catch { /* noop */ } return def }
-  const savePos = (p: Box) => { setPos(p); try { localStorage.setItem(POS_KEY, JSON.stringify(p)) } catch { /* noop */ } }
+  const savePos = (p: Box) => {
+    const z = appZoom(); const w = window.innerWidth / z, h = window.innerHeight / z
+    const anchored: Box = { x: p.x, y: p.y, ax: p.x + 28 > w / 2 ? 'right' : 'left', ay: p.y + 28 > h / 2 ? 'bottom' : 'top', rx: w - p.x, by: h - p.y }
+    setPos(anchored); try { localStorage.setItem(POS_KEY, JSON.stringify(anchored)) } catch { /* noop */ }
+  }
   const saveWin = (w: WinBox) => { setWin(w); try { localStorage.setItem(WIN_KEY, JSON.stringify(w)) } catch { /* noop */ } }
   const toggleListView = () => setListView((v) => { const nv = !v; try { localStorage.setItem(VIEW_KEY, nv ? 'list' : 'canvas') } catch { /* noop */ } return nv })
   // 콘텐츠 영역 폭(스크롤 가능 영역까지 배치 허용을 위한 기준).
