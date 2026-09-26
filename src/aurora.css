@@ -13,7 +13,7 @@
   --paper: #12141d;
   --binder-bg: transparent; --binder-fg: #d8dce6; --binder-sel: #6f7888; /* 선택 행도 회색 */
   --border: #22263a; --border-dark: #2c3147; --text: #eceff6; --muted: #8790a6;
-  --accent: #8a94a6; --accent-2: #c3cad6; --shadow: 0 1px 3px rgba(0,0,0,.6); /* 강조색도 회색 계열(흰 글자 4.5:1 이상) */
+  --accent: #5e72f0; --accent-2: #aebcff; --shadow: 0 1px 3px rgba(0,0,0,.6); /* 내용(링크·주 버튼·도구창) 강조색은 색을 유지 — 셸(배지·칩·독·레일)만 회색 */
   color-scheme: dark;
   --au-fill: var(--au-fill);      /* 유리 위 얕은 채움(입력·탭·타일) */
   --au-fill-2: var(--au-fill-2);    /* 호버/진행 막대 트랙 */
@@ -23,6 +23,8 @@
   --au-soft-shadow: 0 12px 30px rgba(0, 0, 0, .35);
   --au-card-shadow: 0 16px 40px rgba(0, 0, 0, .35);
   --au-view-fg: #ffffff;                     /* 회색 강조 위 글자 */
+  --au-content: var(--au-view);              /* 뷰 '내용' 강조색 — 에디터는 회색, 다른 뷰는 셸이 뷰 색으로 주입 */
+  --au-content-fg: #ffffff;
   --au-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Apple SD Gothic Neo', 'Malgun Gothic', Georgia, serif;
   --au-r-xl: 26px; --au-r-lg: 20px; --au-r-md: 14px; --au-r-sm: 10px;
   --au-view: #6f7888;                       /* 셸 강조색 = 중립 회색(뷰별 색 없음) */
@@ -41,7 +43,7 @@
 }
 /* 원고 종이: 테마 토큰을 따른다(다크=어두운 시트, 라이트=흰 종이, 세피아=크림) */
 .app-aurora .paper { background: var(--au-paper-bg); color: var(--au-paper-fg); border: 1px solid var(--au-paper-line); box-shadow: var(--au-card-shadow); border-radius: 22px; max-width: 860px; padding: 72px 92px; }
-.app-aurora .paper:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--au-view) 55%, transparent), var(--au-card-shadow); }
+.app-aurora .paper:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--au-content) 55%, transparent), var(--au-card-shadow); }
 .app-aurora .paper:not(.script-mode):not(:focus-within) > p:only-child:empty::before,
 .app-aurora .paper:not(.script-mode):not(:focus-within) > p:only-child:has(> br:only-child)::before { color: color-mix(in srgb, var(--muted) 70%, transparent); }
 .app-aurora .editor-scroll { padding: 22px 24px 140px; }
@@ -206,10 +208,10 @@
 .app-aurora .swatch { width: 34px; height: 34px; border-radius: 10px; }
 
 /* 코르크보드 — 어두운 보드 + 뷰 색 격자, 유리 카드 */
-.app-aurora .corkboard { background: transparent; background-image: radial-gradient(color-mix(in srgb, var(--au-view) 30%, transparent) 1.3px, transparent 1.3px); background-size: 24px 24px; padding: 28px 28px 140px 4px; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-.app-aurora .card { background: var(--au-glass-2); border: 1px solid var(--au-line); border-top: 4px solid var(--au-view); border-radius: 18px; color: var(--text); box-shadow: var(--au-card-shadow); min-height: 170px; transition: transform .16s, box-shadow .16s; }
+.app-aurora .corkboard { background: transparent; background-image: radial-gradient(color-mix(in srgb, var(--au-content) 30%, transparent) 1.3px, transparent 1.3px); background-size: 24px 24px; padding: 28px 28px 140px 4px; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.app-aurora .card { background: var(--au-glass-2); border: 1px solid var(--au-line); border-top: 4px solid var(--au-content); border-radius: 18px; color: var(--text); box-shadow: var(--au-card-shadow); min-height: 170px; transition: transform .16s, box-shadow .16s; }
 .app-aurora .card:hover { transform: translateY(-3px); box-shadow: 0 22px 50px rgba(0,0,0,.45); }
-.app-aurora .card.selected { outline: 2px solid var(--au-view); box-shadow: var(--au-glow); }
+.app-aurora .card.selected { outline: 2px solid var(--au-content); box-shadow: var(--au-glow); }
 .app-aurora .card .card-title { font-family: var(--au-serif); font-size: 15.5px; border-bottom-color: var(--au-line); padding: 12px 14px 8px; background: transparent; color: var(--text); }
 .app-aurora .card .card-body, .app-aurora .card .card-syn, .app-aurora .card textarea { color: var(--text); font-size: 13.5px; }
 
@@ -217,7 +219,7 @@
 .app-aurora .board-col, .app-aurora .kanban-col { background: var(--au-fill); border: 1px solid var(--au-line); border-radius: 18px; }
 .app-aurora .outliner table td, .app-aurora .outliner table th, .app-aurora .db-table td, .app-aurora .db-table th { border-color: var(--au-line); }
 .app-aurora .outliner tr:hover td { background: var(--au-fill); }
-.app-aurora .outliner tr.selected td { background: color-mix(in srgb, var(--au-view) 22%, transparent); }
+.app-aurora .outliner tr.selected td { background: color-mix(in srgb, var(--au-content) 22%, transparent); }
 
 /* 푸터 — 독 아래의 작은 유리 알약 */
 .app-aurora .footer {
@@ -226,7 +228,7 @@
 }
 .app-aurora .footer .spacer { flex: 0 0 8px; }
 .app-aurora .progress { height: 6px; width: 110px; background: var(--au-fill-2); border-radius: 999px; }
-.app-aurora .progress > span { background: var(--au-view); }
+.app-aurora .progress > span { background: var(--au-content); }
 
 /* ---------- 하단 대형 컬러 독 ---------- */
 .au-dock {
@@ -296,14 +298,14 @@
 
 /* ---------- 공용 컨트롤(이 스킨 범위에서만 크기·모양 변경) ---------- */
 .app-aurora .minibtn { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--au-fill); color: var(--text); border-color: transparent; line-height: 1.2; transition: background .12s, transform .08s; }
-.app-aurora .minibtn:hover { background: color-mix(in srgb, var(--au-view) 18%, transparent); }
+.app-aurora .minibtn:hover { background: color-mix(in srgb, var(--au-content) 18%, transparent); }
 .app-aurora .minibtn:active { transform: scale(.97); }
 .app-aurora .minibtn svg { width: 17px; height: 17px; }
 .app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: 999px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 75%, #000)); color: #fff; border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
 .app-aurora .linkbtn { font-size: 13px; padding: 6px 12px; gap: 6px; border-radius: 999px; }
 .app-aurora .linkbtn svg { width: 16px; height: 16px; }
 .app-aurora .field { font-size: 14px; padding: 9px 12px; border-radius: 12px; }
-.app-aurora .field:focus { border-color: var(--au-view); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-view) 18%, transparent); outline: none; }
+.app-aurora .field:focus { border-color: var(--au-content); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-content) 18%, transparent); outline: none; }
 .app-aurora .kw-chip { font-size: 12.5px; padding: 5px 12px; border-radius: 999px; }
 .app-aurora .toolwin { border-radius: var(--au-r-lg); box-shadow: 0 26px 64px rgba(0,0,0,.45); border-color: var(--au-line); background: var(--au-glass-2); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 .app-aurora .toolwin-head { padding: 10px 14px; font-size: 14px; background: transparent; border-bottom-color: var(--au-line); }
@@ -337,7 +339,7 @@
   --paper: #ffffff;
   --binder-fg: #2a2f3d; --binder-sel: #5b6472;
   --border: #dfe3ec; --border-dark: #cdd3df; --text: #1b1f2a; --muted: #6b7385;
-  --accent: #5b6472; --accent-2: #3f4653; --shadow: 0 1px 3px rgba(20, 24, 40, .12);
+  --accent: #4f6ef7; --accent-2: #3d5be0; --shadow: 0 1px 3px rgba(20, 24, 40, .12);
   color-scheme: light;
   --au-glass: rgba(255, 255, 255, .64);
   --au-glass-2: rgba(255, 255, 255, .9);
@@ -362,7 +364,7 @@
   --paper: #fbf6e9;
   --binder-fg: #3b3121; --binder-sel: #7a6f5f;
   --border: #e2d8c2; --border-dark: #d2c6ab; --text: #3b3121; --muted: #7d6f58;
-  --accent: #7a6f5f; --accent-2: #5a5044; --shadow: 0 1px 3px rgba(60, 45, 20, .12);
+  --accent: #8a6d3b; --accent-2: #6f5728; --shadow: 0 1px 3px rgba(60, 45, 20, .12);
   color-scheme: light;
   --au-glass: rgba(255, 251, 240, .66);
   --au-glass-2: rgba(255, 251, 240, .92);
