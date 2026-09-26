@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ChevronDown,
   ChevronRight,
@@ -934,7 +935,8 @@ export default function Binder() {
           </>
         )}
       </div>
-      {menu && <ContextMenu menu={menu} onClose={() => setMenu(null)} />}
+      {/* 우클릭 메뉴는 body 로 포털: 오로라 유리 서랍처럼 backdrop-filter + overflow:hidden 인 조상 안에서는 position:fixed 도 잘리므로 */}
+      {menu && createPortal(<ContextMenu menu={menu} onClose={() => setMenu(null)} />, document.body)}
     </div>
   )
 }
