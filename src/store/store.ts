@@ -37,6 +37,17 @@ import { STRUCTURES, type Beat } from '../templates/structures'
 // 디자인 2 미리보기(/v2/)는 같은 origin 의 /app/ 과 localStorage 를 공유하므로 스킨 선택 키를 분리한다.
 const IS_V2_PATH = ((): boolean => { try { return /\/v2\//.test(location.pathname) } catch { return false } })()
 export const UI_SKIN_KEY = IS_V2_PATH ? 'sry:uiSkin:v2' : 'sry:uiSkin'
+// URL 로 스킨 지정(소개 페이지의 '시작하기' → ?skin=aurora 등): 저장한 뒤 주소에서 파라미터를 지워 새로고침해도 깨끗하게.
+const SKIN_FROM_URL = ((): 'classic' | 'studio' | 'aurora' | null => {
+  try {
+    const v = new URLSearchParams(location.search).get('skin')
+    if (v !== 'classic' && v !== 'studio' && v !== 'aurora') return null
+    localStorage.setItem(UI_SKIN_KEY, v)
+    const u = new URL(location.href); u.searchParams.delete('skin')
+    history.replaceState(null, '', u.pathname + u.search + u.hash)
+    return v
+  } catch { return null }
+})()
 
 /** 도구가 프로젝트에 항목을 추가할 때 쓰는 사양(브리지 공용). */
 export interface ProjectEntrySpec {
@@ -386,7 +397,7 @@ export const useStore = create<AppState>((set, get) => ({
   inspectorVisible: true,
   favorites: loadFavorites(),
   // 디자인 2 미리보기 경로(/v2/)에서는 아직 선택이 없으면 오로라로 시작(같은 origin 의 /app/ 은 저장된 값이 없으면 클래식)
-  uiSkin: ((): 'classic' | 'studio' | 'aurora' => { try { const v = localStorage.getItem(UI_SKIN_KEY); if (v === 'studio' || v === 'aurora') return v; if (v == null && IS_V2_PATH) return 'aurora'; return 'classic' } catch { return 'classic' } })(),
+  uiSkin: ((): 'classic' | 'studio' | 'aurora' => { try { if (SKIN_FROM_URL) return SKIN_FROM_URL; const v = localStorage.getItem(UI_SKIN_KEY); if (v === 'studio' || v === 'aurora') return v; if (v == null && IS_V2_PATH) return 'aurora'; return 'classic' } catch { return 'classic' } })(),
   binderVisible: true,
   composition: false,
   renameId: null,
