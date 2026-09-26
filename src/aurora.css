@@ -76,6 +76,11 @@
 .au-scale-btn:hover { background: color-mix(in srgb, var(--au-view) 14%, transparent); }
 .au-scale-btn:disabled { opacity: .4; cursor: default; }
 .au-scale-val { min-width: 50px; }
+/* 테마 세그먼트(라이트/다크/세피아) — 항상 보이는 라벨 있는 테마 스위치. 레일의 순환 버튼(⌘⇧L)과 같은 상태를 바꾼다. */
+.au-themes { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--au-glass); border: 1px solid var(--au-line); }
+.au-theme { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+.au-theme:hover { color: var(--text); }
+.au-theme.active { background: color-mix(in srgb, var(--au-view) 22%, transparent); color: var(--au-skin-active-fg, #fff); cursor: default; }
 .au-skins { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--au-glass); border: 1px solid var(--au-line); }
 .au-skin { height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
 .au-skin:hover { color: var(--text); }
@@ -374,6 +379,8 @@
 /* ---------- 반응형 ---------- */
 @media (max-width: 1280px) {
   .au-crumbs { display: none; }
+  .au-theme-tx { display: none; }
+  .au-theme { padding: 0 9px; }
   .au-chip-tx { display: none; }
   .au-chip { width: 40px; padding: 0; justify-content: center; }
 }
@@ -381,7 +388,8 @@
   .au-top { padding: 12px 14px 4px; gap: 10px; }
   .au-title { font-size: 20px; max-width: 220px; }
   .au-brand-mark { display: none; }
-  .au-skins, .au-status { display: none; }
+  .au-skins, .au-status { display: none; } /* 좁은 폭: 테마는 하단 레일의 순환 버튼으로 */
+  .au-themes { display: none; }
   .au-stage { margin: 0 !important; }
   .au-stage-head { padding: 4px 14px 6px; }
   .au-stage-title b { font-size: 21px; }

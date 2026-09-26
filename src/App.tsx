@@ -1890,6 +1890,7 @@ export default function App() {
         { label: '명령 팔레트', fn: () => setModal('palette'), kbd: '⌘K' },
         { label: '집중 모드', fn: requestFocusMode },
         { label: '편집기 분할 토글', fn: toggleSplit },
+        { label: '테마 전환 (라이트/다크/세피아)', fn: cycleTheme, kbd: '⌘⇧L' },
         { divider: true },
         { label: '단축키 도움말 (치트시트)', fn: () => setShowShortcuts(true), kbd: 'F1' },
         { label: '도움말 둘러보기 (가이드 투어)', fn: startTour },
@@ -1920,6 +1921,7 @@ export default function App() {
           onToggleComposition={requestFocusMode}
           onToggleBinder={userToggleBinder} onToggleInspector={userToggleInspector}
           onSetSkin={(s) => setUiSkin(s)}
+          onSetTheme={(t) => setTheme(t)}
         />
       ) : uiSkin === 'studio' ? (
         <StudioShell

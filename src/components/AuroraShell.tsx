@@ -16,8 +16,10 @@ import { ActiveView, type StudioMenuDef, type StudioProps, type ViewKey } from '
 
 export type SkinName = 'classic' | 'studio' | 'aurora'
 
+export type ThemeName = 'light' | 'dark' | 'sepia'
 export interface AuroraProps extends Omit<StudioProps, 'onSetClassic'> {
   onSetSkin: (skin: SkinName) => void
+  onSetTheme?: (theme: ThemeName) => void // 라벨 있는 테마 세그먼트(라이트/다크/세피아). 없으면 레일의 순환 버튼만.
 }
 
 // 뷰 10종 — 각각 고유 색(독 아이콘·스테이지 제목·레일 강조·코르크보드 격자에 사용)
@@ -160,6 +162,15 @@ export default function AuroraShell(p: AuroraProps) {
             <button className="au-scale-btn au-scale-val" onClick={p.onResetScale} title="100%로" aria-label="크기 초기화">{Math.round(p.uiScale * 100)}%</button>
             <button className="au-scale-btn" onClick={() => p.onChangeScale(0.1)} disabled={p.uiScale >= 1.6} aria-label="크게">A+</button>
           </div>
+          {p.onSetTheme && (
+            <div className="au-themes" role="group" aria-label="테마" title="테마 — 라이트 / 다크 / 세피아 (⌘⇧L 로 순환)">
+              {([['light', '라이트', 'sun'], ['dark', '다크', 'moon'], ['sepia', '세피아', 'book']] as [ThemeName, string, string][]).map(([t, label, icon]) => (
+                <button key={t} className={'au-theme' + (p.theme === t ? ' active' : '')} onClick={() => p.onSetTheme && p.onSetTheme(t)} aria-label={label + ' 테마'} aria-pressed={p.theme === t} title={label + ' 테마'}>
+                  <Icon name={icon} size={15} mono strokeWidth={1.8} /><span className="au-theme-tx">{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <div className="au-skins" role="group" aria-label="디자인 전환" title="디자인 전환 — 원고·설정은 그대로 보존됩니다">
             <button className="au-skin" onClick={() => p.onSetSkin('classic')} aria-label="클래식 UI 로 전환">클래식</button>
             <button className="au-skin" onClick={() => p.onSetSkin('studio')} aria-label="Studio UI 로 전환">스튜디오</button>
