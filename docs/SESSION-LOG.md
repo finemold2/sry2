@@ -12,6 +12,7 @@
 - **배포 성공(run #2, 6c54e70)**: build·deploy 잡 전부 success. GitHub Deployments API 기준 `github-pages` 환경 상태 **success**, `environment_url = https://finemold2.github.io/sry2/`. 아티팩트 `github-pages` 10.9MB. 이후 main 푸시마다 자동 재배포(문서만 바뀐 커밋은 `paths-ignore` 로 제외).
 - **로컬 검증(클라우드 세션)**: 이 세션 환경은 `registry.npmjs.org` 가 네트워크 정책으로 차단돼 로컬 빌드 불가 → 빌드/테스트는 CI 가 담당. 랜딩은 의존성 0 이라 `_site` 를 `/sry2/` 하위 경로로 띄워 Playwright 로 검사: 시작 버튼 5개 전부 `/sry2/app/`, 클릭 이동 OK, 로컬 요청 4xx 0, `og:url` 절대. (콘솔의 Pretendard CDN 실패 1건은 샌드박스 차단 아티팩트.)
 - **문서**: README "배포 (GitHub Pages)" 절, CLAUDE.md(저장소·Pages 주소·`build:pages`), `site/README.md` 현재 배포 안내.
+- **▶ 다음 세션 할 일(사용자 지시: "전반적인 모든 면을 테스트")**: 새 세션에서 `npm ci` 가 되는지 먼저 확인(이전 세션은 registry.npmjs.org 차단). 되면 ① `tsc`→단위 174→`vite build` ② `vite preview`(:4178)+헤드리스 Chrome(9222)으로 `scripts/_cdp_*.cjs` 배터리 전체(all_tools 555·ui_all·binder_deep·views_*·save_open·datasafety·a11y 등) ③ **도구 간 연계 집중 검증** 신규 스크립트: 인물시트→관계도/세계관 위키/캔버스, linkbus `characters/places` 공유 라이브러리 add/update/drag 흐름(사용자가 "인물시트에서 관계도로 인물 이동" 을 예로 지목) ④ 다중 에이전트 교차 베타(데이터 안전·연계·UI/UX·모바일·PWA) → 확정 버그만 수정 → 회귀 → main 푸시(자동 배포).
 - **남은 과제**: ① 배포된 사이트 실브라우저 확인(https://finemold2.github.io/sry2/ · /app/) — 앱 실기동·SW 등록(scope `/sry2/app/`)·이모지 경로(`./emoji/`)·PWA 설치. (클라우드 세션은 github.io·아티팩트 저장소 접근이 차단돼 원격에서 못 봄 — 로컬 세션 또는 사용자 확인 필요.) ② (선택) actions/* 를 Node 24 대응 최신 메이저로 올려 경고 제거. ③ 로컬 세션에서 CDP 배터리(`_cdp_all_tools` 등)를 `_site/app` 기준으로도 1회 통과시키기.
 
 ### 2026-07-18 #32: 남은 UX 백로그 14건 전부 구현 + 적대 코드리뷰 13건 수정 + 전체 실동작 베타
