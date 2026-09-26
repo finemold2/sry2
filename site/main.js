@@ -31,9 +31,48 @@
     t._timer = setTimeout(function () { t.classList.remove('show'); }, 3600);
   }
 
+  /* 앱(PWA)의 서비스 워커가 이전 배포를 프리캐시해 두면, 새 배포 직후 첫 방문은 옛 번들이 뜬다(스킨 파라미터·자동 새로고침이
+     없는 구버전이면 그대로 옛 화면). '시작하기'를 누를 때 같은 origin 의 등록된 워커에 업데이트를 요청하고, 새 워커가
+     활성화될 때까지(최대 3초) 기다렸다가 이동해 항상 최신 앱으로 들어가게 한다. 워커가 없거나 이미 최신이면 바로 이동. */
+  function refreshAppWorker() {
+    return new Promise(function (resolve) {
+      var done = false; var finish = function () { if (!done) { done = true; resolve(); } };
+      var timer = setTimeout(finish, 3000);
+      try {
+        if (!('serviceWorker' in navigator)) { clearTimeout(timer); return finish(); }
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          var pending = 0;
+          regs.forEach(function (reg) {
+            if (!reg.scope || reg.scope.indexOf('/app/') < 0) return;
+            pending++;
+            var watch = function (sw) {
+              if (!sw) return false;
+              if (sw.state === 'activated') return false;
+              try { sw.postMessage({ type: 'SKIP_WAITING' }); } catch (e) { /* noop */ }
+              sw.addEventListener('statechange', function () { if (sw.state === 'activated' || sw.state === 'redundant') { pending--; if (pending <= 0) { clearTimeout(timer); finish(); } } });
+              return true;
+            };
+            reg.update().then(function () {
+              if (watch(reg.installing) || watch(reg.waiting)) return;
+              reg.addEventListener('updatefound', function () { watch(reg.installing); });
+              // 이미 최신: 잠깐(300ms) updatefound 를 기다렸다가 이동
+              setTimeout(function () { pending--; if (pending <= 0) { clearTimeout(timer); finish(); } }, 300);
+            }).catch(function () { pending--; if (pending <= 0) { clearTimeout(timer); finish(); } });
+          });
+          if (pending === 0) { clearTimeout(timer); finish(); }
+        }).catch(function () { clearTimeout(timer); finish(); });
+      } catch (e) { clearTimeout(timer); finish(); }
+    });
+  }
+
   Array.prototype.forEach.call(doc.querySelectorAll('[data-app-link]'), function (a) {
     if (appReady) {
       a.setAttribute('href', appUrl); // 배포 완료: 실제 앱으로 연결
+      a.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // 새 탭 열기 등은 기본 동작
+        e.preventDefault();
+        refreshAppWorker().then(function () { window.location.href = a.getAttribute('href') || appUrl; });
+      });
     } else {
       a.setAttribute('href', '#'); // 미배포: 404 대신 안내
       var base = (a.getAttribute('aria-label') || a.textContent || '').replace(/\s+/g, ' ').trim();
