@@ -96,6 +96,19 @@ npm run typecheck # 타입 검사
 
 `example.rtf`는 엔진이 생성한 샘플로, Microsoft Word / 한글(HWP)에서 바로 열어 확인할 수 있습니다.
 
+## 배포 (GitHub Pages)
+
+`main` 에 푸시하면 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) 이 타입체크 → 단위 테스트 → 빌드 → 배포를 자동으로 수행합니다.
+
+| 주소 | 내용 |
+|---|---|
+| https://finemold2.github.io/sry2/ | 소개(랜딩) 페이지 (`site/`) |
+| https://finemold2.github.io/sry2/app/ | 실제 앱 (`dist/`, PWA 설치 가능) |
+
+- 조립 규칙은 `scripts/build-pages.cjs`: `site/` → `_site/`, `dist/` → `_site/app/`. 앱은 `base: './'` 상대경로 빌드라 하위 경로에서 그대로 동작합니다.
+- 로컬에서 같은 결과물을 만들려면 `npm run build:pages` → `_site/` 를 아무 정적 서버로 여세요.
+- 최초 1회, 저장소 **Settings → Pages → Source** 가 **GitHub Actions** 여야 합니다(워크플로의 `configure-pages` 가 자동 설정을 시도하며, 실패하면 이 항목만 손으로 바꾸면 됩니다).
+
 ## 기술 스택
 
 React 18 · TypeScript · Vite · Zustand · idb · JSZip · docx · mammoth(DOCX 가져오기) · lucide-react · vite-plugin-pwa. 백엔드/계정 없음 — 완전 클라이언트 사이드·오프라인. (AI 어시스턴트만 사용자가 입력한 본인 API 키로 제공자에 직접 요청)

@@ -8,7 +8,7 @@
 **브라우저 전용(서버 없음) 한국어 글쓰기 앱 — Scrivener 클론.**
 React 18 + TypeScript + Vite + Zustand. 본문은 **실제 RTF**. 저장은 IndexedDB + File System Access(`.scriv`) + zip 백업. PWA 오프라인. 전부 클라이언트에서 동작.
 
-- 작업 디렉터리: `D:\tof3\4 dev\cc_sry`
+- 작업 디렉터리: `D:\tof3\4 dev\cc_sry` · GitHub: `finemold2/sry2`(main) · **GitHub Pages**: https://finemold2.github.io/sry2/ (랜딩) · https://finemold2.github.io/sry2/app/ (앱) — main 푸시 시 `.github/workflows/deploy-pages.yml` 이 자동 배포.
 - 플랫폼: Windows / PowerShell. (Bash 도구도 사용 가능)
 - 사용자 선호: **묻지 말고 끝까지 자동 구현·검증**. 구현하면 **반드시 여러 명(에이전트)로 교차 베타테스트**. **데이터(원고) 안전이 최우선.**
 
@@ -17,6 +17,7 @@ React 18 + TypeScript + Vite + Zustand. 본문은 **실제 RTF**. 저장은 Inde
 ```bash
 npm run dev          # 개발 서버 (5173)
 npm run build        # 프로덕션 빌드(PWA). 빌드 전 vite preview 종료+dist 삭제 권장
+npm run build:pages  # 빌드 + GitHub Pages 조립(_site/ = site/ + dist→app/). CI 와 동일
 npm test             # 단위 테스트 174개 (rtf 88 + export 12 + creative 55 + persistence 19)
 npx tsc --noEmit     # 타입체크
 node scripts/_gentools.cjs        # 도구 레지스트리 재생성(도구 추가 후 필수)
@@ -34,7 +35,7 @@ node scripts/_cdp_datasafety.cjs         # 데이터 안전 E2E 베타
 - `src/creative/` — 합성기 1,534(procgen)·분석기 47·가이드 565·단어은행 등(창작 스튜디오, 약 2,445 도구).
 - `src/tools/` — **도구 허브 507종**(기본 100 + 장르별 168 + 자율 대형 도구 novel-A~K) + `linkbus.ts`(연계) + `ToolWindow`/`ToolHub`/`registry.tsx`. 모든 도구는 ToolWindow 하단 자동 "관련 도구" 스트립으로 연결(App `relatedToolsFor`). → [docs/TOOL-HUB.md](docs/TOOL-HUB.md)
 - `src/export/`, `src/compile/`, `src/rtf/` — 컴파일/내보내기(DOCX/EPUB/ODT/LaTeX/MD/Fountain/FDX)·RTF 엔진.
-- `site/` — **앱 소개(랜딩) 페이지**(앱과 분리된 독립 정적: 미니멀 스위스+스크롤 모션+실제 앱 스크린샷, 곧-출시 토스트·의견 폼). 로컬 미리보기 `node scripts/serve-site.cjs`(→ :5500). 배포/재생성·SRY_APP_READY 플래그는 `site/README.md`·SESSION-LOG #29.
+- `site/` — **앱 소개(랜딩) 페이지**(앱과 분리된 독립 정적: 미니멀 스위스+스크롤 모션+실제 앱 스크린샷, 곧-출시 토스트·의견 폼). 로컬 미리보기 `node scripts/serve-site.cjs`(→ :5500). 배포/재생성·SRY_APP_READY 플래그는 `site/README.md`·SESSION-LOG #29. **GitHub Pages 배포 완료(#33)**: `SRY_APP_READY=true`, 랜딩=루트·앱=`/app/`.
 
 ## 상세 문서 (docs/)
 

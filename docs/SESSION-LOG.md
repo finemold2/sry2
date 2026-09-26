@@ -2,7 +2,16 @@
 
 > 세션이 갑자기 닫혀도 이어받을 수 있도록 이번 작업의 흐름과 **남은 과제**를 기록. 최신이 위.
 
-## ▶▶ 다음 세션 이어받기 (2026-07-18, 최신) — 여기부터 읽으세요
+## ▶▶ 다음 세션 이어받기 (2026-09-26, 최신) — 여기부터 읽으세요
+
+### 2026-09-26 #33: GitHub 저장소 `finemold2/sry2` 로 이식 + GitHub Pages 자동 배포 구축
+- **저장소**: 로컬 `D:\tof3\4 dev\cc_sry` 를 사용자가 `https://github.com/finemold2/sry2`(main) 로 푸시. 이후 작업의 원격 루트는 이 저장소.
+- **배포 설계**(#29 "남은 과제 ①" 이행): 랜딩 `site/` = 루트, 앱 `dist/` = `/app/`. 신규 `scripts/build-pages.cjs`(site→`_site/`, dist→`_site/app/`, README/DESIGN.md 제외, `.nojekyll`) + `npm run build:pages`. `site/index.html` **`SRY_APP_READY=true`**(시작 버튼→`./app/`), `og:url`/`og:image`/`twitter:image` 를 Pages 절대 URL 로. `.gitignore` 에 `_site`.
+- **CI**: `.github/workflows/deploy-pages.yml` — main 푸시/수동 실행 → `npm ci` → `typecheck` → `npm test` → `build:pages`(NODE_OPTIONS 6GB) → `configure-pages`(enablement) → `upload-pages-artifact(_site)` → `deploy-pages`. 검증 게이트 하나라도 실패하면 배포 안 함.
+- **1차 실행 결과(run #1)**: npm ci·tsc 0·단위 174/174·vite build 25s(precache 566 entries/25.3MB, CreativeStudio 청크 3.9MB)·`_site` 1,459 파일 **전부 성공**. `configure-pages` 만 실패: 저장소에 Pages 사이트가 아직 없고 GITHUB_TOKEN 으론 생성 불가("Resource not accessible by integration"). → **저장소 Settings → Pages → Source = GitHub Actions** 를 1회 켜면 이후 자동. 켠 뒤 실패 run 재실행 또는 아무 커밋 푸시.
+- **로컬 검증(클라우드 세션)**: 이 세션 환경은 `registry.npmjs.org` 가 네트워크 정책으로 차단돼 로컬 빌드 불가 → 빌드/테스트는 CI 가 담당. 랜딩은 의존성 0 이라 `_site` 를 `/sry2/` 하위 경로로 띄워 Playwright 로 검사: 시작 버튼 5개 전부 `/sry2/app/`, 클릭 이동 OK, 로컬 요청 4xx 0, `og:url` 절대. (콘솔의 Pretendard CDN 실패 1건은 샌드박스 차단 아티팩트.)
+- **문서**: README "배포 (GitHub Pages)" 절, CLAUDE.md(저장소·Pages 주소·`build:pages`), `site/README.md` 현재 배포 안내.
+- **남은 과제**: ① Pages Source 활성화 후 첫 배포 확인(https://finemold2.github.io/sry2/ · /app/) — 앱 실기동·SW 등록(scope `/sry2/app/`)·이모지 경로(`./emoji/`)·PWA 설치 실브라우저 확인. ② (선택) actions/* 를 Node 24 대응 최신 메이저로 올려 경고 제거. ③ 로컬 세션에서 CDP 배터리(`_cdp_all_tools` 등)를 `_site/app` 기준으로도 1회 통과시키기.
 
 ### 2026-07-18 #32: 남은 UX 백로그 14건 전부 구현 + 적대 코드리뷰 13건 수정 + 전체 실동작 베타
 - **병렬 구현 8(에이전트)**: #15 DB(다중선택·일괄바·헤더필터·전열 자연정렬·빈상태 원인 안내) · #16 연재(발행 요일 토글 serialDays·다음 발행일 자동 채움·회차번호 명시 고정·빈상태 CTA·플랫폼용 평문 복사) · #17 타임라인(인스펙터 메타 탭 \"장면 메타\" POV/스토리시간/플롯라인 — structure.ts 키 재사용, 빈상태 CTA→메타 탭, 크로스-장 드롭 사유 안내) · #18 보드류(코르크 폴더 단클릭=선택/더블클릭=드릴인 컨테이너 pin, ＋카드, Board 카드 위 드롭 이동, Outliner 행 키보드 순회) · #19 바인더(다중 휴지통·다중 드래그 text/scriv-ids·메뉴 클램프·가장자리 자동 스크롤) · #5 캔버스 전면 포인터화(dragPointer+touchAction) · #12 컴파일(한국어 글자수·원고지 매수, 포맷 용도 설명) · #30 참고문헌(검색·정렬·중복 안내).

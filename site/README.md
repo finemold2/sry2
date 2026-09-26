@@ -44,6 +44,10 @@ node scripts/_rasterize_og.cjs        # og.svg → og.png 재생성
 
 ## 배포 방법
 
+> **현재 배포**: GitHub Pages — https://finemold2.github.io/sry2/ (소개) · https://finemold2.github.io/sry2/app/ (앱).
+> `main` 푸시 시 `.github/workflows/deploy-pages.yml` 이 아래 B 방식을 자동 수행합니다(`npm run build:pages` = `scripts/build-pages.cjs`, 산출물 `_site/`).
+> 그래서 `index.html` 의 `SRY_APP_READY` 는 `true` 입니다. 앱을 잠시 내리려면 `false` 로.
+
 ### A. 소개 페이지만 올리기 (가장 간단)
 
 `site/` 폴더를 정적 호스팅에 올리면 끝입니다.
