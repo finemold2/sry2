@@ -440,12 +440,15 @@ button:disabled,
 
 /* 빈 새 문서 플레이스홀더 안내 — 본문이 비어 있고(단락 1개만, 텍스트 없음) 포커스가 없을 때만 표시.
    IME/포커스 시에는 :focus-within 으로 사라진다. 빈 문서는 보통 <p><br></p> 또는 <p></p> 한 개로 렌더된다.
-   ::before 는 단락의 인라인 흐름 앞에 놓여 캐럿/입력을 가로채지 않는다(pointer-events:none). */
+   ::before 는 단락의 인라인 흐름 앞에 놓여 캐럿/입력을 가로채지 않는다(pointer-events:none).
+   (#23 의 .paper::before 플레이스홀더와 중복 렌더되어 두 문장이 겹쳐 보이던 문제 → 여기 한 곳으로 통합) */
 .paper:not(.script-mode):not(:focus-within) > p:only-child:empty::before,
 .paper:not(.script-mode):not(:focus-within) > p:only-child:has(> br:only-child)::before {
-  content: '여기에 글을 써보세요…';
+  content: '여기에 쓰세요 — 첫 문장은 가볍게, 나중에 얼마든지 고칠 수 있어요.';
   color: var(--muted);
+  opacity: .7;
   pointer-events: none;
+  user-select: none;
 }
 
 /* Scrivenings 구분선 */
@@ -3165,7 +3168,7 @@ body {
   --binder-bg: #090b10; --binder-fg: #c5cbd8; --binder-sel: #6366f1;
   --border: #272c38; --border-dark: #323845;
   --text: #e8ebf1; --muted: #98a0b0;
-  --accent: #818cf8; --accent-2: #a5b4fc;
+  --accent: #6b7af6; --accent-2: #b4bfff; /* 채운 버튼 위 흰 글자·어두운 배경 위 강조 글자 양쪽 대비 확보 */
   --warn: #f87171; --ok: #34d399;
 }
 [data-theme='sepia'] {
@@ -3514,9 +3517,4 @@ img.emoji {
 [data-theme='dark'] .paper span[style*='background']:not([style*='color']) { color: #1f2329; }
 .ann-flash { color: #1f2329 !important; }
 
-/* 빈 문서 플레이스홀더(#23) — 내용이 생기면(:has 조건 해제) 자동으로 사라진다. */
-.paper:has(> p:only-child > br:only-child)::before {
-  content: '여기에 쓰세요 — 첫 문장은 가볍게, 나중에 얼마든지 고칠 수 있어요.';
-  display: block; height: 0; overflow: visible;
-  color: var(--muted); opacity: .55; pointer-events: none; user-select: none;
-}
+/* 빈 문서 플레이스홀더(#23)는 위 '빈 새 문서 플레이스홀더' 규칙으로 통합(중복 렌더 제거). */

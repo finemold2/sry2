@@ -13,7 +13,7 @@
   --paper: #12141d;
   --binder-bg: transparent; --binder-fg: #d8dce6; --binder-sel: #5b7cfa;
   --border: #22263a; --border-dark: #2c3147; --text: #eceff6; --muted: #8790a6;
-  --accent: #7d95ff; --accent-2: #aebcff; --shadow: 0 1px 3px rgba(0,0,0,.6);
+  --accent: #5e72f0; --accent-2: #aebcff; --shadow: 0 1px 3px rgba(0,0,0,.6); /* 흰 글자를 올려도 4.5:1 이상 */
   color-scheme: dark;
   --au-fill: var(--au-fill);      /* 유리 위 얕은 채움(입력·탭·타일) */
   --au-fill-2: var(--au-fill-2);    /* 호버/진행 막대 트랙 */
@@ -22,7 +22,7 @@
   --au-backdrop: rgba(6, 8, 14, .5);
   --au-soft-shadow: 0 12px 30px rgba(0, 0, 0, .35);
   --au-card-shadow: 0 16px 40px rgba(0, 0, 0, .35);
-  --au-on-view: #fff;                        /* 뷰 색 위 글자 */
+  --au-view-fg: #fff;                        /* 뷰 색 위 글자(셸이 뷰마다 주입) */
   --au-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Apple SD Gothic Neo', 'Malgun Gothic', Georgia, serif;
   --au-r-xl: 26px; --au-r-lg: 20px; --au-r-md: 14px; --au-r-sm: 10px;
   --au-view: var(--accent);                 /* 현재 뷰 색(셸이 주입) */
@@ -53,7 +53,7 @@
 /* ---------- 상단: 캔버스 위 타이포그래피 ---------- */
 .au-top { display: flex; align-items: center; gap: 16px; padding: 18px 26px 6px; position: relative; z-index: 60; }
 .au-menu-launch {
-  display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; flex-shrink: 0;
+  display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; border: 0; cursor: pointer; color: var(--au-view-fg, #fff); flex-shrink: 0;
   background: conic-gradient(from 210deg, var(--au-view), #7c4dff, #2bb6c0, var(--au-view)); box-shadow: var(--au-glow), inset 0 0 0 3px rgba(0,0,0,.35);
   transition: transform .18s cubic-bezier(.34,1.56,.64,1), filter .14s;
 }
@@ -98,7 +98,7 @@
   transition: background .14s, color .14s, border-color .14s;
 }
 .au-chip:hover { background: color-mix(in srgb, var(--au-view) 14%, transparent); border-color: color-mix(in srgb, var(--au-view) 40%, transparent); }
-.au-chip.active { color: #fff; background: var(--au-view); border-color: transparent; box-shadow: var(--au-glow); }
+.au-chip.active { color: var(--au-view-fg, #fff); background: var(--au-view); border-color: transparent; box-shadow: var(--au-glow); }
 .au-stage-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 0 0 26px; }
 .au-stage-body > * { animation: auSlide .28s cubic-bezier(.4,0,.2,1); }
 /* 뷰 컨테이너 배경을 캔버스에 녹인다 */
@@ -125,14 +125,14 @@
 }
 .au-ib:hover, .au-save:hover { background: color-mix(in srgb, var(--au-view) 16%, transparent); transform: scale(1.08); }
 .au-ib:active, .au-save:active { transform: scale(.94); }
-.au-ib.active { color: #fff; background: var(--au-view); box-shadow: var(--au-glow); }
+.au-ib.active { color: var(--au-view-fg, #fff); background: var(--au-view); box-shadow: var(--au-glow); }
 .au-ib-tx {
   position: absolute; right: 66px; top: 50%; transform: translateY(-50%) translateX(6px); white-space: nowrap; pointer-events: none;
   padding: 7px 12px; border-radius: 10px; background: var(--au-glass-2); border: 1px solid var(--au-line); color: var(--text); font-size: 13px; font-weight: 700;
   opacity: 0; transition: opacity .14s, transform .14s;
 }
 .au-ib:hover .au-ib-tx, .au-save:hover .au-ib-tx, .au-ib:focus-visible .au-ib-tx { opacity: 1; transform: translateY(-50%); }
-.au-save.dirty { color: #fff; background: var(--au-view); box-shadow: var(--au-glow); animation: auPulse 1.6s ease-in-out infinite; }
+.au-save.dirty { color: var(--au-view-fg, #fff); background: var(--au-view); box-shadow: var(--au-glow); animation: auPulse 1.6s ease-in-out infinite; }
 .au-save.ok { color: var(--muted); }
 .au-save.err { color: #fff; background: var(--warn); }
 @keyframes auPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--au-view) 45%, transparent); } 50% { box-shadow: 0 0 0 10px transparent; } }
@@ -164,7 +164,7 @@
 .app-aurora .binder-tree { padding: 4px 0 60px; }
 .app-aurora .binder-row { padding: 9px 12px; font-size: 14.5px; border-radius: 14px; margin: 2px 10px; gap: 8px; border: 1px solid transparent; transition: background .12s, transform .12s; }
 .app-aurora .binder-row:hover { background: var(--au-fill); }
-.app-aurora .binder-row.selected { background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); color: #fff; box-shadow: var(--au-glow); }
+.app-aurora .binder-row.selected { background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); color: var(--au-view-fg, #fff); box-shadow: var(--au-glow); }
 .app-aurora .binder-row.drop-into { background: color-mix(in srgb, var(--au-view) 30%, transparent); border-color: var(--au-view); }
 .app-aurora .binder-row.drop-before { border-top: 2px solid var(--au-view); }
 .app-aurora .binder-row.drop-after { border-bottom: 2px solid var(--au-view); }
@@ -179,7 +179,7 @@
 .app-aurora .insp-tabs { gap: 4px; padding: 4px 12px 10px; border: 0; background: transparent; }
 .app-aurora .insp-tabs button { flex: 0 0 auto; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; border-bottom: 0; background: var(--au-fill); color: var(--muted); }
 .app-aurora .insp-tabs button:hover { color: var(--text); background: var(--au-fill-2); }
-.app-aurora .insp-tabs button.active, .app-aurora .insp-tabs button[aria-selected='true'] { background: var(--au-view); color: #fff; box-shadow: var(--au-glow); border-bottom: 0; }
+.app-aurora .insp-tabs button.active, .app-aurora .insp-tabs button[aria-selected='true'] { background: var(--au-view); color: var(--au-view-fg, #fff); box-shadow: var(--au-glow); border-bottom: 0; }
 .app-aurora .insp-body { padding: 4px 12px 40px; }
 .app-aurora .insp-section { background: var(--au-fill); border: 1px solid var(--au-line); border-radius: 18px; padding: 12px 12px 10px; margin-bottom: 10px; }
 .app-aurora .insp-section > label { font-size: 10.5px; letter-spacing: .14em; font-weight: 800; margin-bottom: 8px; }
@@ -195,7 +195,7 @@
 }
 .app-aurora .fbtn { min-width: 36px; height: 36px; border-radius: 12px; }
 .app-aurora .fbtn:hover { background: color-mix(in srgb, var(--au-view) 16%, transparent); }
-.app-aurora .fbtn.active { background: var(--au-view); color: #fff; box-shadow: none; }
+.app-aurora .fbtn.active { background: var(--au-view); color: var(--au-view-fg, #fff); box-shadow: none; }
 .app-aurora .formatbar select, .app-aurora .formatbar input[type='color'] { height: 36px; border-radius: 999px; padding: 0 10px; font-size: 13px; background: var(--au-fill); border-color: transparent; }
 .app-aurora .formatbar .divider { height: 22px; background: var(--au-line); margin: 0 6px; }
 .app-aurora .swatch { width: 34px; height: 34px; border-radius: 10px; }
@@ -277,7 +277,7 @@
   border: 1px solid var(--au-line); background: var(--au-fill); color: var(--text); font-size: 13.5px; font-weight: 600; line-height: 1.3;
   transition: background .12s, border-color .12s, transform .1s;
 }
-.au-tile:hover:not(:disabled) { background: color-mix(in srgb, var(--au-view) 16%, transparent); border-color: color-mix(in srgb, var(--au-view) 45%, transparent); transform: translateY(-1px); }
+.au-tile:hover:not(:disabled) { background: color-mix(in srgb, var(--au-view) 16%, transparent); color: var(--text); border-color: color-mix(in srgb, var(--au-view) 45%, transparent); transform: translateY(-1px); }
 .au-tile:disabled { opacity: .45; cursor: default; }
 .au-tile-kbd { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; flex-shrink: 0; }
 
@@ -286,7 +286,7 @@
 .app-aurora .minibtn:hover { background: color-mix(in srgb, var(--au-view) 18%, transparent); }
 .app-aurora .minibtn:active { transform: scale(.97); }
 .app-aurora .minibtn svg { width: 17px; height: 17px; }
-.app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: 999px; background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
+.app-aurora .btn-primary { font-size: 14.5px; padding: 10px 20px; border-radius: 999px; background: linear-gradient(135deg, var(--au-view), color-mix(in srgb, var(--au-view) 60%, #7c4dff)); color: var(--au-view-fg, #fff); border-color: transparent; box-shadow: var(--au-glow); font-weight: 700; }
 .app-aurora .linkbtn { font-size: 13px; padding: 6px 12px; gap: 6px; border-radius: 999px; }
 .app-aurora .linkbtn svg { width: 16px; height: 16px; }
 .app-aurora .field { font-size: 14px; padding: 9px 12px; border-radius: 12px; }

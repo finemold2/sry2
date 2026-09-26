@@ -21,17 +21,18 @@ export interface AuroraProps extends Omit<StudioProps, 'onSetClassic'> {
 }
 
 // 뷰 10종 — 각각 고유 색(독 아이콘·스테이지 제목·레일 강조·코르크보드 격자에 사용)
-const VIEWS: { key: ViewKey; icon: string; label: string; hint: string; color: string }[] = [
-  { key: 'editor', icon: 'editor', label: '에디터', hint: '원고를 씁니다', color: '#5b7cfa' },
-  { key: 'corkboard', icon: 'corkboard', label: '코르크보드', hint: '카드로 구상합니다', color: '#f0a23b' },
-  { key: 'outliner', icon: 'outliner', label: '아웃라이너', hint: '표로 훑습니다', color: '#2fb3a6' },
-  { key: 'board', icon: 'board', label: '칸반', hint: '상태별로 진행합니다', color: '#e0518b' },
-  { key: 'canvas', icon: 'canvas', label: '캔버스', hint: '자유롭게 배치합니다', color: '#8b6dd4' },
-  { key: 'serial', icon: 'serial', label: '연재', hint: '회차와 발행을 관리합니다', color: '#d2473b' },
-  { key: 'timeline', icon: 'timeline', label: '타임라인', hint: '스토리 시간을 봅니다', color: '#3fa35a' },
-  { key: 'references', icon: 'references', label: '참고문헌', hint: '출처와 인용', color: '#7a8493' },
-  { key: 'argument', icon: 'argument', label: '논증', hint: '주장·근거·반박', color: '#c9772b' },
-  { key: 'database', icon: 'database', label: '데이터베이스', hint: '모든 요소를 표로', color: '#2bb6c0' },
+// fg: 뷰 색 위에 올라가는 글자/아이콘 색 — 밝은 색(주황·청록·초록·황갈·시안)은 어두운 글자로 대비 확보(WCAG 4.5:1 이상)
+const VIEWS: { key: ViewKey; icon: string; label: string; hint: string; color: string; fg: string }[] = [
+  { key: 'editor', icon: 'editor', label: '에디터', hint: '원고를 씁니다', color: '#5b7cfa', fg: '#fff' },
+  { key: 'corkboard', icon: 'corkboard', label: '코르크보드', hint: '카드로 구상합니다', color: '#f0a23b', fg: '#1c1204' },
+  { key: 'outliner', icon: 'outliner', label: '아웃라이너', hint: '표로 훑습니다', color: '#2fb3a6', fg: '#04201d' },
+  { key: 'board', icon: 'board', label: '칸반', hint: '상태별로 진행합니다', color: '#e0518b', fg: '#fff' },
+  { key: 'canvas', icon: 'canvas', label: '캔버스', hint: '자유롭게 배치합니다', color: '#8b6dd4', fg: '#fff' },
+  { key: 'serial', icon: 'serial', label: '연재', hint: '회차와 발행을 관리합니다', color: '#d2473b', fg: '#fff' },
+  { key: 'timeline', icon: 'timeline', label: '타임라인', hint: '스토리 시간을 봅니다', color: '#3fa35a', fg: '#04200c' },
+  { key: 'references', icon: 'references', label: '참고문헌', hint: '출처와 인용', color: '#7a8493', fg: '#fff' },
+  { key: 'argument', icon: 'argument', label: '논증', hint: '주장·근거·반박', color: '#c9772b', fg: '#1c1204' },
+  { key: 'database', icon: 'database', label: '데이터베이스', hint: '모든 요소를 표로', color: '#2bb6c0', fg: '#03221f' },
 ]
 
 const INTRO_KEY = 'sry:aurora:intro'
@@ -116,7 +117,7 @@ export default function AuroraShell(p: AuroraProps) {
   const cur = VIEWS.find((v) => v.key === viewMode) || VIEWS[0]
   const rootRef = useRef<HTMLDivElement>(null)
   // 현재 뷰 색을 CSS 변수로 — 독 활성 아이콘·스테이지 제목·레일·코르크보드 격자 강조에 쓰인다
-  useEffect(() => { rootRef.current?.style.setProperty('--au-view', cur.color) }, [cur.color])
+  useEffect(() => { rootRef.current?.style.setProperty('--au-view', cur.color); rootRef.current?.style.setProperty('--au-view-fg', cur.fg) }, [cur.color, cur.fg])
   // 오로라 첫 진입: 서랍을 닫아 캔버스(원고)만 보이게 하고, 테마가 라이트면 다크로 시작(오로라의 기본 인상).
   // 이후에는 사용자가 고른 테마(라이트/다크/세피아)와 서랍 상태를 그대로 둔다 — 테마 토글은 세 스킨 모두 동일하게 동작.
   useEffect(() => {
@@ -177,7 +178,7 @@ export default function AuroraShell(p: AuroraProps) {
         )}
         <main className={'au-stage' + (binderVisible && !isNarrow ? ' with-left' : '') + (inspectorVisible && !isNarrow ? ' with-right' : '')}>
           <div className="au-stage-head">
-            <span className="au-stage-badge" style={{ background: cur.color }}><Icon name={cur.icon} size={20} mono /></span>
+            <span className="au-stage-badge" style={{ background: cur.color, color: cur.fg }}><Icon name={cur.icon} size={20} mono /></span>
             <div className="au-stage-title"><b>{cur.label}</b><span>{cur.hint}</span></div>
             <span className="au-stage-spacer" />
             <button className={'au-chip' + (binderVisible ? ' active' : '')} onClick={p.onToggleBinder} aria-label="바인더" aria-pressed={binderVisible} title="바인더 서랍 (⌘⇧B)"><Icon name="binder" size={18} mono /><span className="au-chip-tx">바인더</span></button>
