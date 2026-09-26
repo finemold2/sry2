@@ -24,6 +24,7 @@
 - **에디터만 회색, 다른 뷰 내용은 뷰 색**: `.au-stage-body` 에 `--au-content`(에디터 = 회색 `--au-view`, 그 외 뷰 = 뷰 고유 색) 주입. 코르크보드 격자·카드 띠·선택 카드, 아웃라이너 선택 행, 진행 막대, `.minibtn:hover`, `.field:focus`, `.paper:focus` 가 이 토큰을 씀. 셸(배지·칩·독·레일·런처·바인더 선택)은 계속 회색. aurora_smoke 39/0, 테마 UI 10/10.
 - **문단 간격 기본 0**: Enter 로 나눈 줄과 자동 줄바꿈된 줄의 간격이 달랐음(`.paper p` 기본 margin-bottom 0.7em). 기본값·'기본/집중/넓게' 프리셋을 0 으로(웹소설 프리셋 1.1em 은 유지, 프로젝트 설정 '문단 간격'으로 조절 가능). 검증 `scripts/_pw_para_gap.cjs`(클래식 13.5px=13.5px, 오로라 15px=15px), ui_all 72/0, aurora_smoke 39/0, 단위 테스트 통과.
 - **줄간격 기본 1.7 + 옛 값 이관**: 문단 간격 0 으로 맞추자 기본 줄간격 1.0 이 그대로 드러나 자동 줄바꿈 줄이 붙어 보임 → `.paper p` 기본 `--ed-line` 1.7, 설정 기본값·'기본' 프리셋 1.7(최대 2.4). `normalizeProject` 에서 옛 '기본' 프리셋 값(0.7em/1.0)이 저장된 프로젝트를 0/1.7 로 이관(다른 값은 유지). 검증 `scripts/_pw_line_height.cjs`(기본 1.7배·Enter=자동 줄바꿈 25.5px, 이관) + `_pw_para_gap.cjs`, 단위 테스트 통과.
+- **바인더 우클릭 메뉴 잘림(오로라)**: `.context-menu` 는 `position:fixed` 지만 오로라 서랍의 `backdrop-filter` 가 고정 요소의 컨테이닝 블록이 되고 `overflow:hidden` 이라 서랍 아래로 잘림 → `createPortal(…, document.body)` 로 렌더. 검증 `scripts/_pw_ctx_menu.cjs`(오로라·클래식, 19개 항목 끝까지 클릭 가능, Esc 닫힘), ui_all 72/0, aurora_smoke 39/0.
 - **다음**: 사용자 리뷰 후 `main` 머지 시 기본 스킨은 클래식 유지(기존 사용자 화면 불변) — 디자인 2는 스위처로 선택. 세부 톤(색·라운드·간격·서체)은 `aurora.css` 토큰만 조정.
 
 ### 2026-09-26 #34: 전 기능 실동작 배터리(97 스크립트) 완주 + 도구 연계(payload) 전수 점검·수정 + 확정 버그 6건
