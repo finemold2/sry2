@@ -245,7 +245,7 @@ export default function ProjectSettingsModal({ onClose }: { onClose: () => void 
             <label>에디터 타이포그래피 (읽기 편의)</label>
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 12, color: 'var(--muted)' }}>프리셋</span>
-              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 760, editorParaGap: 0, editorLineHeight: 1.0 })}>기본</button>
+              <button className="minibtn" onClick={() => patchSettings({ editorWidth: 760, editorParaGap: 0, editorLineHeight: 1.7 })}>기본</button>
               <button className="minibtn" onClick={() => patchSettings({ editorWidth: 680, editorParaGap: 1.1, editorLineHeight: 1.9 })}>웹소설(여백 큼)</button>
               <button className="minibtn" onClick={() => patchSettings({ editorWidth: 620, editorParaGap: 0, editorLineHeight: 1.75 })}>집중(좁게)</button>
               <button className="minibtn" onClick={() => patchSettings({ editorWidth: 960, editorParaGap: 0, editorLineHeight: 1.7 })}>넓게</button>
@@ -258,7 +258,7 @@ export default function ProjectSettingsModal({ onClose }: { onClose: () => void 
             </div>
             <div className="row" style={{ marginTop: 6 }}>
               <span style={{ flex: '0 0 110px', fontSize: 12 }}>줄간격(배수)</span>
-              <input className="field" type="number" min={0.5} max={2} step={0.1} value={project.settings.editorLineHeight ?? 1.0} onChange={(e) => patchSettings({ editorLineHeight: Math.max(0.5, Math.min(2, parseFloat(e.target.value) || 1.0)) })} />
+              <input className="field" type="number" min={0.5} max={2.4} step={0.1} value={project.settings.editorLineHeight ?? 1.7} onChange={(e) => patchSettings({ editorLineHeight: Math.max(0.5, Math.min(2.4, parseFloat(e.target.value) || 1.7)) })} />
               <span style={{ flex: 1, fontSize: 11, color: 'var(--muted)' }}>
                 본문 편집 화면의 폭·문단 간격·줄간격을 조절합니다(글꼴/크기는 서식 바에서).
               </span>

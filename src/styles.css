@@ -405,7 +405,7 @@ button:disabled,
 /* 문단 간격 기본 0: Enter 로 나눈 줄과 자동 줄바꿈된 줄의 간격이 같다(프로젝트 설정 '문단 간격'으로 벌릴 수 있음). */
 .paper p {
   margin: 0 0 var(--ed-para-gap, 0);
-  line-height: var(--ed-line, 1.0);
+  line-height: var(--ed-line, 1.7); /* 기본 줄간격 1.7: 자동 줄바꿈된 줄이 붙어 보이지 않게(프로젝트 설정 '줄간격'으로 조절) */
 }
 .paper h1,
 .paper h2,
