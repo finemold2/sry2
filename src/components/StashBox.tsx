@@ -73,6 +73,17 @@ export default function StashBox() {
   const [listView, setListView] = useState<boolean>(() => load<string>(VIEW_KEY, 'canvas') === 'list')
   const [winZ, setWinZ] = useState(300) // 펼친 창의 z(클릭 시 앞으로). 아이콘(.stash-icon)은 항상 최상위 유지.
   const [coach, setCoach] = useState(false) // 최초 1회 코치마크
+  // 뷰포트 크기 변화(창을 작은 모니터로 옮김·브라우저 창 축소·배율 변경)에 맞춰 아이콘/창 위치를 다시 계산 — 저장된 좌표가
+  // 화면 밖이면 항상 보이는 자리로 끌어들인다. 저장값은 건드리지 않아 큰 모니터로 돌아가면 원래 자리로 복귀.
+  const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
+  useEffect(() => {
+    const onResize = () => setVp({ w: window.innerWidth, h: window.innerHeight })
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const iconZ = appZoom()
+  const iconLeft = clamp(pos.x, 0, Math.max(0, vp.w / iconZ - 56))
+  const iconTop = clamp(pos.y, 0, Math.max(0, vp.h / iconZ - 76))
   const [viewer, setViewer] = useState<{ kind: 'url' | 'image' | 'audio' | 'video' | 'file'; url: string; label: string; objectUrl?: boolean; local?: boolean } | null>(null)
   const closeViewer = () => { if (viewer?.objectUrl) { try { URL.revokeObjectURL(viewer.url) } catch { /* noop */ } } setViewer(null) }
   // 뷰어(이미지/파일/링크 미리보기)는 Esc 로도 닫히게 — 오버레이의 기본 기대 동작.
@@ -290,7 +301,7 @@ export default function StashBox() {
   // ---- 아이콘 드래그 이동 ----
   const iconDrag = useRef<{ dx: number; dy: number; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
-  const onIconDown = (e: React.PointerEvent) => { iconDrag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, moved: false }; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) }
+  const onIconDown = (e: React.PointerEvent) => { const z = appZoom(); iconDrag.current = { dx: e.clientX / z - iconLeft, dy: e.clientY / z - iconTop, moved: false }; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) }
   const onIconMove = (e: React.PointerEvent) => { const d = iconDrag.current; if (!d) return; const z = appZoom(); const nx = clamp(e.clientX / z - d.dx, 0, window.innerWidth / z - 56), ny = clamp(e.clientY / z - d.dy, 0, window.innerHeight / z - 56); if (Math.abs(nx - pos.x) > 2 || Math.abs(ny - pos.y) > 2) d.moved = true; setPos({ x: nx, y: ny }) }
   const onIconUp = (e: React.PointerEvent) => { const d = iconDrag.current; iconDrag.current = null; try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId) } catch { /* noop */ } if (d && d.moved) { savePos(pos); suppressClick.current = true; setTimeout(() => { suppressClick.current = false }, 50) } }
   const onIconClick = () => { if (suppressClick.current) return; setCoach(false); raiseWin(); setOpen(true) }
@@ -298,7 +309,7 @@ export default function StashBox() {
   // ---- 창 헤더 드래그 ----
   const winDrag = useRef<{ dx: number; dy: number } | null>(null)
   const onWinDown = (e: React.PointerEvent) => { raiseWin(); if ((e.target as HTMLElement).closest('button')) return; winDrag.current = { dx: e.clientX - win.x, dy: e.clientY - win.y }; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) }
-  const onWinMove = (e: React.PointerEvent) => { const d = winDrag.current; if (!d) return; const z = appZoom(); setWin({ ...win, x: clamp(e.clientX / z - d.dx, -win.w + 120, window.innerWidth / z - 80), y: clamp(e.clientY / z - d.dy, 4, window.innerHeight / z - 40) }) }
+  const onWinMove = (e: React.PointerEvent) => { const d = winDrag.current; if (!d) return; const z = appZoom(); const w = Math.min(win.w, window.innerWidth / z - 16), h = Math.min(win.h, window.innerHeight / z - 16); setWin({ ...win, x: clamp(e.clientX / z - d.dx, 8, Math.max(8, window.innerWidth / z - w - 8)), y: clamp(e.clientY / z - d.dy, 8, Math.max(8, window.innerHeight / z - h - 8)) }) }
   const onWinUp = (e: React.PointerEvent) => { if (!winDrag.current) return; winDrag.current = null; try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId) } catch { /* noop */ } saveWin(win) }
 
   // ---- 항목 드래그(캔버스 내 자유 배치) — 콘텐츠 크기까지 클램프(스크롤 영역 활용) ----
@@ -330,15 +341,16 @@ export default function StashBox() {
   }
 
   // 여는 시점 뷰포트 클램프(좁은 화면에서 창이 밖으로 잘려 열리지 않도록) — ToolWindow 의 dispW/clampPos 패턴 차용.
-  const dispLeft = clamp(win.x, -win.w + 120, window.innerWidth - 80)
-  const dispW = Math.min(win.w, window.innerWidth - 8)
-  const dispTop = clamp(win.y, 4, Math.max(4, window.innerHeight - 40))
-  const dispH = Math.min(win.h, window.innerHeight - 8)
+  // 펼친 창은 항상 화면 안에 통째로 들어오게(예전엔 가장자리 일부만 남겨 작은 모니터에서 대부분이 잘렸다)
+  const dispW = Math.min(win.w, Math.max(240, vp.w - 16))
+  const dispH = Math.min(win.h, Math.max(200, vp.h - 16))
+  const dispLeft = clamp(win.x, 8, Math.max(8, vp.w - dispW - 8))
+  const dispTop = clamp(win.y, 8, Math.max(8, vp.h - dispH - 8))
 
   return (
     <>
       {!open && (
-        <div className="stash-icon-wrap" style={{ left: pos.x, top: pos.y }}>
+        <div className="stash-icon-wrap" style={{ left: iconLeft, top: iconTop }}>
           <button
             className="stash-icon" title={'수집함 — 무엇이든 끌어다 담으세요 (' + count + ')'} aria-label="수집함 열기"
             style={{ borderColor: dragOver ? 'var(--accent)' : undefined, boxShadow: dragOver ? '0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent)' : undefined }}
