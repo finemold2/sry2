@@ -19,6 +19,7 @@
   - 집중 모드: `.comp-paper` 가 세로 flex 자식으로 눌려 긴 문서의 마지막 줄들이 하단 바 아래 숨고 스크롤 불가 → `flex-shrink:0`. 600px 폭에서 하단 바 항목 넘침 → `flex-wrap` + 720px 이하 슬라이더 숨김.
   - 기각: Scrivenings 두 문서에 걸친 선택(사용자 제스처로 재현 불가).
 - **검증**: 단위 `test:rtf` 104/0(그룹 복원·`\b0`·줄간격 1.0 추가) + 전체 단위 통과 · tsc 0 · Playwright `_pw_editor_format.cjs`(3스킨: Ctrl+A·넓히기/좁히기·여러 문단·반복 적용·(혼합)·Ctrl+Z·맨 텍스트·중첩 목록·새로고침 보존) · `_pw_block_format.cjs`(클래식/오로라: 문단 스타일·인용·목록 생성/해제/재로드·제목+목록·들여쓰기·옛 래퍼·줄간격 1.0·항목 정렬/줄간격·제목 굵게 해제·inherit·중첩 목록 글꼴) · `_pw_focus_mode.cjs`(3스킨×3테마 + 긴 문서·600px 바) 전부 0 실패 · 기존 `_pw_*` 7종 0 실패.
+- **CDP 회귀 배터리 22종**(클라우드 Chromium 153 headless=new, 스크립트마다 새 브라우저): 19종 0 실패(editor_advanced 36·find_replace 38·savecycle 18·keyboard 48·ui_all 72·menus_all 144·binder_deep 100·compile 29·edge_empty 37·datasafety 15·aurora_smoke 39 등). 실패 3종은 **수정 전 빌드(main 9123a60)에서도 동일**하고 실브라우저(Playwright)로는 정상 → 하니스 문제: `x_write_journey` 의 `enter()`(raw keyDown 13, text 없음)가 headless=new 에서 문단을 만들지 않음(Playwright Enter 는 문단 2개 확인), `x_save_open` 은 훅 대기 타임아웃, `inspector` 는 `.click()` 탭 전환이 반영 안 됨(Playwright 클릭은 `insp-tab-meta` aria-selected=true·라벨/상태 select 표시 확인). `_cdp_linespacing` 의 "기본 1.0" 기대값은 #35 의 1.7 로 갱신.
 - **알려진 한계**: 문단 스타일 여러 문단·들여쓰기·목록 정리는 직접 DOM 조작/문단별 명령이라 Ctrl+Z 한 번에 통째로 되돌아가지 않는다(글꼴/크기·굵게 등 인라인 명령은 네이티브 되돌리기).
 
 ### 2026-09-26 #35 (브랜치 `design-v2`): 디자인 2 "Aurora" 스킨 — 어두운 캔버스·세리프 타이포·세로 레일·컬러 독·유리 서랍, 공용 컴포넌트까지 재스킨
