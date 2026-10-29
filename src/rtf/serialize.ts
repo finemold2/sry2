@@ -1,30 +1,10 @@
 // 구조화 문서 모델 -> RTF 문자열.
 // 한글/유니코드는 \uN? (UTF-16 코드유닛, 16비트 부호) 로 인코딩한다.
 import { DEFAULT_FONT } from './model.ts'
-import type { Block, BlockType, RtfDoc, Run, RunStyle } from './model.ts'
+import type { Block, BlockType, RtfDoc, Run, RunStyle, StyleDef } from './model.ts'
+import { STYLES } from './model.ts'
 
 // 헤딩/인용 스타일 정의(stylesheet 및 직접 서식 양쪽에 사용)
-interface StyleDef {
-  s: number
-  name: string
-  // 직접 char/par 서식(스타일을 무시하는 리더에서도 보이도록 함께 출력)
-  bold?: boolean
-  italic?: boolean
-  fsHalf?: number // half-points
-  li?: number // twips
-}
-
-const STYLES: Record<BlockType, StyleDef> = {
-  p: { s: 0, name: 'Normal' },
-  h1: { s: 1, name: 'heading 1', bold: true, fsHalf: 36 },
-  h2: { s: 2, name: 'heading 2', bold: true, fsHalf: 30 },
-  h3: { s: 3, name: 'heading 3', bold: true, fsHalf: 26 },
-  h4: { s: 4, name: 'heading 4', bold: true, fsHalf: 24 },
-  blockquote: { s: 5, name: 'Quote', italic: true, li: 480 },
-  'li-ul': { s: 0, name: 'Normal' },
-  'li-ol': { s: 0, name: 'Normal' },
-  hr: { s: 0, name: 'Normal' },
-}
 
 const PT = 20 // 1pt = 20 twips
 
@@ -155,7 +135,7 @@ function pictRtf(dataUrl: string, w?: number, h?: number): string {
   return `{\\pict${blip}${dims}\n${wrapped}}`
 }
 
-function serializeRun(run: Run, tb: TableBuilder): string {
+function serializeRun(run: Run, tb: TableBuilder, def?: StyleDef): string {
   const st: RunStyle = run.style || {}
 
   // 인라인 이미지: {\pict ...}
@@ -176,8 +156,11 @@ function serializeRun(run: Run, tb: TableBuilder): string {
   }
 
   const cw: string[] = []
+  // 제목(기본 굵게)/인용(기본 기울임) 안의 명시 해제는 \b0/\i0 으로 내보내 되읽을 때 보존한다.
   if (st.bold) cw.push('\\b')
+  else if (st.bold === false && def?.bold) cw.push('\\b0')
   if (st.italic) cw.push('\\i')
+  else if (st.italic === false && def?.italic) cw.push('\\i0')
   if (st.underline) cw.push('\\ul')
   if (st.strike) cw.push('\\strike')
   if (st.superscript) cw.push('\\super')
@@ -241,7 +224,8 @@ function serializeBlock(block: Block, tb: TableBuilder, olCounter: number): stri
   // 문단 간격 / 줄 간격
   if (block.spaceBefore) s += `\\sb${Math.round(block.spaceBefore * PT)}`
   if (block.spaceAfter) s += `\\sa${Math.round(block.spaceAfter * PT)}`
-  if (block.lineSpacing && block.lineSpacing !== 1) {
+  // 명시 1.0 도 내보낸다(문서 기본 줄간격과 다를 수 있음 — 빠뜨리면 새로고침 후 문서 기본으로 되돌아간다).
+  if (block.lineSpacing) {
     s += `\\sl${Math.round(block.lineSpacing * 240)}\\slmult1`
   }
   // 헤딩/인용 직접 서식(리더 호환)
@@ -256,7 +240,7 @@ function serializeBlock(block: Block, tb: TableBuilder, olCounter: number): stri
   s += listMarker(block.type, olCounter)
 
   // 런
-  for (const run of block.runs) s += serializeRun(run, tb)
+  for (const run of block.runs) s += serializeRun(run, tb, def)
   s += '\\par\n'
   return s
 }

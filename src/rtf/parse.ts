@@ -2,6 +2,7 @@
 // 토크나이저 + 상태스택 방식. 한글 \uN, \'XX, 그룹, 색/폰트/스타일 테이블, 하이퍼링크 필드를 처리.
 import { DEFAULT_FONT } from './model.ts'
 import type { Align, Block, BlockType, RtfDoc, Run, RunStyle } from './model.ts'
+import { STYLES, normalizeRunStyles } from './model.ts'
 
 type Dest =
   | 'body'
@@ -88,6 +89,11 @@ export function parseRtf(rtf: string): RtfDoc {
   let runText = ''
   let runStyle: RunStyle = {}
 
+  // 문단 접두부(\pard 이후 첫 글자/그룹 전까지)의 \b\i\fs 는 제목/인용 스타일의 '문단 기본 서식'(직렬화기가 리더 호환용으로
+  // 문단 수준에 내보냄)이므로 런 서식으로 삼지 않는다 — 그래야 제목을 본문으로 되돌릴 때 굵게/18pt 가 남지 않고,
+  // 반대로 런 그룹 {\fs36 ..} 안의 명시 크기는 그대로 보존된다.
+  let parPrefix = false
+  const prefixKeys = new Set<string>()
   // 그룹 스택
   const stack: GroupState[] = [{ char: {}, dest: 'body', uc: 1, destOwner: false }]
   let ucSkip = 1
@@ -136,7 +142,22 @@ export function parseRtf(rtf: string): RtfDoc {
     mut(runStyle)
   }
 
+  // 문단 접두부 종료: 스타일 기본과 같은 종류의 서식(제목 굵게/크기, 인용 기울임)이 접두부에서 설정됐으면 런 서식에서 뺀다.
+  function endPrefix() {
+    if (!parPrefix) return
+    parPrefix = false
+    const def = STYLES[curType]
+    if (def) {
+      if (def.bold && prefixKeys.has('bold') && runStyle.bold === true) delete runStyle.bold
+      if (def.italic && prefixKeys.has('italic') && runStyle.italic === true) delete runStyle.italic
+      if (def.fsHalf && prefixKeys.has('fontSize')) delete runStyle.fontSize
+    }
+    prefixKeys.clear()
+  }
+
   function resetPar() {
+    parPrefix = true
+    prefixKeys.clear()
     curType = 'p'
     curAlign = 'left'
     curLi = 0
@@ -209,6 +230,8 @@ export function parseRtf(rtf: string): RtfDoc {
       block.pageBreak = true
       curPageBreak = false
     }
+    // 문단 수준 직접 서식(제목 \b\fs, 인용 \i)이 런에 박힌 것을 걷어낸다.
+    normalizeRunStyles(block)
     blocks.push(block)
     curRuns = []
   }
@@ -225,6 +248,7 @@ export function parseRtf(rtf: string): RtfDoc {
 
   function appendText(s: string) {
     const d = top().dest
+    if (parPrefix && d === 'body') endPrefix()
     if (d === 'fldinst') fldinstBuf += s
     else if (d === 'fonttbl') fontNameBuf += s
     else if (d === 'stylesheet') styleNameBuf += s
@@ -402,12 +426,15 @@ export function parseRtf(rtf: string): RtfDoc {
         applyCharChange((c) => {
           for (const k of Object.keys(c)) delete (c as Record<string, unknown>)[k]
         })
+        if (parPrefix) prefixKeys.clear()
         return
       case 'b':
         applyCharChange((c) => (c.bold = param !== 0))
+        if (parPrefix) prefixKeys.add('bold')
         return
       case 'i':
         applyCharChange((c) => (c.italic = param !== 0))
+        if (parPrefix) prefixKeys.add('italic')
         return
       case 'ul':
         applyCharChange((c) => (c.underline = param !== 0))
@@ -438,6 +465,7 @@ export function parseRtf(rtf: string): RtfDoc {
         return
       case 'fs':
         if (hasParam) applyCharChange((c) => (c.fontSize = (param as number) / 2))
+        if (parPrefix) prefixKeys.add('fontSize')
         return
       case 'f':
         if (hasParam)
@@ -609,6 +637,7 @@ export function parseRtf(rtf: string): RtfDoc {
     }
 
     if (ch === '{') {
+      if (parPrefix && top().dest === 'body') endPrefix() // 접두부 뒤의 첫 그룹 = 런 그룹
       // 그룹 스택 깊이 상한 — 악의적 RTF 의 무한 '{' 로 인한 메모리 고갈(DoS) 방지.
       // 실제 문서 중첩은 수십 단계 이내라 4096 은 충분히 여유. 초과 시 push 만 건너뛰고 커서는 전진(O(n) 종료 보장).
       if (stack.length < 4096) {
@@ -680,7 +709,10 @@ export function parseRtf(rtf: string): RtfDoc {
       flushRun()
       // 마지막(body) 그룹은 보호 — 불균형 RTF 로 인한 스택 언더플로우/크래시 방지
       if (stack.length > 1) stack.pop()
-      runStyle = { ...top().char }
+      // 그룹을 닫으면 그 그룹을 '열 때' 저장한 서식으로 되돌린다(= closingGroup.char).
+      // 예전엔 pop 뒤 top().char(바깥 그룹이 열릴 때의 스냅샷)로 되돌려, 바깥 그룹에서 그룹 열기 이후에 설정한
+      // 서식(제목의 \b\fs36 등)이 중첩 그룹 {\f1 ..} 하나만 닫혀도 사라졌다.
+      runStyle = { ...closingGroup.char }
       ucSkip = top().uc
       i++
       continue

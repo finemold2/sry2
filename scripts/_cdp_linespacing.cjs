@@ -1,4 +1,4 @@
-// 줄간격 검증 — ①기본 1.0 ②무선택=문서 전체 기본 변경(새 문단도 따름) ③블록 선택=그 블록만.
+// 줄간격 검증 — ①기본 1.7(#35 에서 1.0→1.7: 자동 줄바꿈 줄이 붙어 보이지 않게) ②무선택=문서 전체 기본 변경(새 문단도 따름) ③블록 선택=그 블록만.
 const HUB = 'http://localhost:9222'; let _id = 0
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 async function bws() { const r = await fetch(HUB + '/json/version'); return (await r.json()).webSocketDebuggerUrl }
@@ -17,9 +17,9 @@ async function main() {
   // 에디터/문단 준비
   await ev(ws, sid, `const p=document.querySelector('.paper');if(p){p.focus();p.innerHTML='<p>첫째 문단입니다</p><p>둘째 문단입니다</p>';p.dispatchEvent(new Event('input',{bubbles:true}))}return 1`); await sleep(400)
 
-  // 기본 줄간격 1.0 (--ed-line 미설정 시 CSS fallback)
+  // 기본 줄간격 1.7 (--ed-line 미설정 시 CSS fallback, #35)
   const def = await ev(ws, sid, `const p=document.querySelector('.paper p');const cs=getComputedStyle(p);const fs=parseFloat(cs.fontSize);const lh=parseFloat(cs.lineHeight);return Math.round((lh/fs)*100)/100`)
-  t(Math.abs(def - 1.0) < 0.06, '기본 줄간격 ≈ 1.0 (실측 ' + def + ')')
+  t(Math.abs(def - 1.7) < 0.06, '기본 줄간격 ≈ 1.7 (실측 ' + def + ')')
 
   // A) 무선택(캐럿만) → 문서 전체 기본 2.0
   await ev(ws, sid, `const p=document.querySelector('.paper');const r=document.createRange();r.setStart(p.firstChild,0);r.collapse(true);const s=getSelection();s.removeAllRanges();s.addRange(r);return 1`); await sleep(250)

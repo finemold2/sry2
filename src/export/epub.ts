@@ -217,7 +217,15 @@ function renderList(items: EBlock[], images: Images): string {
   let minLevel = Infinity
   for (const it of items) minLevel = Math.min(minLevel, it.listLevel ?? 0)
   if (!isFinite(minLevel)) minLevel = 0
-  return renderListAt(items, 0, items.length, minLevel, images).html
+  // 인접 목록의 종류가 바뀌면(ul→ol) renderListAt 이 거기서 멈추므로 남은 항목으로 다음 목록을 이어 만든다.
+  let html = ''
+  let i = 0
+  while (i < items.length) {
+    const r = renderListAt(items, i, items.length, minLevel, images)
+    html += r.html
+    i = r.next > i ? r.next : i + 1
+  }
+  return html
 }
 
 // items[start..end) 구간에서 level 깊이의 목록 하나를 만든다.
@@ -229,12 +237,14 @@ function renderListAt(
   level: number,
   images: Images,
 ): { html: string; next: number } {
-  const tag = items[start].type === 'li-ul' ? 'ul' : 'ol'
+  const listType = items[start].type
+  const tag = listType === 'li-ul' ? 'ul' : 'ol'
   let html = `<${tag}>`
   let i = start
   while (i < end) {
     const lvl = items[i].listLevel ?? 0
     if (lvl < level) break // 더 얕은 항목 -> 상위 목록으로 복귀
+    if (lvl === level && items[i].type !== listType) break // 같은 깊이에서 종류가 바뀌면(ul→ol) 새 목록
     if (lvl > level) {
       // 더 깊은 항목 -> 직전 <li> 안에 중첩 목록을 넣는다.
       const sub = renderListAt(items, i, end, lvl, images)

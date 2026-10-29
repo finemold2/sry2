@@ -83,3 +83,43 @@ export function docToPlainText(doc: RtfDoc): string {
     .map((b) => b.runs.map((r) => r.text).join(''))
     .join('\n')
 }
+
+// 블록 유형별 기본 서식(RTF 스타일시트 \sN 과 리더 호환용 직접 서식). 직렬화기·파서·HTML 변환이 공유한다.
+export interface StyleDef {
+  s: number
+  name: string
+  bold?: boolean
+  italic?: boolean
+  fsHalf?: number // 반 포인트
+  li?: number // 기본 왼쪽 들여쓰기(twips)
+}
+export const STYLES: Record<BlockType, StyleDef> = {
+  p: { s: 0, name: 'Normal' },
+  h1: { s: 1, name: 'heading 1', bold: true, fsHalf: 36 },
+  h2: { s: 2, name: 'heading 2', bold: true, fsHalf: 30 },
+  h3: { s: 3, name: 'heading 3', bold: true, fsHalf: 26 },
+  h4: { s: 4, name: 'heading 4', bold: true, fsHalf: 24 },
+  blockquote: { s: 5, name: 'Quote', italic: true, li: 480 },
+  'li-ul': { s: 0, name: 'Normal' },
+  'li-ol': { s: 0, name: 'Normal' },
+  hr: { s: 0, name: 'Normal' },
+}
+
+// 블록 기본 서식과 같은 런 서식은 '상속'으로 보고 지운다 — 제목의 \b\fs36, 인용의 \i 는 문단 수준에서 내보내므로
+// 되읽을 때 런에 박히면(굵게+18pt span) 제목을 본문으로 되돌려도 서식이 남는다. 반대로 기본이 굵게가 아닌 블록에서
+// '굵게 아님'(bold:false) 같은 명시 해제는 의미가 없어 지운다(제목 안의 명시 해제만 \b0 으로 보존).
+export function normalizeRunStyles(block: Block): void {
+  const def = STYLES[block.type]
+  if (!def) return
+  for (const r of block.runs) {
+    const s = r.style
+    if (!s) continue
+    if (s.bold === true && def.bold) delete s.bold
+    if (s.bold === false && !def.bold) delete s.bold
+    if (s.italic === true && def.italic) delete s.italic
+    if (s.italic === false && !def.italic) delete s.italic
+    // 글자 크기는 지우지 않는다 — 제목에 사용자가 명시한 18pt 와 스타일 기본 \fs36 은 값이 같아 구분할 수 없고,
+    // 편집기의 제목 CSS 크기(1.7em 등)는 18pt 가 아니라서 지우면 새로고침 후 크기가 바뀐다.
+    // 문단 머리의 \b\fs36 (스타일 기본)은 파서가 문단 접두부에서 따로 걸러낸다(parse.ts endPrefix).
+  }
+}
