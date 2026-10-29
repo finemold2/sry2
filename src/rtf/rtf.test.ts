@@ -562,5 +562,13 @@ declare const process: { exit(code: number): never }
   eq(html, '<ul><li>a</li><li>b</li></ul><ol><li>1</li><li>2<ul><li>sub</li></ul></li></ol>', '글머리 목록 뒤 번호 목록이 따로 유지되고 중첩은 보존')
 }
 
+// 44) 전체가 한 단계 들여쓰인 목록은 빈 <li> 없이 ul>ul 로 그려져 깊이가 보존된다.
+{
+  const html = modelToHtml({ blocks: [
+    { type: 'li-ul', listLevel: 1, runs: [{ text: 'one', style: {} }] }, { type: 'li-ul', listLevel: 1, runs: [{ text: 'two', style: {} }] },
+  ] })
+  eq(html, '<ul><ul><li>one</li><li>two</li></ul></ul>', '깊이 1 목록 → ul>ul')
+}
+
 console.log(`\nRTF 엔진 테스트: ${pass} 통과 / ${fail} 실패`)
 if (fail > 0) process.exit(1)

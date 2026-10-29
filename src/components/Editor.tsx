@@ -7,6 +7,7 @@ import MediaViewer from './MediaViewer'
 import CharacterEditor from './CharacterEditor'
 import { ADVANCE, applyElement, detectElement, ELEMENTS, nextInCycle } from '../script/elements'
 import { Icon } from '../ui/icons'
+import { backspaceAtListStart } from './listOps'
 
 // 캐럿이 위치한 .paper 의 직속 블록 엘리먼트를 찾는다. 없으면 새 <p> 를 만들어 반환(각본 첫 줄/빈 문서 대응).
 function currentBlockEl(paper: HTMLElement): HTMLElement | null {
@@ -318,6 +319,21 @@ function DocEditable({ item }: { item: BinderItem }) {
     }
     el.addEventListener('input', onInput)
     return () => el.removeEventListener('input', onInput)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id])
+
+  // 문단 구분자를 <p> 로(기본 <div>): 목록을 Enter 로 빠져나온 뒤 치는 문단이 <div> 가 되어 .paper p 줄간격/문단 서식·
+  // 들여쓰기 명령을 못 받던 문제. 목록 항목 맨 앞의 Backspace 는 앞 문단에 붙이지 않고 글머리만 없앤다.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    try { document.execCommand('defaultParagraphSeparator', false, 'p') } catch { /* noop */ }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Backspace' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return
+      if (backspaceAtListStart(el)) { e.preventDefault(); el.dispatchEvent(new Event('input', { bubbles: true })) }
+    }
+    el.addEventListener('keydown', onKey)
+    return () => el.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id])
 

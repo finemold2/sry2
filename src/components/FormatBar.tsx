@@ -22,6 +22,7 @@ import {
   Underline,
 } from 'lucide-react'
 import { SCRIV_LINK_PREFIX, useStore } from '../store/store'
+import { normalizeLists, restoreSelection, snapshotSelection, unlistItems } from './listOps'
 
 /** .paper 안의 각주 마커를 문서 순서대로 다시 번호 매김. */
 export function renumberFootnotes(paper: HTMLElement) {
@@ -552,15 +553,18 @@ export default function FormatBar() {
     }
     return null
   }
-  // 현재 선택 범위와 겹치는 모든 블록 엘리먼트(p/h/blockquote/li). 선택이 비었으면 캐럿이 놓인 블록 1개.
+  // 현재 선택 범위와 겹치는 블록 엘리먼트(p/h/blockquote/li/div/pre). 선택이 비었으면 캐럿이 놓인 블록 1개.
+  // 블록 '자신의' 인라인 내용(자식 블록 제외)이 선택과 겹칠 때만 센다 — 중첩 항목만 고른 경우 부모 항목이 딸려오지 않게.
   const blocksInSelection = (): HTMLElement[] => {
     const sel = window.getSelection()
     if (!sel || !sel.rangeCount) { const a = anchorBlock(); return a ? [a] : [] }
     const range = sel.getRangeAt(0)
     const paper = editableOf(range.commonAncestorContainer)
     if (!paper) { const a = anchorBlock(); return a ? [a] : [] }
-    const cand = Array.from(paper.querySelectorAll('p,h1,h2,h3,h4,blockquote,li')) as HTMLElement[]
-    const hit = cand.filter((b) => range.intersectsNode(b))
+    const cand = Array.from(paper.querySelectorAll('p,h1,h2,h3,h4,h5,h6,blockquote,li,div,pre')) as HTMLElement[]
+    const ownHit = (b: HTMLElement) =>
+      Array.from(b.childNodes).some((n) => !(n.nodeType === 1 && /^(UL|OL|P|DIV|H[1-6]|BLOCKQUOTE|PRE)$/.test((n as HTMLElement).tagName)) && range.intersectsNode(n))
+    const hit = cand.filter((b) => range.intersectsNode(b) && ownHit(b))
     if (hit.length) return hit
     const a = anchorBlock(); return a ? [a] : []
   }
@@ -588,16 +592,25 @@ export default function FormatBar() {
     flush(paper); refresh()
   }
 
+  const flash = (msg: string) => { try { window.dispatchEvent(new CustomEvent('scriv:flash', { detail: msg })) } catch { /* noop */ } }
+
   // 문단 스타일(본문/제목/인용) — 여러 문단 선택 시 브라우저의 formatBlock 은 선택된 문단들을 <br> 로 이어 붙여
-  // 하나의 블록으로 합쳐 버린다(문단 경계 영구 소실). 그래서 .paper 직속 블록마다 캐럿을 두고 한 문단씩 적용한다.
+  // 하나의 블록으로 합쳐 버리고(문단 경계 영구 소실), 목록 항목이 섞이면 목록을 제목 안에 끼워 넣는다.
+  // 그래서 .paper 직속 블록마다 캐럿을 두고 한 문단씩 적용하고, 목록 항목은 건너뛴다(목록만 선택했으면 안내).
   const setBlockStyle = (tagValue: string) => {
     restore()
     const sel = window.getSelection()
     if (!sel || !sel.rangeCount) return
     const paper = editableOf(sel.getRangeAt(0).commonAncestorContainer)
     if (!paper) { exec('formatBlock', tagValue); afterExec(); return }
-    const blocks = blocksInSelection().filter((b) => b.parentElement === paper && /^(P|DIV|H[1-6]|BLOCKQUOTE)$/.test(b.tagName))
-    if (blocks.length <= 1) { exec('formatBlock', tagValue); afterExec(); return }
+    const all = blocksInSelection()
+    const hasLi = all.some((b) => b.tagName === 'LI')
+    const blocks = all.filter((b) => b.parentElement === paper && /^(P|DIV|H[1-6]|BLOCKQUOTE|PRE)$/.test(b.tagName))
+    if (!blocks.length) {
+      if (hasLi) { flash('목록 항목에는 문단 스타일을 적용할 수 없어요 — 먼저 목록을 해제해 주세요.'); afterExec(); return }
+      exec('formatBlock', tagValue); afterExec(); return
+    }
+    if (blocks.length === 1 && !hasLi) { exec('formatBlock', tagValue); afterExec(); return }
     const idx = (n: Node) => Array.prototype.indexOf.call(paper.childNodes, n) as number
     const i0 = idx(blocks[0])
     const i1 = idx(blocks[blocks.length - 1])
@@ -622,103 +635,78 @@ export default function FormatBar() {
   }
 
   // 들여쓰기 — 문단은 margin-left 를 40px 씩 조절한다(저장 시 leftIndent 로 보존, 새로고침 후에도 유지).
-  // 브라우저 기본 indent 는 문단들을 <blockquote> 로 감싸는데, 이는 저장/재로드에서 인용 블록으로 바뀌고 문단이 합쳐지며
-  // 되읽은 뒤에는 outdent 도 듣지 않았다. 목록 항목은 브라우저 기본(중첩 목록)으로 처리한다.
+  // 브라우저 기본 indent 는 문단들을 <blockquote> 로 감싸는데, 이는 인용처럼 보이고 저장/재로드에서 문단이 합쳐지며
+  // 되읽은 뒤에는 outdent 도 듣지 않았다. 목록 항목은 연속된 형제 묶음마다 브라우저 기본(중첩/내어쓰기)으로 처리하고
+  // 결과 구조(li 안 li 등)를 정리한다. 문단과 항목이 섞인 선택도 각각 처리.
   const INDENT_PX = 40
   const indentBlocks = (dir: 1 | -1) => {
     restore()
+    const sel = window.getSelection()
+    if (!sel || !sel.rangeCount) return
     const blocks = blocksInSelection()
     if (!blocks.length) return
-    if (blocks.some((b) => b.tagName === 'LI')) { exec(dir > 0 ? 'indent' : 'outdent'); afterExec(); return }
-    let paper: HTMLElement | null = null
+    const paper = editableOf(blocks[0])
+    if (!paper) return
+    const snap = snapshotSelection(paper)
     for (const b of blocks) {
+      if (b.tagName === 'LI') continue
       const m = (b.style.marginLeft || '').match(/(-?[\d.]+)\s*(px|pt)?/)
       const curPx = m ? parseFloat(m[1]) * ((m[2] || 'px') === 'pt' ? 4 / 3 : 1) : 0
       const next = Math.max(0, Math.round(curPx + dir * INDENT_PX))
       if (next > 0) b.style.marginLeft = next + 'px'
       else b.style.removeProperty('margin-left')
       if (b.getAttribute('style') === '') b.removeAttribute('style')
-      paper = editableOf(b)
     }
-    if (paper) paper.dispatchEvent(new Event('input', { bubbles: true }))
+    const lis = blocks.filter((b) => b.tagName === 'LI')
+    if (lis.length) {
+      const groups: HTMLElement[][] = []
+      for (const li of lis) {
+        const g = groups[groups.length - 1]
+        if (g && g[g.length - 1].parentElement === li.parentElement && g[g.length - 1].nextElementSibling === li) g.push(li)
+        else groups.push([li])
+      }
+      for (const g of groups) {
+        if (!paper.contains(g[0])) continue
+        const last = g[g.length - 1]
+        const r = document.createRange()
+        r.setStart(g[0], 0)
+        r.setEnd(last, last.childNodes.length)
+        sel.removeAllRanges()
+        sel.addRange(r)
+        exec(dir > 0 ? 'indent' : 'outdent')
+      }
+      normalizeLists(paper)
+    }
+    restoreSelection(paper, snap, blocks[0])
+    paper.dispatchEvent(new Event('input', { bubbles: true }))
     afterExec()
   }
 
-  // 목록 명령 뒤 정리 — 브라우저는 <p><ul>…</ul></p> 처럼 문단 안에 목록을 만들고(저장 시 빈 문단이 앞뒤로 생기고
-  // 목록 해제도 꼬임), 목록을 풀면 'x<br>' 같은 맨 텍스트를 .paper 직속에 남긴다(.paper p 줄간격이 안 먹음).
-  // 목록을 문단 밖으로 꺼내고 맨 인라인 조각은 <p> 로 감싼다. 캐럿은 텍스트 노드 기준으로 복원.
-  const normalizeLists = (paper: HTMLElement) => {
+  // 목록 명령 — 같은 종류의 목록 항목만 선택된 상태(= 해제)면 직접 문단으로 되돌린다(브라우저 기본 해제는 항목 경계를 잃어
+  // 'onetwo' 처럼 붙이고 맨 인라인 조각을 남김). 그 외(생성·종류 변환)는 브라우저 기본 뒤 구조 정리(normalizeLists).
+  const listCmd = (cmd: 'insertUnorderedList' | 'insertOrderedList') => {
+    restore()
     const sel = window.getSelection()
-    const savedSel = sel && sel.rangeCount ? (() => { const r = sel.getRangeAt(0); return { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset } })() : null
-    let changed = false
-    const BLOCK_RE = /^(P|DIV|H[1-6]|BLOCKQUOTE|PRE|UL|OL|HR)$/
-    const hasContent = (el: Element) => (el.textContent || '').trim() !== '' || !!el.querySelector('img,.fn-marker,.cmt-marker')
-    for (let guard = 0; guard < 6; guard++) {
-      let moved = false
-      Array.from(paper.querySelectorAll('ul,ol')).forEach((list) => {
-        const parent = list.parentElement
-        if (!parent || parent === paper || !/^(P|DIV|H[1-6]|BLOCKQUOTE|PRE)$/.test(parent.tagName)) return
-        const gp = parent.parentNode
-        if (!gp) return
-        const before = parent.cloneNode(false) as HTMLElement
-        while (parent.firstChild && parent.firstChild !== list) before.appendChild(parent.firstChild)
-        const after = parent.cloneNode(false) as HTMLElement
-        let n: Node | null = list.nextSibling
-        while (n) { const nx: Node | null = n.nextSibling; after.appendChild(n); n = nx }
-        if (hasContent(before)) gp.insertBefore(before, parent)
-        gp.insertBefore(list, parent)
-        if (hasContent(after)) gp.insertBefore(after, parent)
-        gp.removeChild(parent)
-        moved = true
-        changed = true
-      })
-      if (!moved) break
-    }
-    let buf: Node[] = []
-    const wrapBuf = () => {
-      if (!buf.length) return
-      const p = document.createElement('p')
-      paper.insertBefore(p, buf[0])
-      buf.forEach((n) => p.appendChild(n))
-      buf = []
-      changed = true
-    }
-    Array.from(paper.childNodes).forEach((n) => {
-      if (n.nodeType === 1 && BLOCK_RE.test((n as HTMLElement).tagName)) { wrapBuf(); return }
-      if (n.nodeType === 1 && (n as HTMLElement).tagName === 'BR') {
-        if (buf.length) { wrapBuf(); paper.removeChild(n) } else { const p = document.createElement('p'); paper.insertBefore(p, n); p.appendChild(n) }
-        changed = true
+    if (!sel || !sel.rangeCount) return
+    const blocks = blocksInSelection()
+    const paper = editableOf(sel.getRangeAt(0).commonAncestorContainer) || (blocks[0] ? editableOf(blocks[0]) : null)
+    if (!paper) { run(cmd); return }
+    const tag = cmd === 'insertUnorderedList' ? 'UL' : 'OL'
+    const lis = blocks.filter((b) => b.tagName === 'LI')
+    const snap = snapshotSelection(paper)
+    if (lis.length && lis.length === blocks.length && lis.every((li) => li.parentElement && li.parentElement.tagName === tag)) {
+      const ps = unlistItems(paper, lis)
+      if (ps.length) {
+        normalizeLists(paper)
+        restoreSelection(paper, snap, ps[0])
+        paper.dispatchEvent(new Event('input', { bubbles: true }))
+        afterExec()
         return
       }
-      if (n.nodeType === 3 && !(n.textContent || '').trim() && !buf.length) return
-      if (n.nodeType === 8) return
-      buf.push(n)
-    })
-    wrapBuf()
-    if (!changed) return
-    if (sel) {
-      sel.removeAllRanges()
-      try {
-        if (savedSel && paper.contains(savedSel.sc) && paper.contains(savedSel.ec)) {
-          const r = document.createRange()
-          r.setStart(savedSel.sc, Math.min(savedSel.so, savedSel.sc.nodeType === 3 ? (savedSel.sc.textContent || '').length : savedSel.sc.childNodes.length))
-          r.setEnd(savedSel.ec, Math.min(savedSel.eo, savedSel.ec.nodeType === 3 ? (savedSel.ec.textContent || '').length : savedSel.ec.childNodes.length))
-          sel.addRange(r)
-        } else {
-          const li = paper.querySelector('li:last-of-type')
-          const r = document.createRange()
-          r.selectNodeContents(li || paper)
-          r.collapse(false)
-          sel.addRange(r)
-        }
-      } catch { /* 캐럿 복원 실패는 무시 */ }
     }
+    exec(cmd)
+    if (normalizeLists(paper)) restoreSelection(paper, snap, null)
     paper.dispatchEvent(new Event('input', { bubbles: true }))
-  }
-  const listCmd = (cmd: 'insertUnorderedList' | 'insertOrderedList') => {
-    run(cmd)
-    const paper = paperOf()
-    if (paper) normalizeLists(paper)
     afterExec()
   }
 

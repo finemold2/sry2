@@ -10,8 +10,10 @@ function hasContent(el: Element): boolean {
   return (el.textContent || '').trim() !== '' || !!el.querySelector('img,.fn-marker,.cmt-marker')
 }
 
-/** 캐럿/선택을 텍스트 노드 기준으로 기억했다가 DOM 정리 뒤 복원하기 위한 스냅샷. */
-export function snapshotSelection(paper: HTMLElement): { sc: Node; so: number; ec: Node; eo: number } | null {
+export interface SelSnap { sc: Node; so: number; ec: Node; eo: number }
+
+/** 캐럿/선택을 노드 기준으로 기억했다가 DOM 정리 뒤 복원하기 위한 스냅샷(노드가 사라졌으면 복원 시 폴백). */
+export function snapshotSelection(paper: HTMLElement): SelSnap | null {
   const sel = window.getSelection()
   if (!sel || !sel.rangeCount) return null
   const r = sel.getRangeAt(0)
@@ -19,7 +21,7 @@ export function snapshotSelection(paper: HTMLElement): { sc: Node; so: number; e
   return { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset }
 }
 
-export function restoreSelection(paper: HTMLElement, snap: { sc: Node; so: number; eo: number; ec: Node } | null, fallback?: Element | null) {
+export function restoreSelection(paper: HTMLElement, snap: SelSnap | null, fallback?: Element | null) {
   const sel = window.getSelection()
   if (!sel) return
   const clamp = (n: Node, o: number) => Math.min(o, n.nodeType === 3 ? (n.textContent || '').length : n.childNodes.length)
@@ -163,17 +165,16 @@ export function unlistItems(paper: HTMLElement, lis: HTMLElement[]): HTMLElement
   const tops: Element[] = []
   for (const li of lis) { const t = topListOf(li); if (t && !tops.includes(t)) tops.push(t) }
   if (!tops.length) return []
-  // 먼저 처리 가능 여부를 전부 확인(절반만 바꾸고 실패하지 않도록)
   for (const top of tops) {
     const all = Array.from(top.querySelectorAll('li'))
-    const allSelected = all.every((li) => set.has(li))
+    const allSelected = all.every((li) => set.has(li as HTMLElement))
     const flat = !top.querySelector('ul,ol')
     if (!allSelected && !flat) return []
   }
   const out: HTMLElement[] = []
   for (const top of tops) {
     const all = Array.from(top.querySelectorAll('li'))
-    const allSelected = all.every((li) => set.has(li))
+    const allSelected = all.every((li) => set.has(li as HTMLElement))
     const frag = document.createDocumentFragment()
     if (allSelected) {
       for (const li of all) {
@@ -215,8 +216,7 @@ export function liAtCaretStart(paper: HTMLElement): HTMLElement | null {
   pre.setStart(li, 0)
   pre.setEnd(r.startContainer, r.startOffset)
   if (pre.toString() !== '') return null
-  const frag = pre.cloneContents()
-  if (frag.querySelector('img,.fn-marker,.cmt-marker,ul,ol')) return null
+  if (pre.cloneContents().querySelector('img,.fn-marker,.cmt-marker,ul,ol')) return null
   return li
 }
 
@@ -227,20 +227,14 @@ export function liAtCaretStart(paper: HTMLElement): HTMLElement | null {
 export function backspaceAtListStart(paper: HTMLElement): boolean {
   const li = liAtCaretStart(paper)
   if (!li) return false
+  const snap = snapshotSelection(paper)
   const ps = unlistItems(paper, [li])
   if (ps.length) {
     normalizeLists(paper)
-    const sel = window.getSelection()
-    if (sel) {
-      const r = document.createRange()
-      r.selectNodeContents(ps[0])
-      r.collapse(true)
-      sel.removeAllRanges()
-      sel.addRange(r)
-    }
+    restoreSelection(paper, snap, ps[0])
     return true
   }
   try { document.execCommand('outdent') } catch { /* noop */ }
-  normalizeLists(paper)
+  if (normalizeLists(paper)) restoreSelection(paper, snap, null)
   return true
 }
