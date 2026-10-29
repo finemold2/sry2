@@ -101,14 +101,12 @@ export default function FormatBar() {
     afterExec()
   }
 
-  // 글꼴/크기 적용 — 선택 범위에 걸친 모든 문단에, 기존 서식 위에 덮어쓴다.
-  //  · Ctrl+A(전체 선택)·여러 문단에 걸친 선택도 문단별로 나눠 감싸므로 그대로 적용된다
-  //    (문단 경계를 넘는 단일 span 은 RTF 재파싱 시 스타일이 조용히 소실되므로 문단 단위로 감싼다).
-  //  · 선택 경계에서 기존 인라인 요소(옛 글꼴 span 등)를 쪼개 경계를 문단 직속 수준으로 끌어올린 뒤 감싸므로,
-  //    이미 같은 속성이 걸린 부분을 포함해 범위를 넓히거나 좁혀 다시 적용해도 새 span 이 항상 문단 바로 아래
-  //    평평하게 놓이고, 새 span 안쪽의 같은 속성은 모두 지워 새 값이 이긴다(예전엔 안쪽의 옛 span 이 남아
-  //    바깥 새 값이 무시되거나, 반복 적용할수록 span 이 겹겹이 깊어지던 문제).
-  //  · 속성이 비게 된 span/font 는 풀어 DOM 이 계속 깊어지지 않게 한다.
+  // 글꼴/크기 적용 — 브라우저의 편집 명령(execCommand)으로 적용한다.
+  //  · 브라우저가 Ctrl+A·여러 문단·중첩 목록·겹치는 기존 span 까지 알아서 처리하고(안쪽의 같은 속성을 걷어내 새 값이
+  //    이기고, 인접 span 은 합침) 되돌리기(Ctrl+Z) 스택에도 기록된다 — 예전의 직접 DOM 조작은 한 문단 안의 선택만
+  //    받았고, 범위를 넓히거나 좁혀 다시 적용하면 안쪽 옛 span 이 남아 새 값이 무시됐으며 Ctrl+Z 도 깨졌다.
+  //  · fontSize 명령은 1~7 단계만 받으므로 7(xxx-large)로 적용한 뒤 그 span 들을 실제 pt 로 바꾼다.
+  //  · 문단 경계를 넘는 단일 span 은 생기지 않는다(브라우저가 문단별로 감쌈) — RTF 재파싱에서 스타일이 소실되지 않음.
   const wrapInlineStyle = (prop: 'fontSize' | 'fontFamily', value: string) => {
     restore()
     const sel = window.getSelection()
@@ -117,98 +115,38 @@ export default function FormatBar() {
     if (range.collapsed) return
     const paper = editableOf(range.commonAncestorContainer)
     if (!paper) return
-    const cssProp = prop === 'fontSize' ? 'font-size' : 'font-family'
-    const BLOCK_SEL = 'p,h1,h2,h3,h4,h5,h6,blockquote,li,pre,div'
-    // 선택과 겹치는 가장 안쪽 블록들(blockquote>p 처럼 중첩되면 안쪽만).
-    const cand = Array.from(paper.querySelectorAll<HTMLElement>(BLOCK_SEL)).filter((b) => range.intersectsNode(b))
-    let blocks = cand.filter((b) => !cand.some((o) => o !== b && b.contains(o)))
-    if (blocks.length === 0) blocks = [paper] // 블록 없이 .paper 직속 텍스트만 있는 경우
-    const indexOf = (n: Node) => Array.prototype.indexOf.call(n.parentNode!.childNodes, n) as number
-    // (node, offset) 경계를 block 직속 자식 경계로 끌어올린다 — 텍스트/인라인 조상을 경계에서 쪼갠다.
-    // 빈 조각은 만들지 않는다(경계가 노드 맨 앞/뒤면 쪼개지 않고 앞/뒤로 이동).
-    const liftBoundary = (node: Node, offset: number, block: HTMLElement): number => {
-      if (node === block) return offset
-      if (!block.contains(node)) return offset <= 0 ? 0 : block.childNodes.length
-      let n: Node = node
-      let off = offset
-      if (n.nodeType === 3) {
-        const t = n as Text
-        const parent = t.parentNode as Node
-        if (off > 0 && off < t.length) { const right = t.splitText(off); n = parent; off = indexOf(right) }
-        else if (off <= 0) { n = parent; off = indexOf(t) }
-        else { n = parent; off = indexOf(t) + 1 }
-      }
-      while (n !== block) {
-        const el = n as HTMLElement
-        const parent = el.parentNode as Node
-        const idx = indexOf(el)
-        if (off <= 0) { n = parent; off = idx }
-        else if (off >= el.childNodes.length) { n = parent; off = idx + 1 }
-        else {
-          const clone = el.cloneNode(false) as HTMLElement
-          while (el.childNodes[off]) clone.appendChild(el.childNodes[off])
-          parent.insertBefore(clone, el.nextSibling)
-          n = parent; off = idx + 1
+    if (prop === 'fontFamily') {
+      exec('fontName', value)
+    } else {
+      exec('fontSize', '7')
+      paper.querySelectorAll<HTMLElement>('span[style*="xxx-large"], font[size="7"]').forEach((el) => {
+        if (el.tagName === 'FONT') {
+          const span = document.createElement('span')
+          span.style.fontSize = value
+          while (el.firstChild) span.appendChild(el.firstChild)
+          el.replaceWith(span)
+        } else if (el.style.fontSize === 'xxx-large') {
+          el.style.fontSize = value
         }
-      }
-      return off
+      })
     }
-    const made: HTMLElement[] = []
-    const startR = range.cloneRange()
-    const endR = range.cloneRange()
-    startR.collapse(true)
-    endR.collapse(false)
-    try {
-      for (const block of blocks) {
-        const r = document.createRange()
-        r.selectNodeContents(block)
-        // 블록 내용 범위를 실제 선택 경계로 잘라낸다(첫/끝 문단은 부분 선택일 수 있음).
-        if (r.compareBoundaryPoints(Range.START_TO_START, startR) < 0) r.setStart(startR.startContainer, startR.startOffset)
-        if (r.compareBoundaryPoints(Range.END_TO_END, endR) > 0) r.setEnd(endR.endContainer, endR.endOffset)
-        if (r.collapsed || r.toString() === '') continue // 빈 문단/텍스트 없는 조각은 건너뜀
-        // 끝 경계를 먼저 끌어올린다(시작 쪽 쪼개기로 끝 경계 노드가 움직이지 않도록) — 이후 노드 기준으로 다시 찾는다.
-        const endIdx = liftBoundary(r.endContainer, r.endOffset, block)
-        const endMarker: Node | null = block.childNodes[endIdx] || null
-        const startIdx = liftBoundary(r.startContainer, r.startOffset, block)
-        const startMarker: Node | null = block.childNodes[startIdx] || null
-        const r2 = document.createRange()
-        r2.setStart(block, startMarker ? indexOf(startMarker) : block.childNodes.length)
-        r2.setEnd(block, endMarker ? indexOf(endMarker) : block.childNodes.length)
-        if (r2.collapsed) continue
-        const span = document.createElement('span')
-        span.style.setProperty(cssProp, value)
-        span.appendChild(r2.extractContents())
-        r2.insertNode(span)
-        // 새 span 안쪽에 남은 같은 속성(옛 span 조각·<font>)을 지워 새 값이 이기게 한다.
-        span.querySelectorAll<HTMLElement>('*').forEach((el) => {
-          if (el.style && el.style.getPropertyValue(cssProp)) el.style.removeProperty(cssProp)
-          if (el.tagName === 'FONT') {
-            if (prop === 'fontFamily') el.removeAttribute('face')
-            else el.removeAttribute('size')
-          }
-          if (el.getAttribute('style') === '') el.removeAttribute('style')
-        })
-        // 속성이 모두 빠진 span/font 는 풀어서 중첩을 줄인다(자식은 그대로 보존).
-        Array.from(span.querySelectorAll<HTMLElement>('span,font')).forEach((el) => {
-          if (el.attributes.length === 0 && el.parentNode) {
-            while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el)
-            el.parentNode.removeChild(el)
-          }
-        })
-        made.push(span)
-      }
-      if (made.length) {
-        const r = document.createRange()
-        r.setStartBefore(made[0])
-        r.setEndAfter(made[made.length - 1])
-        sel.removeAllRanges()
-        sel.addRange(r)
-        // DOM 직접 조작이라 네이티브 input 이 안 뜬다 — 에디터가 저장하도록 input 을 명시 발화(글꼴/크기 영속).
-        paper.dispatchEvent(new Event('input', { bubbles: true }))
-      }
-    } catch {
-      /* 비정상 선택(마커 내부 등)은 무시 */
-    }
+    // 블록 요소 자체에 글꼴/크기가 붙으면(브라우저가 문단 전체 선택 시 그렇게 할 수 있음) RTF 가 문단 수준 글꼴을
+    // 저장하지 않으므로, 자식을 감싸는 span 으로 옮긴다.
+    const cssProp = prop === 'fontSize' ? 'font-size' : 'font-family'
+    paper.querySelectorAll<HTMLElement>('p,h1,h2,h3,h4,h5,h6,blockquote,li,div,pre').forEach((b) => {
+      const v = b.style.getPropertyValue(cssProp)
+      if (!v) return
+      b.style.removeProperty(cssProp)
+      if (b.getAttribute('style') === '') b.removeAttribute('style')
+      const span = document.createElement('span')
+      span.style.setProperty(cssProp, v)
+      const kids = Array.from(b.childNodes).filter((n) => !(n.nodeType === 1 && /^(UL|OL|P|DIV|H[1-6]|BLOCKQUOTE)$/.test((n as HTMLElement).tagName)))
+      if (!kids.length) return
+      b.insertBefore(span, kids[0])
+      kids.forEach((k) => span.appendChild(k))
+    })
+    // execCommand 는 네이티브 input 을 발화하지만 위 치환은 그 뒤에 일어나므로 저장용 input 을 다시 발화한다.
+    paper.dispatchEvent(new Event('input', { bubbles: true }))
     afterExec()
   }
 
@@ -515,6 +453,140 @@ export default function FormatBar() {
     flush(paper); refresh()
   }
 
+  // 문단 스타일(본문/제목/인용) — 여러 문단 선택 시 브라우저의 formatBlock 은 선택된 문단들을 <br> 로 이어 붙여
+  // 하나의 블록으로 합쳐 버린다(문단 경계 영구 소실). 그래서 .paper 직속 블록마다 캐럿을 두고 한 문단씩 적용한다.
+  const setBlockStyle = (tagValue: string) => {
+    restore()
+    const sel = window.getSelection()
+    if (!sel || !sel.rangeCount) return
+    const paper = editableOf(sel.getRangeAt(0).commonAncestorContainer)
+    if (!paper) { exec('formatBlock', tagValue); afterExec(); return }
+    const blocks = blocksInSelection().filter((b) => b.parentElement === paper && /^(P|DIV|H[1-6]|BLOCKQUOTE)$/.test(b.tagName))
+    if (blocks.length <= 1) { exec('formatBlock', tagValue); afterExec(); return }
+    const idx = (n: Node) => Array.prototype.indexOf.call(paper.childNodes, n) as number
+    const i0 = idx(blocks[0])
+    const i1 = idx(blocks[blocks.length - 1])
+    for (const b of blocks) {
+      const r = document.createRange()
+      r.selectNodeContents(b)
+      r.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(r)
+      exec('formatBlock', tagValue)
+    }
+    const first = paper.childNodes[i0]
+    const last = paper.childNodes[i1]
+    if (first && last) {
+      const r = document.createRange()
+      r.setStartBefore(first)
+      r.setEndAfter(last)
+      sel.removeAllRanges()
+      sel.addRange(r)
+    }
+    afterExec()
+  }
+
+  // 들여쓰기 — 문단은 margin-left 를 40px 씩 조절한다(저장 시 leftIndent 로 보존, 새로고침 후에도 유지).
+  // 브라우저 기본 indent 는 문단들을 <blockquote> 로 감싸는데, 이는 저장/재로드에서 인용 블록으로 바뀌고 문단이 합쳐지며
+  // 되읽은 뒤에는 outdent 도 듣지 않았다. 목록 항목은 브라우저 기본(중첩 목록)으로 처리한다.
+  const INDENT_PX = 40
+  const indentBlocks = (dir: 1 | -1) => {
+    restore()
+    const blocks = blocksInSelection()
+    if (!blocks.length) return
+    if (blocks.some((b) => b.tagName === 'LI')) { exec(dir > 0 ? 'indent' : 'outdent'); afterExec(); return }
+    let paper: HTMLElement | null = null
+    for (const b of blocks) {
+      const m = (b.style.marginLeft || '').match(/(-?[\d.]+)\s*(px|pt)?/)
+      const curPx = m ? parseFloat(m[1]) * ((m[2] || 'px') === 'pt' ? 4 / 3 : 1) : 0
+      const next = Math.max(0, Math.round(curPx + dir * INDENT_PX))
+      if (next > 0) b.style.marginLeft = next + 'px'
+      else b.style.removeProperty('margin-left')
+      if (b.getAttribute('style') === '') b.removeAttribute('style')
+      paper = editableOf(b)
+    }
+    if (paper) paper.dispatchEvent(new Event('input', { bubbles: true }))
+    afterExec()
+  }
+
+  // 목록 명령 뒤 정리 — 브라우저는 <p><ul>…</ul></p> 처럼 문단 안에 목록을 만들고(저장 시 빈 문단이 앞뒤로 생기고
+  // 목록 해제도 꼬임), 목록을 풀면 'x<br>' 같은 맨 텍스트를 .paper 직속에 남긴다(.paper p 줄간격이 안 먹음).
+  // 목록을 문단 밖으로 꺼내고 맨 인라인 조각은 <p> 로 감싼다. 캐럿은 텍스트 노드 기준으로 복원.
+  const normalizeLists = (paper: HTMLElement) => {
+    const sel = window.getSelection()
+    const savedSel = sel && sel.rangeCount ? (() => { const r = sel.getRangeAt(0); return { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset } })() : null
+    let changed = false
+    const BLOCK_RE = /^(P|DIV|H[1-6]|BLOCKQUOTE|PRE|UL|OL|HR)$/
+    const hasContent = (el: Element) => (el.textContent || '').trim() !== '' || !!el.querySelector('img,.fn-marker,.cmt-marker')
+    for (let guard = 0; guard < 6; guard++) {
+      let moved = false
+      Array.from(paper.querySelectorAll('ul,ol')).forEach((list) => {
+        const parent = list.parentElement
+        if (!parent || parent === paper || !/^(P|DIV|H[1-6]|BLOCKQUOTE|PRE)$/.test(parent.tagName)) return
+        const gp = parent.parentNode
+        if (!gp) return
+        const before = parent.cloneNode(false) as HTMLElement
+        while (parent.firstChild && parent.firstChild !== list) before.appendChild(parent.firstChild)
+        const after = parent.cloneNode(false) as HTMLElement
+        let n: Node | null = list.nextSibling
+        while (n) { const nx: Node | null = n.nextSibling; after.appendChild(n); n = nx }
+        if (hasContent(before)) gp.insertBefore(before, parent)
+        gp.insertBefore(list, parent)
+        if (hasContent(after)) gp.insertBefore(after, parent)
+        gp.removeChild(parent)
+        moved = true
+        changed = true
+      })
+      if (!moved) break
+    }
+    let buf: Node[] = []
+    const wrapBuf = () => {
+      if (!buf.length) return
+      const p = document.createElement('p')
+      paper.insertBefore(p, buf[0])
+      buf.forEach((n) => p.appendChild(n))
+      buf = []
+      changed = true
+    }
+    Array.from(paper.childNodes).forEach((n) => {
+      if (n.nodeType === 1 && BLOCK_RE.test((n as HTMLElement).tagName)) { wrapBuf(); return }
+      if (n.nodeType === 1 && (n as HTMLElement).tagName === 'BR') {
+        if (buf.length) { wrapBuf(); paper.removeChild(n) } else { const p = document.createElement('p'); paper.insertBefore(p, n); p.appendChild(n) }
+        changed = true
+        return
+      }
+      if (n.nodeType === 3 && !(n.textContent || '').trim() && !buf.length) return
+      if (n.nodeType === 8) return
+      buf.push(n)
+    })
+    wrapBuf()
+    if (!changed) return
+    if (sel) {
+      sel.removeAllRanges()
+      try {
+        if (savedSel && paper.contains(savedSel.sc) && paper.contains(savedSel.ec)) {
+          const r = document.createRange()
+          r.setStart(savedSel.sc, Math.min(savedSel.so, savedSel.sc.nodeType === 3 ? (savedSel.sc.textContent || '').length : savedSel.sc.childNodes.length))
+          r.setEnd(savedSel.ec, Math.min(savedSel.eo, savedSel.ec.nodeType === 3 ? (savedSel.ec.textContent || '').length : savedSel.ec.childNodes.length))
+          sel.addRange(r)
+        } else {
+          const li = paper.querySelector('li:last-of-type')
+          const r = document.createRange()
+          r.selectNodeContents(li || paper)
+          r.collapse(false)
+          sel.addRange(r)
+        }
+      } catch { /* 캐럿 복원 실패는 무시 */ }
+    }
+    paper.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  const listCmd = (cmd: 'insertUnorderedList' | 'insertOrderedList') => {
+    run(cmd)
+    const paper = paperOf()
+    if (paper) normalizeLists(paper)
+    afterExec()
+  }
+
   const ib = (cmd: string, icon: React.ReactNode, title: string) => (
     <button
       className={'fbtn' + (state(cmd) ? ' active' : '')}
@@ -575,7 +647,7 @@ export default function FormatBar() {
       <select
         value={['h1', 'h2', 'h3', 'blockquote'].includes(curBlock) ? curBlock : 'p'}
         onMouseDown={() => restore()}
-        onChange={(e) => run('formatBlock', e.target.value === 'p' ? 'P' : e.target.value.toUpperCase())}
+        onChange={(e) => setBlockStyle(e.target.value === 'p' ? 'P' : e.target.value.toUpperCase())}
         title="문단 스타일"
       >
         <option value="p">본문</option>
@@ -661,12 +733,16 @@ export default function FormatBar() {
       {ib('subscript', <Subscript size={15} />, '아래첨자')}
 
       <span className="divider" />
-      {ib('insertUnorderedList', <List size={15} />, '글머리 기호')}
-      {ib('insertOrderedList', <ListOrdered size={15} />, '번호 매기기')}
-      <button className="fbtn" title="들여쓰기 늘리기" onMouseDown={(e) => e.preventDefault()} onClick={() => run('indent')}>
+      <button className={'fbtn' + (state('insertUnorderedList') ? ' active' : '')} title="글머리 기호" aria-pressed={state('insertUnorderedList')} onMouseDown={(e) => e.preventDefault()} onClick={() => listCmd('insertUnorderedList')}>
+        <List size={15} />
+      </button>
+      <button className={'fbtn' + (state('insertOrderedList') ? ' active' : '')} title="번호 매기기" aria-pressed={state('insertOrderedList')} onMouseDown={(e) => e.preventDefault()} onClick={() => listCmd('insertOrderedList')}>
+        <ListOrdered size={15} />
+      </button>
+      <button className="fbtn" title="들여쓰기 늘리기" onMouseDown={(e) => e.preventDefault()} onClick={() => indentBlocks(1)}>
         <IndentIncrease size={15} />
       </button>
-      <button className="fbtn" title="들여쓰기 줄이기" onMouseDown={(e) => e.preventDefault()} onClick={() => run('outdent')}>
+      <button className="fbtn" title="들여쓰기 줄이기" onMouseDown={(e) => e.preventDefault()} onClick={() => indentBlocks(-1)}>
         <IndentDecrease size={15} />
       </button>
 

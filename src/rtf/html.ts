@@ -1,5 +1,6 @@
 // 구조화 문서 모델 <-> HTML (contenteditable 편집용). 브라우저 전용(DOM 사용).
-import type { Align, Block, BlockType, RtfDoc, Run, RunStyle } from './model.ts'
+import type { Align, Block, BlockType, RtfDoc, Run, RunStyle, StyleDef } from './model.ts'
+import { STYLES, normalizeRunStyles } from './model.ts'
 
 function escapeHtml(s: string): string {
   return s
@@ -16,7 +17,7 @@ interface RenderCtx {
   fn: number
 }
 
-function runToHtml(run: Run, ctx: RenderCtx): string {
+function runToHtml(run: Run, ctx: RenderCtx, def?: StyleDef): string {
   const s = run.style || {}
   // 인라인 이미지
   if (s.image != null) {
@@ -46,6 +47,9 @@ function runToHtml(run: Run, ctx: RenderCtx): string {
   if (s.highlight) styles.push(`background-color:${s.highlight}`)
   if (s.fontSize) styles.push(`font-size:${s.fontSize}pt`)
   if (s.fontFamily) styles.push(`font-family:${cssFont(s.fontFamily)}`)
+  // 제목(기본 굵게)/인용(기본 기울임) 안에서 명시적으로 해제한 런은 CSS 기본을 덮어쓴다.
+  if (s.bold === false && def?.bold) styles.push('font-weight:normal')
+  if (s.italic === false && def?.italic) styles.push('font-style:normal')
   if (s.bold) inner = `<strong>${inner}</strong>`
   if (s.italic) inner = `<em>${inner}</em>`
   if (s.underline) inner = `<u>${inner}</u>`
@@ -73,7 +77,8 @@ function safeUrl(url: string): string {
 
 function blockInner(b: Block, ctx: RenderCtx): string {
   if (!b.runs.length) return '<br>'
-  const html = b.runs.map((r) => runToHtml(r, ctx)).join('')
+  const def = STYLES[b.type]
+  const html = b.runs.map((r) => runToHtml(r, ctx, def)).join('')
   return html === '' ? '<br>' : html
 }
 
@@ -103,7 +108,7 @@ function renderListAt(
       i = sub.next
       continue
     }
-    html += `<li>${blockInner(blocks[i], ctx)}</li>`
+    html += `<li${blockStyle(blocks[i])}>${blockInner(blocks[i], ctx)}</li>`
     i++
   }
   html += `</${tag}>`
@@ -116,7 +121,7 @@ function blockStyle(b: Block): string {
   // HTML 출력에 반영 — PDF/인쇄가 강제 H1 개행 대신 실제 옵션을 따르게 한다.
   if (b.pageBreak) s.push('page-break-before:always')
   if (b.align && b.align !== 'left') s.push(`text-align:${b.align}`)
-  if (b.lineSpacing && b.lineSpacing !== 1) s.push(`line-height:${b.lineSpacing}`)
+  if (b.lineSpacing) s.push(`line-height:${b.lineSpacing}`) // 명시 1.0 도 유지(문서 기본과 다를 수 있음)
   if (b.spaceBefore) s.push(`margin-top:${b.spaceBefore}pt`)
   if (b.spaceAfter != null) s.push(`margin-bottom:${b.spaceAfter}pt`)
   if (b.leftIndent) s.push(`margin-left:${b.leftIndent}pt`)
@@ -192,7 +197,9 @@ function parseFontSize(v: string): number | undefined {
 function applyInlineStyle(style: CSSStyleDeclaration, s: RunStyle) {
   const fw = style.fontWeight
   if (fw === 'bold' || fw === 'bolder' || (parseInt(fw) >= 600)) s.bold = true
+  else if (fw === 'normal' || fw === 'lighter' || (parseInt(fw) > 0 && parseInt(fw) < 600)) s.bold = false // 명시 해제(제목 안 등)
   if (style.fontStyle === 'italic' || style.fontStyle === 'oblique') s.italic = true
+  else if (style.fontStyle === 'normal') s.italic = false
   const td = style.textDecorationLine || style.textDecoration
   if (td) {
     if (td.includes('underline')) s.underline = true
@@ -211,7 +218,9 @@ function applyInlineStyle(style: CSSStyleDeclaration, s: RunStyle) {
     if (fz) s.fontSize = fz
   }
   if (style.fontFamily) {
-    s.fontFamily = style.fontFamily.replace(/['"]/g, '').split(',')[0].trim()
+    const fam = style.fontFamily.replace(/['"]/g, '').split(',')[0].trim()
+    // 브라우저가 문단 병합 시 끼워 넣는 'inherit' 같은 CSS 키워드는 글꼴이 아니다(폰트 테이블 오염 방지).
+    if (fam && !/^(inherit|initial|unset|revert|revert-layer)$/i.test(fam)) s.fontFamily = fam
   }
   const va = style.verticalAlign
   if (va === 'super') s.superscript = true
@@ -220,8 +229,8 @@ function applyInlineStyle(style: CSSStyleDeclaration, s: RunStyle) {
 
 function styleKey(s: RunStyle): string {
   return JSON.stringify([
-    !!s.bold,
-    !!s.italic,
+    s.bold === false ? 'nb' : !!s.bold,
+    s.italic === false ? 'ni' : !!s.italic,
     !!s.underline,
     !!s.strike,
     !!s.superscript,
@@ -359,7 +368,9 @@ function processList(listEl: HTMLElement, blocks: Block[], level: number) {
         collectRuns(child, {}, runs)
       }
     }
-    blocks.push({ type, listLevel: level, runs: mergeRuns(runs) })
+    const block: Block = { type, listLevel: level, runs: mergeRuns(runs) }
+    readBlockStyle(li as HTMLElement, block) // 항목의 정렬/줄간격도 보존(예전엔 버려져 새로고침 후 사라짐)
+    blocks.push(block)
     for (const n of nested) processList(n, blocks, level + 1)
   }
 }
@@ -392,6 +403,82 @@ function readBlockStyle(el: HTMLElement, block: Block) {
   if (ti) block.firstIndent = ti
 }
 
+const BLOCK_TAGS = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'DIV', 'PRE', 'UL', 'OL', 'HR'])
+
+function blockTypeOf(tag: string): BlockType {
+  if (tag === 'BLOCKQUOTE') return 'blockquote'
+  if (/^H[1-4]$/.test(tag)) return tag.toLowerCase() as BlockType
+  if (tag === 'H5' || tag === 'H6') return 'h4'
+  return 'p'
+}
+
+// 블록 요소(p/h/blockquote/div/pre) 하나를 모델 블록으로. 브라우저 편집 결과는 블록 안에 블록이 들어갈 수 있다:
+//  · execCommand('indent') 는 문단들을 <blockquote style="margin:0 0 0 40px; border:none; padding:0"> 로 감싼다(들여쓰기 래퍼)
+//  · 목록 명령은 <p><ul>…</ul></p> 처럼 문단 안에 목록을 만든다
+//  · 제목 안에 목록, 인용 안에 문단 등
+// 예전엔 바깥 블록 하나로 뭉개(collectRuns 로 평탄화) 문단 경계·목록이 새로고침 후 사라졌다. 이제 안쪽 블록은
+// 재귀로 각각의 블록이 되고, 블록 사이의 인라인 조각은 바깥 블록 유형의 블록이 된다. 들여쓰기 래퍼는 인용이 아니라
+// 자식 문단의 leftIndent 로 흡수한다.
+function processBlockEl(el: HTMLElement, blocks: Block[], inherit: { indent?: number; quote?: boolean }) {
+  const tag = el.tagName
+  const st = el.style
+  const isIndentWrap =
+    tag === 'BLOCKQUOTE' && !!st.marginLeft && (st.border === 'none' || st.borderStyle === 'none' || st.borderLeftStyle === 'none')
+  let type: BlockType = isIndentWrap ? 'p' : blockTypeOf(tag)
+  if (inherit.quote && type === 'p') type = 'blockquote'
+  const ownIndent = parsePt(st.marginLeft) || 0
+  const applyInherit = (block: Block) => {
+    if (inherit.indent) block.leftIndent = (block.leftIndent || 0) + inherit.indent
+    if (block.leftIndent != null && block.leftIndent <= 0) delete block.leftIndent
+  }
+  const hasBlockChild = Array.from(el.children).some((c) => BLOCK_TAGS.has(c.tagName))
+  if (!hasBlockChild) {
+    const runs: Run[] = []
+    for (const child of Array.from(el.childNodes)) collectRuns(child, {}, runs)
+    const block: Block = { type, runs: mergeRuns(runs) }
+    readBlockStyle(el, block)
+    applyInherit(block)
+    blocks.push(block)
+    return
+  }
+  const childInherit = { indent: (inherit.indent || 0) + ownIndent, quote: inherit.quote || (type === 'blockquote') }
+  let buf: Node[] = []
+  const flush = () => {
+    if (!buf.length) return
+    const runs: Run[] = []
+    for (const n of buf) collectRuns(n, {}, runs)
+    buf = []
+    const merged = mergeRuns(runs)
+    // 블록 사이의 공백/빈 조각만이면 블록을 만들지 않는다(목록 앞뒤에 빈 문단이 생기던 문제).
+    if (!merged.length || merged.every((r) => r.text.trim() === '' && !isMarker(r.style))) return
+    const block: Block = { type, runs: merged }
+    readBlockStyle(el, block)
+    applyInherit(block)
+    blocks.push(block)
+  }
+  for (const node of Array.from(el.childNodes)) {
+    if (node.nodeType === 3) {
+      if (/\S/.test(node.textContent || '')) buf.push(node)
+      continue
+    }
+    if (node.nodeType !== 1) continue
+    const c = node as HTMLElement
+    if (c.tagName === 'UL' || c.tagName === 'OL') {
+      flush()
+      processList(c, blocks, 0)
+    } else if (c.tagName === 'HR') {
+      flush()
+      blocks.push({ type: 'hr', runs: [] })
+    } else if (BLOCK_TAGS.has(c.tagName)) {
+      flush()
+      processBlockEl(c, blocks, childInherit)
+    } else {
+      buf.push(c)
+    }
+  }
+  flush()
+}
+
 function processChildren(parent: HTMLElement, blocks: Block[]) {
   let inlineBuffer: Node[] = []
   const flushInline = () => {
@@ -413,15 +500,9 @@ function processChildren(parent: HTMLElement, blocks: Block[]) {
     if (tag === 'HR') {
       flushInline()
       blocks.push({ type: 'hr', runs: [] })
-    } else if (['P', 'H1', 'H2', 'H3', 'H4', 'BLOCKQUOTE', 'DIV'].includes(tag)) {
+    } else if (BLOCK_TAGS.has(tag) && tag !== 'UL' && tag !== 'OL' && tag !== 'HR') {
       flushInline()
-      const runs: Run[] = []
-      for (const child of Array.from(el.childNodes)) collectRuns(child, {}, runs)
-      const type: BlockType =
-        tag === 'DIV' ? 'p' : tag === 'BLOCKQUOTE' ? 'blockquote' : (tag.toLowerCase() as BlockType)
-      const block: Block = { type, runs: mergeRuns(runs) }
-      readBlockStyle(el, block)
-      blocks.push(block)
+      processBlockEl(el, blocks, {})
     } else if (tag === 'UL' || tag === 'OL') {
       flushInline()
       processList(el, blocks, 0)
@@ -440,5 +521,6 @@ export function htmlToModel(html: string): RtfDoc {
   const blocks: Block[] = []
   processChildren(dom.body, blocks)
   if (!blocks.length) blocks.push({ type: 'p', runs: [] })
+  for (const b of blocks) normalizeRunStyles(b)
   return { blocks }
 }

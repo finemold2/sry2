@@ -49,5 +49,21 @@ const lum = (rgb) => { const m = rgb.match(/\d+/g) || [0, 0, 0]; const [r, g, bl
     chk((await p.locator('.composition').count()) === 0, tag + ': Esc 로 집중 모드 종료')
     await p.close()
   }
+  // 긴 문서: 마지막 줄이 하단 바 위로 스크롤되어 보임 / 좁은 창에서 하단 바 항목이 바 안에 머묾
+  for (const [skin, theme, w, h] of [['classic', 'light', 1400, 900], ['aurora', 'dark', 1400, 900], ['studio', 'dark', 600, 800], ['aurora', 'light', 600, 800]]) {
+    const tag = `${skin}/${theme}@${w}x${h}`
+    const p = await b.newPage(); await p.setViewportSize({ width: w, height: h })
+    await p.goto('http://localhost:4178/')
+    await p.evaluate(([skin, theme]) => { localStorage.clear(); localStorage.setItem('sry:uiSkin', skin); localStorage.setItem('sry:theme', theme); localStorage.setItem('sry:tour:done', '1'); localStorage.setItem('sry:aurora:intro:2', '1') }, [skin, theme])
+    await p.reload(); await p.waitForTimeout(1500)
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = Array.from({ length: 40 }, (_, i) => `<p>line ${i + 1} lorem ipsum dolor sit amet</p>`).join(''); paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(400)
+    await p.locator('.paper').first().click(); await p.keyboard.press('Control+Shift+Enter'); await p.waitForTimeout(300)
+    if (!(await p.locator('.focus-opt').count())) { const btn = p.locator('[title="집중 모드"], [aria-label="집중 모드"]').first(); if (await btn.count()) await btn.click({ force: true }); await p.waitForTimeout(300) }
+    await p.locator('.focus-opt').first().click(); await p.waitForTimeout(400)
+    const r = await p.evaluate(() => { const comp = document.querySelector('.composition'); comp.scrollTop = 1e9; const ps = document.querySelectorAll('.comp-paper p'); const last = ps[ps.length - 1].getBoundingClientRect(); const bar = document.querySelector('.comp-bar').getBoundingClientRect(); const el = document.elementFromPoint(last.left + 10, last.top + last.height / 2); const items = [...document.querySelector('.comp-bar').children].filter((c) => getComputedStyle(c).display !== 'none').map((c) => { const q = c.getBoundingClientRect(); return { tag: c.tagName, inside: q.right <= bar.right + 1 && q.bottom <= bar.bottom + 1 && q.top >= bar.top - 1, w: q.width } }); return { lastBottom: last.bottom, barTop: bar.top, onLine: el && el.closest('.comp-paper') ? el.tagName : el && el.tagName, items, barH: bar.height } })
+    chk(r.lastBottom <= r.barTop && /P|SPAN|DIV/.test(r.onLine || ''), tag + ': 끝까지 스크롤하면 마지막 줄이 하단 바 위에 보임 ' + JSON.stringify({ lastBottom: r.lastBottom, barTop: r.barTop, onLine: r.onLine }))
+    chk(r.items.every((i) => i.inside) && r.items.some((i) => i.tag === 'BUTTON'), tag + ': 하단 바 항목이 모두 바 안에 있음(나가기 버튼 포함) ' + JSON.stringify(r.items.map((i) => i.tag + (i.inside ? '' : '!'))))
+    await p.close()
+  }
   console.log('FOCUS MODE FAILS:', fails); await b.close(); process.exit(fails ? 1 : 0)
 })()

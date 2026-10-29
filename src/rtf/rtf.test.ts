@@ -507,5 +507,44 @@ function roundTrip(doc: RtfDoc): RtfDoc {
 }
 
 declare const process: { exit(code: number): never }
+// 41) 그룹 닫힘 뒤 문단 수준 서식 유지: 제목의 \b\fs36 가 {\f1 ..} 그룹 하나 닫힌 뒤에도 남아야 하며,
+//     제목 기본 서식(굵게/18pt)은 런에 박히지 않는다(normalizeRunStyles).
+{
+  const doc = parseRtf('{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Malgun Gothic;}{\\f1 Georgia;}}\\pard\\plain\\s1\\ql\\b\\fs36 Head {\\f1 mid} tail\\par}')
+  eq(doc.blocks.length, 1, '제목 한 블록')
+  eq(doc.blocks[0].type, 'h1', '제목 1 유형')
+  const runs = doc.blocks[0].runs
+  eq(runs.map((r) => r.text), ['Head ', 'mid', ' tail'], '제목 런 분할')
+  ok(runs.every((r) => r.style.bold === undefined && r.style.fontSize === undefined), '제목 기본 굵게/18pt 가 런에 박히지 않음')
+  eq(runs[1].style.fontFamily, 'Georgia', '그룹 안 글꼴 보존')
+  // 그룹 복원 검증(기본 서식이 아닌 값): 본문 문단에서 \i 를 켠 뒤 {\b ..} 그룹을 닫아도 \i 가 유지
+  const d2 = parseRtf('{\\rtf1\\ansi\\deff0\\pard\\plain\\ql\\i one {\\b two} three\\par}')
+  eq(d2.blocks[0].runs.map((r) => [r.text, !!r.style.italic, !!r.style.bold]), [['one ', true, false], ['two', true, true], [' three', true, false]], '그룹 닫힘 뒤 바깥 그룹의 기울임 유지')
+}
+
+// 42) 제목 안 명시적 굵게 해제(bold:false)가 \b0 로 왕복 보존, 줄간격 1.0 도 왕복 보존
+{
+  const doc: RtfDoc = {
+    blocks: [
+      { type: 'h2', runs: [{ text: '보통 ', style: { bold: false } }, { text: '제목', style: {} }] },
+      { type: 'p', lineSpacing: 1, runs: [{ text: '한 줄', style: {} }] },
+      { type: 'blockquote', runs: [{ text: '곧은 ', style: { italic: false } }, { text: '인용', style: {} }] },
+    ],
+  }
+  const rtf = serializeRtf(doc)
+  ok(rtf.includes('\\b0'), '제목 안 굵게 해제가 \\b0 으로 출력')
+  ok(rtf.includes('\\sl240\\slmult1'), '줄간격 1.0 이 \\sl240 으로 출력')
+  ok(rtf.includes('\\i0'), '인용 안 기울임 해제가 \\i0 으로 출력')
+  const back = parseRtf(rtf)
+  eq(back.blocks[0].runs[0].style.bold, false, '되읽은 제목 첫 런은 bold:false')
+  eq(back.blocks[0].runs[1].style.bold, undefined, '되읽은 제목 둘째 런은 기본(굵게 미표기)')
+  eq(back.blocks[1].lineSpacing, 1, '줄간격 1.0 보존')
+  eq(back.blocks[2].runs[0].style.italic, false, '인용 첫 런 italic:false')
+  const html = modelToHtml(back)
+  ok(html.includes('font-weight:normal'), '제목 굵게 해제가 HTML 에서 font-weight:normal')
+  ok(html.includes('line-height:1"') || html.includes('line-height:1;') || /line-height:1[^.\d]/.test(html), '줄간격 1.0 이 HTML line-height:1 로 출력')
+  ok(!html.includes('<strong>'), '제목 기본 굵게는 strong 으로 박히지 않음')
+}
+
 console.log(`\nRTF 엔진 테스트: ${pass} 통과 / ${fail} 실패`)
 if (fail > 0) process.exit(1)

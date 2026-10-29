@@ -2,6 +2,7 @@
 // 토크나이저 + 상태스택 방식. 한글 \uN, \'XX, 그룹, 색/폰트/스타일 테이블, 하이퍼링크 필드를 처리.
 import { DEFAULT_FONT } from './model.ts'
 import type { Align, Block, BlockType, RtfDoc, Run, RunStyle } from './model.ts'
+import { normalizeRunStyles } from './model.ts'
 
 type Dest =
   | 'body'
@@ -209,6 +210,8 @@ export function parseRtf(rtf: string): RtfDoc {
       block.pageBreak = true
       curPageBreak = false
     }
+    // 문단 수준 직접 서식(제목 \b\fs, 인용 \i)이 런에 박힌 것을 걷어낸다.
+    normalizeRunStyles(block)
     blocks.push(block)
     curRuns = []
   }
@@ -680,7 +683,10 @@ export function parseRtf(rtf: string): RtfDoc {
       flushRun()
       // 마지막(body) 그룹은 보호 — 불균형 RTF 로 인한 스택 언더플로우/크래시 방지
       if (stack.length > 1) stack.pop()
-      runStyle = { ...top().char }
+      // 그룹을 닫으면 그 그룹을 '열 때' 저장한 서식으로 되돌린다(= closingGroup.char).
+      // 예전엔 pop 뒤 top().char(바깥 그룹이 열릴 때의 스냅샷)로 되돌려, 바깥 그룹에서 그룹 열기 이후에 설정한
+      // 서식(제목의 \b\fs36 등)이 중첩 그룹 {\f1 ..} 하나만 닫혀도 사라졌다.
+      runStyle = { ...closingGroup.char }
       ucSkip = top().uc
       i++
       continue

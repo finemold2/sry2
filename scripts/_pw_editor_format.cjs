@@ -84,6 +84,23 @@ const PT = (pt) => Math.round((pt * 96) / 72) + 'px'
     chk(sv3.value === 'Georgia' && sv4.value === '30', skin + ': 균일한 선택(0~2)에서는 실제 값(Georgia/30) 표시 ' + JSON.stringify([sv3, sv4]))
     chk(!(await p.evaluate(() => document.body.innerText.includes('한 문단 안의 선택에만'))), skin + ': "한 문단 안의 선택에만" 거부 메시지가 뜨지 않음')
 
+    // 3b) 되돌리기: 글꼴 적용이 Ctrl+Z 로 풀리고, 그 전에 친 글도 계속 되돌릴 수 있음
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = '<p>undo me please</p>'; paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(300)
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); const t = paper.querySelector('p').firstChild; const r = document.createRange(); r.setStart(t, t.length); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); paper.focus() })
+    await p.keyboard.type(' typed'); await p.waitForTimeout(100)
+    await sel(0, 5, 0, 14); await font('Georgia'); await p.waitForTimeout(150)
+    const u0 = await p.evaluate(() => window.__t.html())
+    await p.keyboard.press('Control+z'); await p.waitForTimeout(150); const u1 = await p.evaluate(() => window.__t.html())
+    await p.keyboard.press('Control+z'); await p.waitForTimeout(150); const u2 = await p.evaluate(() => document.querySelector('.paper').textContent)
+    chk(/Georgia/.test(u0) && !/Georgia/.test(u1) && u2 === 'undo me please', skin + ': Ctrl+Z 로 글꼴 적용이 풀리고 이전 타이핑도 되돌려짐 ' + JSON.stringify({ u1, u2 }))
+    // 3c) .paper 직속 맨 텍스트 + 중첩 목록 바깥 항목도 적용
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = 'bare text<p>para</p><ul><li>level one<ul><li>level two</li></ul></li><li>another</li></ul>'; paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(300)
+    await p.locator('.paper').first().click(); await p.keyboard.press('Control+a'); await p.waitForTimeout(150); await size('18'); await p.waitForTimeout(150)
+    const sizes = await p.evaluate(() => { const w = document.createTreeWalker(document.querySelector('.paper'), NodeFilter.SHOW_TEXT); const out = []; let n; while ((n = w.nextNode())) if (n.textContent.trim()) out.push(n.textContent.trim() + '=' + getComputedStyle(n.parentElement).fontSize); return out })
+    chk(sizes.length === 5 && sizes.every((x) => x.endsWith('=' + PT(18))), skin + ': 맨 텍스트·중첩 목록 바깥 항목 포함 전부 18pt ' + JSON.stringify(sizes))
+    // 원래 3문단으로 복구(이후 새로고침 검증용 상태 재구성)
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = '<p><span style="font-size: 30pt;"><span style="font-family: Georgia;">첫째 </span><span style="font-family: &quot;Courier New&quot;;">문단</span><span style="font-family: Georgia;"> 가나</span></span><span style="font-family: Georgia; font-size: 24pt;">다라마바사</span></p><p><span style="font-family: Georgia; font-size: 24pt;">둘째 </span><span style="font-family: Arial; font-size: 24pt;">문단 아자차카타파하</span></p><p><span style="font-family: Arial; font-size: 24pt;">셋째</span><span style="font-family: Georgia; font-size: 24pt;"> 문단 ABCDEFGHIJ</span></p>'; paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(300)
+
     // 4) 새로고침(RTF 왕복) 후 보존
     await p.waitForTimeout(600); await p.reload(); await p.waitForTimeout(1500)
     await p.evaluate(() => {

@@ -1259,6 +1259,7 @@ textarea.field {
   color: #e8e6df;
   max-width: 740px;
   width: 100%;
+  flex-shrink: 0; /* 세로 flex 자식이라 내용보다 작게 눌려 마지막 줄들이 하단 바 아래 숨고 스크롤도 안 되던 문제 */
   margin: 8vh auto 30vh;
   padding: 0 30px;
   outline: none;
@@ -1273,15 +1274,20 @@ textarea.field {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 40px;
+  min-height: 40px;
   background: rgba(20, 22, 26, 0.92);
   color: #c8ccd2;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 0 20px;
+  flex-wrap: wrap; /* 좁은 창에서 항목이 바 밖으로 넘치지 않게 */
+  gap: 4px 18px;
+  padding: 4px 20px;
   font-size: 12px;
   border-top: 1px solid #333;
+}
+.comp-bar label { white-space: nowrap; }
+@media (max-width: 720px) {
+  .comp-bar label { display: none; } /* 좁은 창: 슬라이더는 숨기고 저장 상태·단어 수·나가기만 */
 }
 .comp-bar input[type='range'] {
   width: 120px;
