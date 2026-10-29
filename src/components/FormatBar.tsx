@@ -57,6 +57,29 @@ export default function FormatBar() {
   const [, force] = useState(0)
   const refresh = () => force((n) => n + 1)
   const saved = useRef<Range | null>(null)
+  const FAST_PATH_BLOCKS = 300
+
+  // Ctrl+Y(다시 실행) 뒤 글자 크기 복원: fontSize 명령은 7(xxx-large)로 적용한 뒤 pt 로 치환하는데, 브라우저가 기존 span 의
+  // style 을 고친 경우 되돌리기 스택에는 'xxx-large' 가 기록돼 Ctrl+Y 가 그 값을 되살린다(48px 로 커지고 RTF 저장에선 크기 소실).
+  // 적용 때 노드에 남긴 data-pt 로 되돌려 놓고 저장용 input 을 다시 발화한다.
+  useEffect(() => {
+    const h = (e: Event) => {
+      const ie = e as InputEvent
+      if (ie.inputType !== 'historyRedo' && ie.inputType !== 'historyUndo') return
+      const paper = (e.target as HTMLElement | null)?.closest?.('.paper') as HTMLElement | null
+      if (!paper) return
+      let changed = false
+      paper.querySelectorAll<HTMLElement>('span[style*="xxx-large"]').forEach((el) => {
+        if (el.style.fontSize !== 'xxx-large') return
+        const pt = parseFloat(el.dataset.pt || '')
+        el.style.fontSize = (pt > 0 ? pt : 24) + 'pt'
+        changed = true
+      })
+      if (changed) paper.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    document.addEventListener('input', h)
+    return () => document.removeEventListener('input', h)
+  }, [])
 
   useEffect(() => {
     // selectionchange 는 키 입력마다 발화 → rAF 로 프레임당 1회로 스로틀(#22 타이핑 중 서식바 과도 리렌더 완화).
@@ -101,6 +124,111 @@ export default function FormatBar() {
     afterExec()
   }
 
+  // 아주 큰 선택(수백 문단 이상) 전용 빠른 경로 — 브라우저 편집 명령은 선택 크기에 대해 준-이차 시간이라(1500문단 ≈ 4~6초 멈춤)
+  // 문단별 직접 감싸기로 즉시 적용한다. 대신 Ctrl+Z 로 되돌리지 못한다(되돌리기 스택 밖의 DOM 조작).
+  const wrapInlineStyleFast = (prop: 'fontSize' | 'fontFamily', value: string) => {
+    restore()
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0) return
+    const range = sel.getRangeAt(0)
+    if (range.collapsed) return
+    const paper = editableOf(range.commonAncestorContainer)
+    if (!paper) return
+    const cssProp = prop === 'fontSize' ? 'font-size' : 'font-family'
+    const BLOCK_SEL = 'p,h1,h2,h3,h4,h5,h6,blockquote,li,pre,div'
+    // 선택과 겹치는 가장 안쪽 블록들(blockquote>p 처럼 중첩되면 안쪽만).
+    const cand = Array.from(paper.querySelectorAll<HTMLElement>(BLOCK_SEL)).filter((b) => range.intersectsNode(b))
+    let blocks = cand.filter((b) => !cand.some((o) => o !== b && b.contains(o)))
+    if (blocks.length === 0) blocks = [paper] // 블록 없이 .paper 직속 텍스트만 있는 경우
+    const indexOf = (n: Node) => Array.prototype.indexOf.call(n.parentNode!.childNodes, n) as number
+    // (node, offset) 경계를 block 직속 자식 경계로 끌어올린다 — 텍스트/인라인 조상을 경계에서 쪼갠다.
+    // 빈 조각은 만들지 않는다(경계가 노드 맨 앞/뒤면 쪼개지 않고 앞/뒤로 이동).
+    const liftBoundary = (node: Node, offset: number, block: HTMLElement): number => {
+      if (node === block) return offset
+      if (!block.contains(node)) return offset <= 0 ? 0 : block.childNodes.length
+      let n: Node = node
+      let off = offset
+      if (n.nodeType === 3) {
+        const t = n as Text
+        const parent = t.parentNode as Node
+        if (off > 0 && off < t.length) { const right = t.splitText(off); n = parent; off = indexOf(right) }
+        else if (off <= 0) { n = parent; off = indexOf(t) }
+        else { n = parent; off = indexOf(t) + 1 }
+      }
+      while (n !== block) {
+        const el = n as HTMLElement
+        const parent = el.parentNode as Node
+        const idx = indexOf(el)
+        if (off <= 0) { n = parent; off = idx }
+        else if (off >= el.childNodes.length) { n = parent; off = idx + 1 }
+        else {
+          const clone = el.cloneNode(false) as HTMLElement
+          while (el.childNodes[off]) clone.appendChild(el.childNodes[off])
+          parent.insertBefore(clone, el.nextSibling)
+          n = parent; off = idx + 1
+        }
+      }
+      return off
+    }
+    const made: HTMLElement[] = []
+    const startR = range.cloneRange()
+    const endR = range.cloneRange()
+    startR.collapse(true)
+    endR.collapse(false)
+    try {
+      for (const block of blocks) {
+        const r = document.createRange()
+        r.selectNodeContents(block)
+        // 블록 내용 범위를 실제 선택 경계로 잘라낸다(첫/끝 문단은 부분 선택일 수 있음).
+        if (r.compareBoundaryPoints(Range.START_TO_START, startR) < 0) r.setStart(startR.startContainer, startR.startOffset)
+        if (r.compareBoundaryPoints(Range.END_TO_END, endR) > 0) r.setEnd(endR.endContainer, endR.endOffset)
+        if (r.collapsed || r.toString() === '') continue // 빈 문단/텍스트 없는 조각은 건너뜀
+        // 끝 경계를 먼저 끌어올린다(시작 쪽 쪼개기로 끝 경계 노드가 움직이지 않도록) — 이후 노드 기준으로 다시 찾는다.
+        const endIdx = liftBoundary(r.endContainer, r.endOffset, block)
+        const endMarker: Node | null = block.childNodes[endIdx] || null
+        const startIdx = liftBoundary(r.startContainer, r.startOffset, block)
+        const startMarker: Node | null = block.childNodes[startIdx] || null
+        const r2 = document.createRange()
+        r2.setStart(block, startMarker ? indexOf(startMarker) : block.childNodes.length)
+        r2.setEnd(block, endMarker ? indexOf(endMarker) : block.childNodes.length)
+        if (r2.collapsed) continue
+        const span = document.createElement('span')
+        span.style.setProperty(cssProp, value)
+        span.appendChild(r2.extractContents())
+        r2.insertNode(span)
+        // 새 span 안쪽에 남은 같은 속성(옛 span 조각·<font>)을 지워 새 값이 이기게 한다.
+        span.querySelectorAll<HTMLElement>('*').forEach((el) => {
+          if (el.style && el.style.getPropertyValue(cssProp)) el.style.removeProperty(cssProp)
+          if (el.tagName === 'FONT') {
+            if (prop === 'fontFamily') el.removeAttribute('face')
+            else el.removeAttribute('size')
+          }
+          if (el.getAttribute('style') === '') el.removeAttribute('style')
+        })
+        // 속성이 모두 빠진 span/font 는 풀어서 중첩을 줄인다(자식은 그대로 보존).
+        Array.from(span.querySelectorAll<HTMLElement>('span,font')).forEach((el) => {
+          if (el.attributes.length === 0 && el.parentNode) {
+            while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el)
+            el.parentNode.removeChild(el)
+          }
+        })
+        made.push(span)
+      }
+      if (made.length) {
+        const r = document.createRange()
+        r.setStartBefore(made[0])
+        r.setEndAfter(made[made.length - 1])
+        sel.removeAllRanges()
+        sel.addRange(r)
+        // DOM 직접 조작이라 네이티브 input 이 안 뜬다 — 에디터가 저장하도록 input 을 명시 발화(글꼴/크기 영속).
+        paper.dispatchEvent(new Event('input', { bubbles: true }))
+      }
+    } catch {
+      /* 비정상 선택(마커 내부 등)은 무시 */
+    }
+    afterExec()
+  }
+
   // 글꼴/크기 적용 — 브라우저의 편집 명령(execCommand)으로 적용한다.
   //  · 브라우저가 Ctrl+A·여러 문단·중첩 목록·겹치는 기존 span 까지 알아서 처리하고(안쪽의 같은 속성을 걷어내 새 값이
   //    이기고, 인접 span 은 합침) 되돌리기(Ctrl+Z) 스택에도 기록된다 — 예전의 직접 DOM 조작은 한 문단 안의 선택만
@@ -115,18 +243,25 @@ export default function FormatBar() {
     if (range.collapsed) return
     const paper = editableOf(range.commonAncestorContainer)
     if (!paper) return
+    // 수백 문단을 넘는 선택은 브라우저 명령이 수 초 멈추므로 빠른 경로로(되돌리기는 포기).
+    if (blocksInSelection().length > FAST_PATH_BLOCKS) { wrapInlineStyleFast(prop, value); return }
     if (prop === 'fontFamily') {
       exec('fontName', value)
     } else {
       exec('fontSize', '7')
+      const pt = String(parseFloat(value) || 12)
       paper.querySelectorAll<HTMLElement>('span[style*="xxx-large"], font[size="7"]').forEach((el) => {
         if (el.tagName === 'FONT') {
           const span = document.createElement('span')
           span.style.fontSize = value
+          span.dataset.pt = pt
           while (el.firstChild) span.appendChild(el.firstChild)
           el.replaceWith(span)
         } else if (el.style.fontSize === 'xxx-large') {
           el.style.fontSize = value
+          // 브라우저가 기존 span 의 style 속성을 고친 경우, 다시 실행(Ctrl+Y)하면 기록된 값(xxx-large)으로 되돌아온다.
+          // 어떤 pt 였는지 노드에 남겨 두고 historyRedo 입력 뒤 복원한다(아래 effect).
+          el.dataset.pt = pt
         }
       })
     }
@@ -626,6 +761,8 @@ export default function FormatBar() {
       const walker = document.createTreeWalker(paper, NodeFilter.SHOW_TEXT)
       for (let t = walker.nextNode(); t; t = walker.nextNode()) {
         if (!(t.textContent || '').trim()) continue
+        // 각주/코멘트 마커(contenteditable=false)의 글자는 서식 대상이 아니다 — 섞임 판정에서 제외(마커가 있으면 늘 '(혼합)'이던 문제).
+        if (t.parentElement && t.parentElement.closest('.fn-marker, .cmt-marker, [contenteditable="false"]')) continue
         const nr = document.createRange()
         nr.selectNodeContents(t)
         // 실제로 겹치는지(경계만 닿는 노드 제외): 노드 시작 < 선택 끝 && 노드 끝 > 선택 시작

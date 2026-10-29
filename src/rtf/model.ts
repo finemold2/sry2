@@ -118,6 +118,8 @@ export function normalizeRunStyles(block: Block): void {
     if (s.bold === false && !def.bold) delete s.bold
     if (s.italic === true && def.italic) delete s.italic
     if (s.italic === false && !def.italic) delete s.italic
-    if (s.fontSize != null && def.fsHalf && Math.round(s.fontSize * 2) === def.fsHalf) delete s.fontSize
+    // 글자 크기는 지우지 않는다 — 제목에 사용자가 명시한 18pt 와 스타일 기본 \fs36 은 값이 같아 구분할 수 없고,
+    // 편집기의 제목 CSS 크기(1.7em 등)는 18pt 가 아니라서 지우면 새로고침 후 크기가 바뀐다.
+    // 문단 머리의 \b\fs36 (스타일 기본)은 파서가 문단 접두부에서 따로 걸러낸다(parse.ts endPrefix).
   }
 }

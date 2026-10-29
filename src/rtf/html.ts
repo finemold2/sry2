@@ -91,12 +91,14 @@ function renderListAt(
   level: number,
   ctx: RenderCtx,
 ): { html: string; next: number } {
-  const tag = blocks[start].type === 'li-ul' ? 'ul' : 'ol'
+  const listType = blocks[start].type
+  const tag = listType === 'li-ul' ? 'ul' : 'ol'
   let html = `<${tag}>`
   let i = start
   while (i < end) {
     const lvl = blocks[i].listLevel ?? 0
     if (lvl < level) break // 더 얕은 항목 -> 상위 목록으로 복귀
+    if (lvl === level && blocks[i].type !== listType) break // 같은 깊이에서 종류가 바뀌면(글머리→번호) 새 목록으로
     if (lvl > level) {
       // 더 깊은 항목 -> 직전 <li> 안에 중첩 목록을 끼워 넣는다.
       const sub = renderListAt(blocks, i, end, lvl, ctx)
@@ -149,8 +151,12 @@ export function modelToHtml(doc: RtfDoc): string {
       let minLevel = Infinity
       for (let k = i; k < end; k++) minLevel = Math.min(minLevel, blocks[k].listLevel ?? 0)
       if (!isFinite(minLevel)) minLevel = 0
-      html += renderListAt(blocks, i, end, minLevel, ctx).html
-      i = end
+      // 인접한 목록이 종류(ul/ol)를 바꾸면 renderListAt 이 거기서 멈추므로, 남은 항목으로 다음 목록을 이어 만든다.
+      while (i < end) {
+        const r = renderListAt(blocks, i, end, minLevel, ctx)
+        html += r.html
+        i = r.next > i ? r.next : i + 1
+      }
       continue
     }
     const a = blockStyle(b)

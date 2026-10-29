@@ -98,6 +98,27 @@ const PT = (pt) => Math.round((pt * 96) / 72) + 'px'
     await p.locator('.paper').first().click(); await p.keyboard.press('Control+a'); await p.waitForTimeout(150); await size('18'); await p.waitForTimeout(150)
     const sizes = await p.evaluate(() => { const w = document.createTreeWalker(document.querySelector('.paper'), NodeFilter.SHOW_TEXT); const out = []; let n; while ((n = w.nextNode())) if (n.textContent.trim()) out.push(n.textContent.trim() + '=' + getComputedStyle(n.parentElement).fontSize); return out })
     chk(sizes.length === 5 && sizes.every((x) => x.endsWith('=' + PT(18))), skin + ': 맨 텍스트·중첩 목록 바깥 항목 포함 전부 18pt ' + JSON.stringify(sizes))
+    // 3d) Ctrl+Z → Ctrl+Y: 다시 실행해도 크기가 pt 로 유지(xxx-large 로 되돌아가지 않음)되고 RTF 에 \fs 가 남음
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = '<p><span style="font-family: Arial; font-size: 18pt;">첫째 문단 가나다</span></p><p>둘째</p>'; paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(300)
+    await sel(0, 0, 0, 8); await size('24'); await p.waitForTimeout(150)
+    await p.keyboard.press('Control+z'); await p.waitForTimeout(150); const z1 = await at(0, 2)
+    await p.keyboard.press('Control+y'); await p.waitForTimeout(400); const y1 = await at(0, 2)
+    await p.waitForTimeout(500); const rtfY = await p.evaluate(() => window.__scriv.bodyOf(window.__scriv.state().activeId))
+    chk(z1.size === PT(18) && y1.size === PT(24) && /\\fs48/.test(rtfY) && !/xxx-large/.test(await p.evaluate(() => window.__t.html())), skin + ': Ctrl+Z 뒤 18pt, Ctrl+Y 뒤 24pt 유지(xxx-large 아님) · RTF \\fs48 ' + JSON.stringify({ z1, y1 }))
+    // 3e) 각주/코멘트 마커가 섞인 선택: 적용 뒤 셀렉트가 (혼합) 이 아니라 적용값을 표시
+    p.once('dialog', (d) => d.accept('각주 내용'))
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = '<p>마커 앞 글</p><p>뒤 글</p>'; paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(300)
+    await sel(0, 4, 0, 4); await p.locator('.formatbar button[title="각주 삽입"]').click(); await p.waitForTimeout(300)
+    chk((await p.evaluate(() => document.querySelectorAll('.paper .fn-marker').length)) === 1, skin + ': 각주 마커 삽입')
+    await p.locator('.paper').first().click(); await p.keyboard.press('Control+a'); await p.waitForTimeout(150); await font('Georgia'); await p.waitForTimeout(150); await size('24'); await p.waitForTimeout(200)
+    const svm1 = await p.evaluate(() => window.__t.selVal(1)), svm2 = await p.evaluate(() => window.__t.selVal(2))
+    chk(svm1.value === 'Georgia' && svm2.value === '24', skin + ': 마커 포함 선택에 적용 뒤 셀렉트가 Georgia/24 표시(혼합 아님) ' + JSON.stringify([svm1, svm2]))
+    // 3f) 1500문단 Ctrl+A 글꼴: 빠른 경로로 1.5초 이내
+    await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = Array.from({ length: 1500 }, (_, i) => '<p>문단 ' + i + ' lorem ipsum dolor</p>').join(''); paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(600)
+    await p.locator('.paper').first().click(); await p.keyboard.press('Control+a'); await p.waitForTimeout(300)
+    const t0 = Date.now(); await font('Courier New'); const dt = Date.now() - t0; await p.waitForTimeout(200)
+    const bigOk = await p.evaluate(() => { const ps = document.querySelectorAll('.paper p'); const a = getComputedStyle(ps[0].firstElementChild || ps[0]).fontFamily, z = getComputedStyle(ps[1499].firstElementChild || ps[1499]).fontFamily; return a.includes('Courier') && z.includes('Courier') })
+    chk(bigOk && dt < 1500, skin + ': 1500문단 Ctrl+A 글꼴 적용 ' + dt + 'ms (빠른 경로), 처음/끝 문단 적용')
     // 원래 3문단으로 복구(이후 새로고침 검증용 상태 재구성)
     await p.evaluate(() => { const paper = document.querySelector('.paper'); paper.innerHTML = '<p><span style="font-size: 30pt;"><span style="font-family: Georgia;">첫째 </span><span style="font-family: &quot;Courier New&quot;;">문단</span><span style="font-family: Georgia;"> 가나</span></span><span style="font-family: Georgia; font-size: 24pt;">다라마바사</span></p><p><span style="font-family: Georgia; font-size: 24pt;">둘째 </span><span style="font-family: Arial; font-size: 24pt;">문단 아자차카타파하</span></p><p><span style="font-family: Arial; font-size: 24pt;">셋째</span><span style="font-family: Georgia; font-size: 24pt;"> 문단 ABCDEFGHIJ</span></p>'; paper.dispatchEvent(new Event('input', { bubbles: true })) }); await p.waitForTimeout(300)
 

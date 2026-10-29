@@ -202,12 +202,14 @@ function renderListAt(
   styles: Styles,
   pics: Pictures,
 ): { xml: string; next: number } {
-  const styleName = items[start].type === 'li-ul' ? 'LBullet' : 'LNumber'
+  const listType = items[start].type
+  const styleName = listType === 'li-ul' ? 'LBullet' : 'LNumber'
   let xml = `<text:list text:style-name="${styleName}">`
   let i = start
   while (i < end) {
     const lvl = items[i].listLevel ?? 0
     if (lvl < level) break // 더 얕은 항목 → 상위 목록으로 복귀
+    if (lvl === level && items[i].type !== listType) break // 같은 깊이에서 종류가 바뀌면(글머리→번호) 새 목록
     if (lvl > level) {
       // 더 깊은 항목 → 직전 <text:list-item> 안에 중첩 목록을 끼워 넣는다.
       const sub = renderListAt(items, i, end, lvl, styles, pics)
@@ -255,9 +257,12 @@ function blocksXml(blocks: EBlock[], styles: Styles, pics: Pictures, breakFirst?
       let minLevel = Infinity
       for (let k = i; k < end; k++) minLevel = Math.min(minLevel, blocks[k].listLevel ?? 0)
       if (!isFinite(minLevel)) minLevel = 0
-      out += renderListAt(blocks, i, end, minLevel, styles, pics).xml
+      while (i < end) {
+        const r = renderListAt(blocks, i, end, minLevel, styles, pics)
+        out += r.xml
+        i = r.next > i ? r.next : i + 1
+      }
       consumeFirst() // 목록은 단락 스타일을 받지 않음(첫 블록이 목록이면 페이지나눔은 생략)
-      i = end
     } else if (/^h[1-4]$/.test(b.type)) {
       const fs = consumeFirst()
       // 페이지나눔이 필요한 첫 헤딩: 정렬 스타일 대신(또는 함께) break-before 파생 스타일 적용.

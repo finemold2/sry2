@@ -546,5 +546,21 @@ declare const process: { exit(code: number): never }
   ok(!html.includes('<strong>'), '제목 기본 굵게는 strong 으로 박히지 않음')
 }
 
+// 43) 문단 접두부의 스타일 기본(\b\fs36)은 런 서식이 아니고, 런 그룹 {\fs36 ..} 의 명시 크기는 보존된다.
+//     인접한 글머리/번호 목록은 modelToHtml 에서 합쳐지지 않는다.
+{
+  const d = parseRtf('{\\rtf1\\ansi\\deff0\\pard\\plain\\s1\\ql\\b\\fs36 {\\fs36 Big} tail\\par\\pard\\plain\\s2\\ql\\b\\fs30 {\\fs48 huge}\\par\\pard\\plain\\ql\\b\\fs36 body\\par}')
+  eq(d.blocks.length, 3, '세 블록')
+  eq(d.blocks[0].runs.map((r) => [r.text, r.style.fontSize ?? null, r.style.bold ?? null]), [['Big', 18, null], [' tail', null, null]], '제목 접두부 \\b\\fs36 는 런에 없고 그룹의 명시 18pt 만 보존')
+  eq(d.blocks[1].runs[0].style.fontSize, 24, '제목 2 안 명시 24pt 보존')
+  eq(d.blocks[2].runs[0].style, { bold: true, fontSize: 18 }, '본문 문단의 접두부 서식은 그대로 런 서식')
+  const html = modelToHtml({ blocks: [
+    { type: 'li-ul', runs: [{ text: 'a', style: {} }] }, { type: 'li-ul', runs: [{ text: 'b', style: {} }] },
+    { type: 'li-ol', runs: [{ text: '1', style: {} }] }, { type: 'li-ol', runs: [{ text: '2', style: {} }] },
+    { type: 'li-ul', listLevel: 1, runs: [{ text: 'sub', style: {} }] },
+  ] })
+  eq(html, '<ul><li>a</li><li>b</li></ul><ol><li>1</li><li>2<ul><li>sub</li></ul></li></ol>', '글머리 목록 뒤 번호 목록이 따로 유지되고 중첩은 보존')
+}
+
 console.log(`\nRTF 엔진 테스트: ${pass} 통과 / ${fail} 실패`)
 if (fail > 0) process.exit(1)
