@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { htmlToRtf, rtfToHtml } from '../rtf'
 import { useStore } from '../store/store'
 import { Icon } from '../ui/icons'
+import { backspaceAtListStart } from './listOps'
 
 // 집중 모드의 글자 크기/폭 슬라이더 값을 세션 간 보존(localStorage). 원고/프로젝트 데이터는 건드리지 않아 안전.
 const LS_SCALE = 'comp:fontSize'
@@ -61,6 +62,20 @@ export default function Composition({ onExit }: { onExit?: () => void } = {}) {
 
   useEffect(() => {
     if (ref.current && item) ref.current.innerHTML = rtfToHtml(item.bodyRtf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.id])
+
+  // 메인 에디터와 동일: 문단 구분자 <p>, 목록 항목 맨 앞 Backspace 는 글머리만 제거.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    try { docOf().execCommand('defaultParagraphSeparator', false, 'p') } catch { /* noop */ }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Backspace' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return
+      if (backspaceAtListStart(el)) { e.preventDefault(); el.dispatchEvent(new Event('input', { bubbles: true })) }
+    }
+    el.addEventListener('keydown', onKey)
+    return () => el.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id])
 

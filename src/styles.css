@@ -402,8 +402,10 @@ button:disabled,
 .paper:focus {
   box-shadow: 0 0 0 2px rgba(74, 118, 212, 0.4), var(--shadow);
 }
-/* 문단 간격 기본 0: Enter 로 나눈 줄과 자동 줄바꿈된 줄의 간격이 같다(프로젝트 설정 '문단 간격'으로 벌릴 수 있음). */
-.paper p {
+/* 문단 간격 기본 0: Enter 로 나눈 줄과 자동 줄바꿈된 줄의 간격이 같다(프로젝트 설정 '문단 간격'으로 벌릴 수 있음).
+   .paper > div 는 브라우저/붙여넣기가 만든 문단(저장 시 p 로 바뀜) — 같은 간격을 준다. */
+.paper p,
+.paper > div {
   margin: 0 0 var(--ed-para-gap, 0);
   line-height: var(--ed-line, 1.7); /* 기본 줄간격 1.7: 자동 줄바꿈된 줄이 붙어 보이지 않게(프로젝트 설정 '줄간격'으로 조절) */
 }

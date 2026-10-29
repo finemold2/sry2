@@ -105,7 +105,9 @@ function renderListAt(
       if (html.endsWith('</li>')) {
         html = html.slice(0, -'</li>'.length) + sub.html + '</li>'
       } else {
-        html += `<li>${sub.html}</li>`
+        // 앞선 항목 없이 깊은 항목이 오면(목록 전체를 들여쓴 경우) 빈 <li> 를 만들지 않고 브라우저식 ul>ul 로 둔다 —
+        // 들여쓰기 깊이가 새로고침 후에도 유지되고 빈 글머리가 생기지 않는다.
+        html += sub.html
       }
       i = sub.next
       continue
@@ -148,12 +150,10 @@ export function modelToHtml(doc: RtfDoc): string {
       // 연속된 목록 항목(li-ul/li-ol)을 listLevel 반영해 중첩 ul/ol 로 렌더링.
       let end = i
       while (end < blocks.length && (blocks[end].type === 'li-ul' || blocks[end].type === 'li-ol')) end++
-      let minLevel = Infinity
-      for (let k = i; k < end; k++) minLevel = Math.min(minLevel, blocks[k].listLevel ?? 0)
-      if (!isFinite(minLevel)) minLevel = 0
+      // 항상 깊이 0 부터 그린다(최소 깊이로 정규화하면 전체가 들여쓰인 목록의 깊이가 사라짐).
       // 인접한 목록이 종류(ul/ol)를 바꾸면 renderListAt 이 거기서 멈추므로, 남은 항목으로 다음 목록을 이어 만든다.
       while (i < end) {
-        const r = renderListAt(blocks, i, end, minLevel, ctx)
+        const r = renderListAt(blocks, i, end, 0, ctx)
         html += r.html
         i = r.next > i ? r.next : i + 1
       }
