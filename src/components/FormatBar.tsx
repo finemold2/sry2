@@ -101,35 +101,113 @@ export default function FormatBar() {
     afterExec()
   }
 
+  // 글꼴/크기 적용 — 선택 범위에 걸친 모든 문단에, 기존 서식 위에 덮어쓴다.
+  //  · Ctrl+A(전체 선택)·여러 문단에 걸친 선택도 문단별로 나눠 감싸므로 그대로 적용된다
+  //    (문단 경계를 넘는 단일 span 은 RTF 재파싱 시 스타일이 조용히 소실되므로 문단 단위로 감싼다).
+  //  · 선택 경계에서 기존 인라인 요소(옛 글꼴 span 등)를 쪼개 경계를 문단 직속 수준으로 끌어올린 뒤 감싸므로,
+  //    이미 같은 속성이 걸린 부분을 포함해 범위를 넓히거나 좁혀 다시 적용해도 새 span 이 항상 문단 바로 아래
+  //    평평하게 놓이고, 새 span 안쪽의 같은 속성은 모두 지워 새 값이 이긴다(예전엔 안쪽의 옛 span 이 남아
+  //    바깥 새 값이 무시되거나, 반복 적용할수록 span 이 겹겹이 깊어지던 문제).
+  //  · 속성이 비게 된 span/font 는 풀어 DOM 이 계속 깊어지지 않게 한다.
   const wrapInlineStyle = (prop: 'fontSize' | 'fontFamily', value: string) => {
     restore()
     const sel = window.getSelection()
     if (!sel || sel.rangeCount === 0) return
     const range = sel.getRangeAt(0)
     if (range.collapsed) return
-    // 다중 '문단'에 걸친 선택은 명시적으로 차단(리뷰 F2) — extractContents 는 예외를 던지지 않고
-    // 부분 <p>들을 span 에 싸서 p>span>p 중첩을 만들며, RTF 재파싱 시 스타일이 조용히 소실된다.
-    const blockOf = (n: Node | null): Element | null => {
-      const el = n ? (n.nodeType === 1 ? (n as Element) : n.parentElement) : null
-      return el ? el.closest('p,h1,h2,h3,h4,h5,h6,blockquote,li,pre,div') : null
+    const paper = editableOf(range.commonAncestorContainer)
+    if (!paper) return
+    const cssProp = prop === 'fontSize' ? 'font-size' : 'font-family'
+    const BLOCK_SEL = 'p,h1,h2,h3,h4,h5,h6,blockquote,li,pre,div'
+    // 선택과 겹치는 가장 안쪽 블록들(blockquote>p 처럼 중첩되면 안쪽만).
+    const cand = Array.from(paper.querySelectorAll<HTMLElement>(BLOCK_SEL)).filter((b) => range.intersectsNode(b))
+    let blocks = cand.filter((b) => !cand.some((o) => o !== b && b.contains(o)))
+    if (blocks.length === 0) blocks = [paper] // 블록 없이 .paper 직속 텍스트만 있는 경우
+    const indexOf = (n: Node) => Array.prototype.indexOf.call(n.parentNode!.childNodes, n) as number
+    // (node, offset) 경계를 block 직속 자식 경계로 끌어올린다 — 텍스트/인라인 조상을 경계에서 쪼갠다.
+    // 빈 조각은 만들지 않는다(경계가 노드 맨 앞/뒤면 쪼개지 않고 앞/뒤로 이동).
+    const liftBoundary = (node: Node, offset: number, block: HTMLElement): number => {
+      if (node === block) return offset
+      if (!block.contains(node)) return offset <= 0 ? 0 : block.childNodes.length
+      let n: Node = node
+      let off = offset
+      if (n.nodeType === 3) {
+        const t = n as Text
+        const parent = t.parentNode as Node
+        if (off > 0 && off < t.length) { const right = t.splitText(off); n = parent; off = indexOf(right) }
+        else if (off <= 0) { n = parent; off = indexOf(t) }
+        else { n = parent; off = indexOf(t) + 1 }
+      }
+      while (n !== block) {
+        const el = n as HTMLElement
+        const parent = el.parentNode as Node
+        const idx = indexOf(el)
+        if (off <= 0) { n = parent; off = idx }
+        else if (off >= el.childNodes.length) { n = parent; off = idx + 1 }
+        else {
+          const clone = el.cloneNode(false) as HTMLElement
+          while (el.childNodes[off]) clone.appendChild(el.childNodes[off])
+          parent.insertBefore(clone, el.nextSibling)
+          n = parent; off = idx + 1
+        }
+      }
+      return off
     }
-    if (blockOf(range.startContainer) !== blockOf(range.endContainer)) {
-      try { window.dispatchEvent(new CustomEvent('scriv:flash', { detail: '글꼴/크기는 한 문단 안의 선택에만 적용돼요 — 문단별로 나눠 적용해 주세요.' })) } catch { /* noop */ }
-      return
-    }
-    const span = document.createElement('span')
-    ;(span.style as unknown as Record<string, string>)[prop] = value
+    const made: HTMLElement[] = []
+    const startR = range.cloneRange()
+    const endR = range.cloneRange()
+    startR.collapse(true)
+    endR.collapse(false)
     try {
-      span.appendChild(range.extractContents())
-      range.insertNode(span)
-      sel.removeAllRanges()
-      const r = document.createRange()
-      r.selectNodeContents(span)
-      sel.addRange(r)
-      // DOM 직접 조작이라 네이티브 input 이 안 뜬다 — 에디터가 저장하도록 input 을 명시 발화(글꼴/크기 영속).
-      editableOf(span)?.dispatchEvent(new Event('input', { bubbles: true }))
+      for (const block of blocks) {
+        const r = document.createRange()
+        r.selectNodeContents(block)
+        // 블록 내용 범위를 실제 선택 경계로 잘라낸다(첫/끝 문단은 부분 선택일 수 있음).
+        if (r.compareBoundaryPoints(Range.START_TO_START, startR) < 0) r.setStart(startR.startContainer, startR.startOffset)
+        if (r.compareBoundaryPoints(Range.END_TO_END, endR) > 0) r.setEnd(endR.endContainer, endR.endOffset)
+        if (r.collapsed || r.toString() === '') continue // 빈 문단/텍스트 없는 조각은 건너뜀
+        // 끝 경계를 먼저 끌어올린다(시작 쪽 쪼개기로 끝 경계 노드가 움직이지 않도록) — 이후 노드 기준으로 다시 찾는다.
+        const endIdx = liftBoundary(r.endContainer, r.endOffset, block)
+        const endMarker: Node | null = block.childNodes[endIdx] || null
+        const startIdx = liftBoundary(r.startContainer, r.startOffset, block)
+        const startMarker: Node | null = block.childNodes[startIdx] || null
+        const r2 = document.createRange()
+        r2.setStart(block, startMarker ? indexOf(startMarker) : block.childNodes.length)
+        r2.setEnd(block, endMarker ? indexOf(endMarker) : block.childNodes.length)
+        if (r2.collapsed) continue
+        const span = document.createElement('span')
+        span.style.setProperty(cssProp, value)
+        span.appendChild(r2.extractContents())
+        r2.insertNode(span)
+        // 새 span 안쪽에 남은 같은 속성(옛 span 조각·<font>)을 지워 새 값이 이기게 한다.
+        span.querySelectorAll<HTMLElement>('*').forEach((el) => {
+          if (el.style && el.style.getPropertyValue(cssProp)) el.style.removeProperty(cssProp)
+          if (el.tagName === 'FONT') {
+            if (prop === 'fontFamily') el.removeAttribute('face')
+            else el.removeAttribute('size')
+          }
+          if (el.getAttribute('style') === '') el.removeAttribute('style')
+        })
+        // 속성이 모두 빠진 span/font 는 풀어서 중첩을 줄인다(자식은 그대로 보존).
+        Array.from(span.querySelectorAll<HTMLElement>('span,font')).forEach((el) => {
+          if (el.attributes.length === 0 && el.parentNode) {
+            while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el)
+            el.parentNode.removeChild(el)
+          }
+        })
+        made.push(span)
+      }
+      if (made.length) {
+        const r = document.createRange()
+        r.setStartBefore(made[0])
+        r.setEndAfter(made[made.length - 1])
+        sel.removeAllRanges()
+        sel.addRange(r)
+        // DOM 직접 조작이라 네이티브 input 이 안 뜬다 — 에디터가 저장하도록 input 을 명시 발화(글꼴/크기 영속).
+        paper.dispatchEvent(new Event('input', { bubbles: true }))
+      }
     } catch {
-      /* 복수 블록 선택은 무시 */
+      /* 비정상 선택(마커 내부 등)은 무시 */
     }
     afterExec()
   }
@@ -450,16 +528,46 @@ export default function FormatBar() {
   )
 
   // 캐럿 위치의 현재 글꼴/크기 — 셀렉트가 항상 빈 플레이스홀더('글꼴…')이던 문제 해소(#20 서식바 상태 반영).
+  // 범위 선택이면 선택 안 텍스트 전체를 훑어, 글꼴/크기가 섞여 있으면 '혼합'(빈 값)으로 둔다 — 그래야
+  // 셀렉트에 이미 떠 있는 값을 다시 골라도 change 가 발화해 전체에 적용된다(예전엔 "반응 없음"으로 보이던 원인).
   const curInline = (() => {
+    const empty = { font: '', size: '', mixedFont: false, mixedSize: false }
     try {
-      const n = saved.current?.startContainer
+      const r = saved.current
+      if (!r) return empty
+      const styleOf = (el: HTMLElement) => {
+        const cs = getComputedStyle(el)
+        const font = (cs.fontFamily || '').split(',')[0].replace(/["']/g, '').trim()
+        const px = parseFloat(cs.fontSize || '0')
+        return { font, size: px ? String(Math.round((px * 72) / 96)) : '' }
+      }
+      const n = r.startContainer
       const el = n ? (n.nodeType === 1 ? (n as HTMLElement) : n.parentElement) : null
-      if (!el || !el.closest('.paper')) return { font: '', size: '' }
-      const cs = getComputedStyle(el)
-      const font = (cs.fontFamily || '').split(',')[0].replace(/["']/g, '').trim()
-      const px = parseFloat(cs.fontSize || '0')
-      return { font, size: px ? String(Math.round((px * 72) / 96)) : '' }
-    } catch { return { font: '', size: '' } }
+      const paper = el ? (el.closest('.paper') as HTMLElement | null) : null
+      if (!el || !paper) return empty
+      if (r.collapsed) return { ...styleOf(el), mixedFont: false, mixedSize: false }
+      // 범위 선택: 겹치는 텍스트 노드들의 글꼴/크기를 모아 섞임 여부를 본다.
+      let font: string | null = null
+      let size: string | null = null
+      let mixedFont = false
+      let mixedSize = false
+      const walker = document.createTreeWalker(paper, NodeFilter.SHOW_TEXT)
+      for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+        if (!(t.textContent || '').trim()) continue
+        const nr = document.createRange()
+        nr.selectNodeContents(t)
+        // 실제로 겹치는지(경계만 닿는 노드 제외): 노드 시작 < 선택 끝 && 노드 끝 > 선택 시작
+        if (!(nr.compareBoundaryPoints(Range.END_TO_START, r) < 0 && nr.compareBoundaryPoints(Range.START_TO_END, r) > 0)) continue
+        const st = styleOf(t.parentElement as HTMLElement)
+        if (font == null) font = st.font
+        else if (font !== st.font) mixedFont = true
+        if (size == null) size = st.size
+        else if (size !== st.size) mixedSize = true
+        if (mixedFont && mixedSize) break
+      }
+      if (font == null) return { ...styleOf(el), mixedFont: false, mixedSize: false }
+      return { font: mixedFont ? '' : font, size: mixedSize ? '' : (size || ''), mixedFont, mixedSize }
+    } catch { return empty }
   })()
 
   return (
@@ -485,7 +593,7 @@ export default function FormatBar() {
         }}
         title="글꼴 — 현재 캐럿 위치의 글꼴이 표시됩니다"
       >
-        <option value="">{curInline.font && !FONTS.includes(curInline.font) ? curInline.font : '글꼴…'}</option>
+        <option value="">{curInline.mixedFont ? '(혼합)' : curInline.font && !FONTS.includes(curInline.font) ? curInline.font : '글꼴…'}</option>
         {FONTS.map((f) => (
           <option key={f} value={f}>
             {f}
@@ -501,7 +609,7 @@ export default function FormatBar() {
         }}
         title="글자 크기 — 현재 캐럿 위치의 크기(pt)가 표시됩니다"
       >
-        <option value="">{curInline.size && !FONT_SIZES.map(String).includes(curInline.size) ? curInline.size + 'pt' : '크기…'}</option>
+        <option value="">{curInline.mixedSize ? '(혼합)' : curInline.size && !FONT_SIZES.map(String).includes(curInline.size) ? curInline.size + 'pt' : '크기…'}</option>
         {FONT_SIZES.map((s) => (
           <option key={s} value={String(s)}>
             {s}
